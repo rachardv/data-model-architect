@@ -1,27 +1,39 @@
 from typing import Dict, Any, List
+import os
 from src.orchestration.spawner import SubagentSpawner
 from src.orchestration.reviewer_council import ReviewerCouncil
 from src.decision_engine import DataModelDecisionEngine
 from src.noun_verb_parser import NounVerbSemanticParser
 from src.ddl_generator import ANSISQLGenerator
+from src.folder_scanner import FolderSchemaScanner
+from src.erd_generator import VisualMermaidERDGenerator
+from src.contract_compiler import DataContractCompiler
 
 class CaptainOrchestrator:
     """
-    Master Orchestration Engine coordinating the end-to-end multi-agent workflow:
-    Triage ➔ Intake ➔ Model Generation ➔ 4-Risk Reviewers ➔ Phase 5c Sign-Off ➔ Delivery.
+    Master Autonomous Data Modeler Factory Orchestrator.
     """
     
-    def __init__(self):
+    def __init__(self, output_dir: str = "docs"):
         self.spawner = SubagentSpawner()
+        self.output_dir = output_dir
         self.state = "IDLE"
         self.disposition_matrix: List[Dict[str, Any]] = []
         
     def execute_workflow(self, user_request: Dict[str, Any]) -> Dict[str, Any]:
-        # Step 1: Phase 0 Intake Triage
+        domain = user_request.get("domain", "ecommerce")
+        
+        # Step 1: Phase 0 Intake Triage & Optional Folder Scan
         self.state = "TRIAGE"
         triage_branch = user_request.get("branch", "NEW_MODEL")
         self.spawner.spawn_agent("requirements_architect_agent", {"branch": triage_branch})
         
+        folder_path = user_request.get("folder_path")
+        scanned_tables = []
+        if folder_path:
+            scan_result = FolderSchemaScanner.scan_folder(folder_path)
+            scanned_tables = scan_result.get("tables_found", [])
+            
         # Step 2: Noun-Verb Parsing & 21 Questions Classification
         self.state = "DISCOVERY"
         narrative = user_request.get("narrative", "")
@@ -37,11 +49,11 @@ class CaptainOrchestrator:
             "architecture": architecture_decision
         })
         
-        # Build Clean Schema Spec
+        # Build Schema Specification
         schema_spec = user_request.get("schema_spec", {
             "tables": [
                 {
-                    "name": "dim_customer_core",
+                    "name": f"dim_{domain}_customer_core",
                     "type": "DIMENSION",
                     "is_conformed": True,
                     "columns": [
@@ -54,7 +66,7 @@ class CaptainOrchestrator:
                     "primary_key": "customer_sk"
                 },
                 {
-                    "name": "fact_orders",
+                    "name": f"fact_{domain}_orders",
                     "type": "FACT",
                     "columns": [
                         {"name": "order_id", "type": "BIGINT", "nullable": False, "is_inferred": False},
@@ -86,8 +98,13 @@ class CaptainOrchestrator:
             
         final_quality_index = 100.0 if len(audit_results["findings"]) == 0 else 98.0
             
-        # Step 6: Generate ANSI SQL DDL
+        # Step 6: Compile Deliverables (ERD, SQL DDL, Data Contract)
         self.state = "COMPLETE"
+        
+        # 1. Visual Mermaid ERD
+        erd_markdown = VisualMermaidERDGenerator.generate_erd(domain, schema_spec["tables"])
+        
+        # 2. ANSI SQL DDL
         generated_sql = {}
         for t in schema_spec["tables"]:
             generated_sql[t["name"]] = ANSISQLGenerator.generate_table_sql(
@@ -96,12 +113,23 @@ class CaptainOrchestrator:
                 primary_key=t["primary_key"]
             )
             
+        # 3. Data Contract Spec
+        rules = user_request.get("rules", [
+            {"description": "Total amount must be non-negative", "enforcement": "Hard Database CHECK", "definition": "total_amount_usd >= 0.00"},
+            {"description": "Estimated delivery days must be positive", "enforcement": "Hard Database CHECK", "definition": "estimated_delivery_days > 0"}
+        ])
+        contract_markdown = DataContractCompiler.compile_contract(domain, rules)
+        
         return {
             "status": "CERTIFIED_PRODUCTION_READY",
             "state": self.state,
+            "domain": domain,
             "architecture_pattern": architecture_decision["pattern"],
             "quality_index": final_quality_index,
             "disposition_matrix": self.disposition_matrix,
+            "erd_markdown": erd_markdown,
             "generated_sql": generated_sql,
+            "contract_markdown": contract_markdown,
+            "scanned_source_tables": len(scanned_tables),
             "spawner_log_count": len(self.spawner.message_log)
         }

@@ -7,6 +7,7 @@ def test_captain_orchestration_lifecycle():
     captain = CaptainOrchestrator()
     
     payload = {
+        "domain": "ecommerce",
         "branch": "NEW_MODEL",
         "narrative": "A customer places an order on our e-commerce platform. The warehouse worker ships the package.",
         "usage_params": {
@@ -26,8 +27,10 @@ def test_captain_orchestration_lifecycle():
     assert result["architecture_pattern"] == "KIMBALL_STAR_SCD2"
     assert result["quality_index"] >= 95.0
     assert result["spawner_log_count"] >= 5
-    assert "dim_customer_core" in result["generated_sql"]
-    assert "fact_orders" in result["generated_sql"]
+    assert any("customer" in t for t in result["generated_sql"])
+    assert any("orders" in t for t in result["generated_sql"])
+    assert "erDiagram" in result["erd_markdown"]
+    assert "Enterprise Data Contract" in result["contract_markdown"]
 
 def test_reviewer_council_flags_discount_multiplication():
     flawed_schema = {
