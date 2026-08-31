@@ -42,6 +42,43 @@ pip install -r requirements.txt
 
 ---
 
+## 🔄 Multi-Branch Workflow Architecture
+
+The studio provides automated multi-agent lifecycles across the **3 Core Engineering Scenarios**:
+
+```mermaid
+flowchart TD
+    subgraph S1["1️⃣ New Data Model Workflow (Greenfield / Brownfield Design)"]
+        A1["Plain-English Business Story"] --> A2["Requirements Triage Agent<br/>(Phase 0 Intake)"]
+        A2 --> A3["21 Questions Classification & Noun-Verb DDD Parsing"]
+        A3 --> A4["Lead Data Model Architect Agent<br/>(Visual ERD + ANSI DDL + Data Contract)"]
+        A4 --> A5["Core 4 Risk Review Council<br/>(Financial, Temporal, Relational, Refactor)"]
+        A5 --> A6{"Phase 5c Sign-Off Gate<br/>All Findings Remediated?"}
+        A6 -- Needs Refactor --> A4
+        A6 -- Approved --> A7["Medallion SQL Pipeline Compiler<br/>(Bronze → Silver → Gold)"]
+        A7 --> A8["DuckDB In-Memory Execution Proof<br/>(✅ Certified Production Ready)"]
+    end
+
+    subgraph S2["2️⃣ New Feature Workflow (Schema Evolution & Mart Sprouting)"]
+        B1["Upstream Codebase / Schema Addition"] --> B2["Recursive Folder Schema Scanner<br/>(.sql, .prisma, .json, .csv, .py, .ts, .yaml)"]
+        B2 --> B3["Semantic Capability Gap Analysis<br/>(Traffic-Light Green/Yellow/Red Diff)"]
+        B3 --> B4["Refactor Risk Reviewer<br/>(Conformed Dimensions & Downstream Mart Compatibility)"]
+        B4 --> B5["Non-Breaking DDL Alterations & Mart Sprouting"]
+        B5 --> B6["Incremental Data Contract & Invariant SLA Versioning"]
+        B6 --> B7["DuckDB Regression & Merge Verification"]
+    end
+
+    subgraph S3["3️⃣ Bug & Quality Incident Workflow (Remediation & Quarantine)"]
+        C1["Data Drift / Invariant Breach Alert<br/>(e.g., Negative Amount in Ingestion Stream)"] --> C2["Silver Quarantine Exception View<br/>(Isolates Corrupt Record + Reason Code)"]
+        C2 --> C3["Incident Triage & Root Cause Classifier<br/>(Grain Inflation, History Loss, Type Mismatch)"]
+        C3 --> C4["Targeted Risk Council Audit<br/>(Financial / Temporal / Relational Integrity)"]
+        C4 --> C5["Remediated Schema & Hard Invariant Rule Bump"]
+        C5 --> C6["DuckDB In-Memory Test Battery Re-Run<br/>(Assert Corrupt Rows Isolated, Clean Rows Merged)"]
+    end
+```
+
+---
+
 ## 📁 Repository Structure
 
 ```
