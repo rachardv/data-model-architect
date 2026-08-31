@@ -8,7 +8,7 @@
 
 ### 1. Clone & Setup
 ```bash
-git clone https://github.com/your-org/data-model-architect.git
+git clone https://github.com/rachardv/data-model-architect.git
 cd data-model-architect
 python -m venv .venv
 source .venv/bin/activate  # Or: .venv\Scripts\activate on Windows
