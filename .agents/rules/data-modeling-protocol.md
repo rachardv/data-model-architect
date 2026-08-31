@@ -39,10 +39,11 @@ What are you trying to create?
 
 ## 1. Pure Deliverables Standard
 
-The Data Model Architect outputs **strictly the 3 pure modeling deliverables**:
+The Data Model Architect outputs **the 4 pure modeling & pipeline deliverables**:
 1. **🎨 Visual Interactive Mermaid ERD Diagram:** Clean visual boxes showing entities, foreign keys, and relationships rendered in chat and saved to `docs/data_models/<domain>_erd.md`.
 2. **📜 Clean Standard ANSI SQL DDL:** 100% portable `CREATE TABLE` scripts with clear primary keys, foreign keys, `CHECK` constraints, and column comments.
 3. **📋 Formal Data Contract Specification:** Saved to `docs/data_contracts/<domain>_contract.md`.
+4. **⚡ Full Medallion Pipeline (Bronze → Silver → Gold) SQL:** Strict ANSI SQL transformation pipeline saved to `docs/pipelines/<domain>/` (`01_bronze/`, `02_silver/`, `03_gold/`) with raw landing DDL + sample data, window deduplication CTEs, invariant quarantine views, and SCD2 atomic merge queries.
 
 ---
 

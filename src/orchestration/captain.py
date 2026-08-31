@@ -8,6 +8,7 @@ from src.ddl_generator import ANSISQLGenerator
 from src.folder_scanner import FolderSchemaScanner
 from src.erd_generator import VisualMermaidERDGenerator
 from src.contract_compiler import DataContractCompiler
+from src.medallion_generator import MedallionPipelineGenerator
 
 class CaptainOrchestrator:
     """
@@ -98,7 +99,7 @@ class CaptainOrchestrator:
             
         final_quality_index = 100.0 if len(audit_results["findings"]) == 0 else 98.0
             
-        # Step 6: Compile Deliverables (ERD, SQL DDL, Data Contract)
+        # Step 6: Compile Deliverables (ERD, SQL DDL, Data Contract, Medallion Pipeline)
         self.state = "COMPLETE"
         
         # 1. Visual Mermaid ERD
@@ -120,6 +121,25 @@ class CaptainOrchestrator:
         ])
         contract_markdown = DataContractCompiler.compile_contract(domain, rules)
         
+        # 4. Medallion Pipeline (Bronze -> Silver -> Gold)
+        quality_policy = user_request.get("quality_policy", "QUARANTINE_VIEW")
+        merge_strategy = user_request.get("merge_strategy", "ANSI_MERGE")
+        medallion_pipeline = MedallionPipelineGenerator.generate_full_pipeline(
+            domain=domain,
+            source_tables=scanned_tables,
+            target_schema=schema_spec,
+            rules=rules,
+            quality_policy=quality_policy,
+            merge_strategy=merge_strategy
+        )
+        
+        # 5. Export Pipeline Files to Structured Layered Directories (docs/pipelines/<domain>/)
+        exported_pipeline_files = MedallionPipelineGenerator.export_pipeline_files(
+            output_base_dir=self.output_dir,
+            domain=domain,
+            pipeline=medallion_pipeline
+        )
+        
         return {
             "status": "CERTIFIED_PRODUCTION_READY",
             "state": self.state,
@@ -130,6 +150,8 @@ class CaptainOrchestrator:
             "erd_markdown": erd_markdown,
             "generated_sql": generated_sql,
             "contract_markdown": contract_markdown,
+            "medallion_pipeline": medallion_pipeline,
+            "exported_pipeline_files": exported_pipeline_files,
             "scanned_source_tables": len(scanned_tables),
             "spawner_log_count": len(self.spawner.message_log)
         }
