@@ -42,40 +42,69 @@ pip install -r requirements.txt
 
 ---
 
-## 🔄 Multi-Branch Unified Workflow Architecture
+## 🔄 Multi-Branch Unified Workflow Architecture with Human-in-the-Loop (HITL) Gates
 
-Whether designing a **New Model**, evolving an existing schema with a **New Feature**, or remediating a **Data Quality Bug**, **ALL workflows funnel through the exact same Mandatory Unified Audit & Verification Block (Zero-Bypass Policy)**:
+Whether designing a **New Model**, evolving an existing schema with a **New Feature**, or remediating a **Data Quality Bug**, **ALL workflows funnel through the exact same Mandatory Unified Audit & Verification Block (Zero-Bypass Policy)** with explicit **Human-in-the-Loop (HITL) Validation Gates**:
 
 ```mermaid
 flowchart TD
-    subgraph INTAKE["📥 3 Distinct Intake Triggers"]
+    subgraph INTAKE["📥 1. Intake Triggers & Narrative"]
         W1["1️⃣ New Data Model<br/>(Business Story Narrative)"]
         W2["2️⃣ New Feature Evolution<br/>(Upstream Codebase / Gap Scan)"]
         W3["3️⃣ Bug / Quality Incident<br/>(Quarantine Alert / Data Drift)"]
     end
 
-    subgraph TRIAGE_DISCOVERY["🔎 Phase 0–3: Intake & Synthesis"]
+    subgraph TRIAGE_DISCOVERY["🔎 2. Triage & Discovery"]
         W1 --> T1["Requirements Triage & 21-Q Classification"]
         W2 --> T2["Folder Scanner & Semantic Gap Matrix"]
         W3 --> T3["Quarantine Diagnostics & Root Cause Analysis"]
         
-        T1 --> S1["Target Schema Spec & Invariant Contract Draft"]
-        T2 --> S1
-        T3 --> S1
+        T1 --> H1{{"👤 HUMAN GATE 1<br/><b>Business Scope Validation</b><br/><i>(Stakeholder aligns on 21-Q & domain boundaries)</i>"}}
+        T2 --> H2{{"👤 HUMAN GATE 2<br/><b>Capability Gap Sign-Off</b><br/><i>(Source engineer confirms missing field backlogs)</i>"}}
+        T3 --> H3{{"👤 HUMAN GATE 3<br/><b>Incident Severity Approval</b><br/><i>(Data owner confirms quarantine root-cause)</i>"}}
+        
+        H1 --> S1["Draft Target Schema & Invariant Contract Spec<br/><i>(Mockup Mode: [AI-GENERATED] tags)</i>"]
+        H2 --> S1
+        H3 --> S1
     end
 
-    subgraph UNIFIED_AUDIT["🛡️ THE MANDATORY UNIFIED AUDIT BLOCK (Zero-Bypass Policy)"]
-        S1 --> AC["🧭 Core 4 Risk Review Council (ISO/IEC 25012)<br/>• Financial & Grain Integrity Reviewer<br/>• Temporal & Time-Travel History Reviewer<br/>• Relational Integrity & Decoupling Reviewer<br/>• Refactorability & Conformed Marts Reviewer"]
+    subgraph CONCEPT_REVIEW["🎨 3. Conceptual Design Review"]
+        S1 --> H4{{"👤 HUMAN GATE 4<br/><b>Visual ERD & Mockup Review</b><br/><i>(Business user validates Mermaid ERD & formulas)</i>"}}
+    end
+
+    subgraph UNIFIED_AUDIT["🛡️ 4. THE MANDATORY UNIFIED AUDIT BLOCK (Zero-Bypass)"]
+        H4 --> AC["🧭 Core 4 Risk Review Council (ISO/IEC 25012)<br/>• Financial & Grain Integrity Reviewer<br/>• Temporal & Time-Travel History Reviewer<br/>• Relational Integrity & Decoupling Reviewer<br/>• Refactorability & Conformed Marts Reviewer"]
         
-        AC --> P5C{"Phase 5c Sign-Off Gate<br/>All Findings Remediated?"}
-        P5C -- Needs Refactor --> REF["Architect Refactoring Loop"]
+        AC --> H5{{"👤 HUMAN GATE 5<br/><b>Phase 5c Architect Sign-Off</b><br/><i>(Lead Architect signs disposition matrix)</i>"}}
+        H5 -- Reject / Needs Refactor --> REF["Architect Refactoring Loop"]
         REF --> AC
         
-        P5C -- Approved --> DUCK["🦆 In-Memory DuckDB Pipeline Execution Engine<br/>• Bronze DDL & Seed Verification<br/>• Silver Staging & Quarantine Isolation Proof<br/>• Gold SCD2 Merge & Active View Validation"]
+        H5 -- Certified Approved --> DUCK["🦆 In-Memory DuckDB Pipeline Execution Engine<br/>• Bronze DDL & Seed Verification<br/>• Silver Staging & Quarantine Isolation Proof<br/>• Gold SCD2 Merge & Active View Validation"]
     end
 
-    DUCK --> OUT["🚀 Production Certified Deliverables<br/>(Visual ERD + ANSI DDL + Data Contract + Medallion SQL)"]
+    subgraph PRODUCTION["🚀 5. Production Hand-off"]
+        DUCK --> H6{{"👤 HUMAN GATE 6<br/><b>Data Contract Final Signing</b><br/><i>(Data Platform & Business sign SLA contract)</i>"}}
+        H6 --> OUT["📦 Production Certified Deliverables<br/>(Visual ERD + ANSI DDL + Data Contract + Medallion SQL)"]
+    end
+
+    style H1 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
+    style H2 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
+    style H3 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
+    style H4 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
+    style H5 fill:#ffc107,stroke:#b27b00,stroke-width:3px
+    style H6 fill:#d4edda,stroke:#28a745,stroke-width:2px
 ```
+
+### 👤 The 6 Mandatory Human Validation Gates
+
+| Gate ID | Lifecycle Stage | Human Role (Who Validates) | What Is Validated & Decided | Rejection Action |
+| :--- | :--- | :--- | :--- | :--- |
+| **👤 Gate 1** | **Intake & Triage** | **Business Stakeholder / PM** | Confirms 21-questions parameters (reporting vs real-time, history requirements). | Re-prompt / refine story |
+| **👤 Gate 2** | **Capability Scan** | **Upstream Data Engineer** | Approves traffic-light gap matrix; schedules upstream telemetry backlog. | Block unfeasible targets |
+| **👤 Gate 3** | **Incident Triage**| **Data Operations Lead** | Validates root cause of quarantine spike (schema drift vs bad upstream data). | Quarantine isolation |
+| **👤 Gate 4** | **Conceptual ERD** | **Business Analyst / Architect**| Validates Visual Mermaid ERD, table grain, and all `[AI-GENERATED]` mockup fields. | Refactor entity relations |
+| **👤 Gate 5** | **Phase 5c Audit** | **Lead Data Architect** | Mandates written disposition for every Core 4 Risk Council finding before compilation. | Trigger Refactoring Loop |
+| **👤 Gate 6** | **Production Sign**| **Data Platform & VP Analytics** | Formally co-signs the Data Contract specification and freshness SLAs for DWH deployment. | Block deployment |
 
 ---
 
