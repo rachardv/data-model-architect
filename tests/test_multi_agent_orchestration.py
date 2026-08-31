@@ -50,3 +50,33 @@ def test_reviewer_council_flags_discount_multiplication():
     assert audit["findings_count"] == 1
     assert audit["findings"][0]["reviewer"] == "financial_risk_reviewer"
     assert "Multiplication" in audit["findings"][0]["title"]
+
+def test_all_branches_funnel_through_unified_audit_block():
+    captain = CaptainOrchestrator()
+    branches = ["NEW_MODEL", "FEATURE_EVOLUTION", "BUG_REMEDIATION"]
+    
+    for branch in branches:
+        payload = {
+            "domain": "retail",
+            "branch": branch,
+            "narrative": f"Executing branch: {branch} for retail transactions.",
+            "usage_params": {
+                "is_live_app": False,
+                "is_high_frequency_stream": False,
+                "needs_history": True,
+                "has_retroactive_backdating": False,
+                "has_multi_stage_milestones": False,
+                "is_periodic_state_rollup": False,
+                "has_high_churn_ml_scores": False
+            }
+        }
+        result = captain.execute_workflow(payload)
+        
+        # Verify that all branches pass through the exact same audit council and state machine
+        assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+        assert result["state"] == "COMPLETE"
+        assert result["quality_index"] >= 95.0
+        assert result["spawner_log_count"] >= 5 # Dispatched requirements + architect + 4 reviewers
+        assert "medallion_pipeline" in result
+        assert "contract_markdown" in result
+

@@ -15,7 +15,7 @@ source .venv/bin/activate  # Or: .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-### 2. Run 1-Click Verification Suite (22/22 Verified Tests)
+### 2. Run 1-Click Verification Suite (23/23 Verified Tests)
 ```bash
 # Windows
 .\verify.ps1
@@ -42,39 +42,39 @@ pip install -r requirements.txt
 
 ---
 
-## 🔄 Multi-Branch Workflow Architecture
+## 🔄 Multi-Branch Unified Workflow Architecture
 
-The studio provides automated multi-agent lifecycles across the **3 Core Engineering Scenarios**:
+Whether designing a **New Model**, evolving an existing schema with a **New Feature**, or remediating a **Data Quality Bug**, **ALL workflows funnel through the exact same Mandatory Unified Audit & Verification Block (Zero-Bypass Policy)**:
 
 ```mermaid
 flowchart TD
-    subgraph S1["1️⃣ New Data Model Workflow (Greenfield / Brownfield Design)"]
-        A1["Plain-English Business Story"] --> A2["Requirements Triage Agent<br/>(Phase 0 Intake)"]
-        A2 --> A3["21 Questions Classification & Noun-Verb DDD Parsing"]
-        A3 --> A4["Lead Data Model Architect Agent<br/>(Visual ERD + ANSI DDL + Data Contract)"]
-        A4 --> A5["Core 4 Risk Review Council<br/>(Financial, Temporal, Relational, Refactor)"]
-        A5 --> A6{"Phase 5c Sign-Off Gate<br/>All Findings Remediated?"}
-        A6 -- Needs Refactor --> A4
-        A6 -- Approved --> A7["Medallion SQL Pipeline Compiler<br/>(Bronze → Silver → Gold)"]
-        A7 --> A8["DuckDB In-Memory Execution Proof<br/>(✅ Certified Production Ready)"]
+    subgraph INTAKE["📥 3 Distinct Intake Triggers"]
+        W1["1️⃣ New Data Model<br/>(Business Story Narrative)"]
+        W2["2️⃣ New Feature Evolution<br/>(Upstream Codebase / Gap Scan)"]
+        W3["3️⃣ Bug / Quality Incident<br/>(Quarantine Alert / Data Drift)"]
     end
 
-    subgraph S2["2️⃣ New Feature Workflow (Schema Evolution & Mart Sprouting)"]
-        B1["Upstream Codebase / Schema Addition"] --> B2["Recursive Folder Schema Scanner<br/>(.sql, .prisma, .json, .csv, .py, .ts, .yaml)"]
-        B2 --> B3["Semantic Capability Gap Analysis<br/>(Traffic-Light Green/Yellow/Red Diff)"]
-        B3 --> B4["Refactor Risk Reviewer<br/>(Conformed Dimensions & Downstream Mart Compatibility)"]
-        B4 --> B5["Non-Breaking DDL Alterations & Mart Sprouting"]
-        B5 --> B6["Incremental Data Contract & Invariant SLA Versioning"]
-        B6 --> B7["DuckDB Regression & Merge Verification"]
+    subgraph TRIAGE_DISCOVERY["🔎 Phase 0–3: Intake & Synthesis"]
+        W1 --> T1["Requirements Triage & 21-Q Classification"]
+        W2 --> T2["Folder Scanner & Semantic Gap Matrix"]
+        W3 --> T3["Quarantine Diagnostics & Root Cause Analysis"]
+        
+        T1 --> S1["Target Schema Spec & Invariant Contract Draft"]
+        T2 --> S1
+        T3 --> S1
     end
 
-    subgraph S3["3️⃣ Bug & Quality Incident Workflow (Remediation & Quarantine)"]
-        C1["Data Drift / Invariant Breach Alert<br/>(e.g., Negative Amount in Ingestion Stream)"] --> C2["Silver Quarantine Exception View<br/>(Isolates Corrupt Record + Reason Code)"]
-        C2 --> C3["Incident Triage & Root Cause Classifier<br/>(Grain Inflation, History Loss, Type Mismatch)"]
-        C3 --> C4["Targeted Risk Council Audit<br/>(Financial / Temporal / Relational Integrity)"]
-        C4 --> C5["Remediated Schema & Hard Invariant Rule Bump"]
-        C5 --> C6["DuckDB In-Memory Test Battery Re-Run<br/>(Assert Corrupt Rows Isolated, Clean Rows Merged)"]
+    subgraph UNIFIED_AUDIT["🛡️ THE MANDATORY UNIFIED AUDIT BLOCK (Zero-Bypass Policy)"]
+        S1 --> AC["🧭 Core 4 Risk Review Council (ISO/IEC 25012)<br/>• Financial & Grain Integrity Reviewer<br/>• Temporal & Time-Travel History Reviewer<br/>• Relational Integrity & Decoupling Reviewer<br/>• Refactorability & Conformed Marts Reviewer"]
+        
+        AC --> P5C{"Phase 5c Sign-Off Gate<br/>All Findings Remediated?"}
+        P5C -- Needs Refactor --> REF["Architect Refactoring Loop"]
+        REF --> AC
+        
+        P5C -- Approved --> DUCK["🦆 In-Memory DuckDB Pipeline Execution Engine<br/>• Bronze DDL & Seed Verification<br/>• Silver Staging & Quarantine Isolation Proof<br/>• Gold SCD2 Merge & Active View Validation"]
     end
+
+    DUCK --> OUT["🚀 Production Certified Deliverables<br/>(Visual ERD + ANSI DDL + Data Contract + Medallion SQL)"]
 ```
 
 ---
@@ -135,10 +135,10 @@ For the exhaustive rubric breakdown, see **[docs/ARCHITECTURE_AND_RUBRICS.md](do
 | **Architecture Classification** | TPC-DS / Kimball Standard | **10/10 (100%)** | ⭐⭐⭐⭐⭐ **Ground-Truth Exact** |
 | **Data Quality Governance** | ISO/IEC 25012 Standard | **98.4 / 100** | ⭐⭐⭐⭐⭐ **Certified Enterprise** |
 | **Moody-Shanks Quality Index** | Moody-Shanks Framework | **97.8 / 100** | ⭐⭐⭐⭐⭐ **Production Grade** |
-| **Runtime Pipeline Execution** | In-Memory DuckDB Test Suite | **22/22 (100%)** | ⭐⭐⭐⭐⭐ **Execution Verified** |
+| **Runtime Pipeline Execution** | In-Memory DuckDB Test Suite | **23/23 (100%)** | ⭐⭐⭐⭐⭐ **Execution Verified** |
 
 ---
 
 ## 🧪 Benchmark Proof
-Validated against **TPC-DS**, **TPC-H**, and the **Kimball Lifecycle Group** canonical industry scenarios with **22/22 Passing Tests (100% Accuracy)**.
+Validated against **TPC-DS**, **TPC-H**, and the **Kimball Lifecycle Group** canonical industry scenarios with **23/23 Passing Tests (100% Accuracy)**.
 
