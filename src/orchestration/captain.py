@@ -12,7 +12,8 @@ from src.medallion_generator import MedallionPipelineGenerator
 class CaptainOrchestrator:
     """
     Master Autonomous Data Modeler Factory Orchestrator.
-    Seamlessly orchestrates Phase 0 Intake verification (Sanity, Completeness, Business Interview),
+    Seamlessly orchestrates Phase 0 Intake verification via the 3-Tier Intake Squad
+    (Semantic Scribe, Completeness Auditor, Business Interviewer),
     Architecture Triage, Core 4 Risk Council Audits, ODCS Data Contract Compilation,
     and Medallion SQL Pipeline Generation.
     """
@@ -32,10 +33,13 @@ class CaptainOrchestrator:
         narrative = user_request.get("narrative", "")
         business_answers = user_request.get("business_answers", [])
         
-        # Step 1: Phase 0 Intake Engine Validation
+        # Step 1: Phase 0 Intake Squad Dispatch
         self.state = "TRIAGE"
         triage_branch = user_request.get("branch", "NEW_MODEL")
         self.spawner.spawn_agent("requirements_architect_agent", {"branch": triage_branch})
+        
+        # Dispatch the 3 Intake Micro-Agents (Scribe, Auditor, Interviewer)
+        self.spawner.dispatch_intake_squad(narrative, business_answers)
         
         intake_res = IntakeEngine.process_intake(narrative, business_answers)
         if intake_res["status"] == "REJECTED":
@@ -44,7 +48,8 @@ class CaptainOrchestrator:
                 "state": "TRIAGE_FAILED",
                 "domain": domain,
                 "rejection_reason": intake_res["rejection_reason"],
-                "message": intake_res["message"]
+                "message": intake_res["message"],
+                "spawner_log_count": len(self.spawner.message_log)
             }
             
         folder_path = user_request.get("folder_path")
@@ -60,7 +65,6 @@ class CaptainOrchestrator:
         inferred_params = intake_res.get("inferred_params", {})
         
         if not architecture_decision:
-            # Fallback if usage_params explicitly passed in user_request
             explicit_params = user_request.get("usage_params", inferred_params)
             from src.decision_engine import DataModelDecisionEngine
             architecture_decision = DataModelDecisionEngine.classify_architecture(**explicit_params)
