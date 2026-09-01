@@ -89,23 +89,23 @@ flowchart LR
 
 ## 3. The Unified Mandatory Audit Funnel with Human-in-the-Loop (HITL) Gates
 
-Regardless of the entry branch (`NEW_MODEL`, `FEATURE_EVOLUTION`, or `BUG_REMEDIATION`), **every change converges into the exact same Mandatory Audit & Verification Funnel with explicit Human Validation Gates**:
+Regardless of the entry branch (`NEW_MODEL`, `ADD_BUSINESS_RULES`, or `BUG_REMEDIATION`), **every change converges into the exact same Mandatory Audit & Verification Funnel with explicit Human Validation Gates**:
 
 ```mermaid
 flowchart TD
     subgraph INTAKE["📥 1. Intake Triggers & Human Input"]
         W1["1️⃣ New Data Model<br/>(Business Story Narrative)"]
-        W2["2️⃣ New Feature Evolution<br/>(Upstream Codebase / Gap Scan)"]
+        W2["2️⃣ Add Business Rules & Evolution<br/>(Apply Rules to Existing Model)"]
         W3["3️⃣ Bug / Quality Incident<br/>(Quarantine Alert / Data Drift)"]
     end
 
     subgraph TRIAGE_DISCOVERY["🔎 2. Triage & Discovery"]
         W1 --> T1["Requirements Triage & 21-Q Classification"]
-        W2 --> T2["Folder Scanner & Semantic Gap Matrix"]
+        W2 --> T2["Folder Scanner & Business Rule Gap Matrix"]
         W3 --> T3["Quarantine Diagnostics & Root Cause Analysis"]
         
         T1 --> H1{{"👤 HUMAN GATE 1<br/><b>Business Scope Validation</b><br/><i>(Stakeholder aligns on 21-Q & domain boundaries)</i>"}}
-        T2 --> H2{{"👤 HUMAN GATE 2<br/><b>Capability Gap Sign-Off</b><br/><i>(Source engineer confirms missing field backlogs)</i>"}}
+        T2 --> H2{{"👤 HUMAN GATE 2<br/><b>Business Rule Impact Sign-Off</b><br/><i>(Data owner confirms rule checks & quarantine logic)</i>"}}
         T3 --> H3{{"👤 HUMAN GATE 3<br/><b>Incident Severity Approval</b><br/><i>(Data owner confirms quarantine root-cause)</i>"}}
         
         H1 --> S1["Draft Target Schema & Invariant Contract Spec<br/><i>(Mockup Mode: [AI-GENERATED] tags)</i>"]
