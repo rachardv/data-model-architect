@@ -8,14 +8,14 @@ from src.folder_scanner import FolderSchemaScanner
 from src.erd_generator import VisualMermaidERDGenerator
 from src.contract_compiler import DataContractCompiler
 from src.medallion_generator import MedallionPipelineGenerator
+from src.sttm_generator import STTMGenerator
 
 class CaptainOrchestrator:
     """
     Master Autonomous Data Modeler Factory Orchestrator.
-    Seamlessly orchestrates Phase 0 Intake verification via the 3-Tier Intake Squad
-    (Semantic Scribe, Completeness Auditor, Business Interviewer),
+    Seamlessly orchestrates Phase 0 Intake verification via the 3-Tier Intake Squad,
     Architecture Triage, Core 4 Risk Council Audits, ODCS Data Contract Compilation,
-    and Medallion SQL Pipeline Generation.
+    Standardized 5-Section STTM Generation, and Medallion SQL Pipeline Generation.
     """
     
     def __init__(self, output_dir: str = "docs"):
@@ -127,7 +127,7 @@ class CaptainOrchestrator:
             
         final_quality_index = 100.0 if len(audit_results["findings"]) == 0 else 98.0
             
-        # Step 6: Compile Deliverables (ERD, SQL DDL, Data Contract, Medallion Pipeline)
+        # Step 6: Compile Deliverables (ERD, SQL DDL, Data Contract, STTM, Medallion Pipeline)
         self.state = "COMPLETE"
         
         # 1. Visual Mermaid ERD
@@ -149,7 +149,20 @@ class CaptainOrchestrator:
         ])
         contract_markdown = DataContractCompiler.compile_contract(domain, rules)
         
-        # 4. Medallion Pipeline (Bronze -> Silver -> Gold)
+        # 4. Standardized 5-Section STTM Document
+        sttm_markdown = STTMGenerator.generate_sttm_document(
+            domain=domain,
+            target_schema=schema_spec,
+            source_tables=scanned_tables,
+            rules=rules
+        )
+        sttm_file_path = STTMGenerator.export_sttm_file(
+            output_base_dir=self.output_dir,
+            domain=domain,
+            sttm_markdown=sttm_markdown
+        )
+        
+        # 5. Medallion Pipeline (Bronze -> Silver -> Gold)
         quality_policy = user_request.get("quality_policy", "QUARANTINE_VIEW")
         merge_strategy = user_request.get("merge_strategy", "ANSI_MERGE")
         medallion_pipeline = MedallionPipelineGenerator.generate_full_pipeline(
@@ -161,7 +174,7 @@ class CaptainOrchestrator:
             merge_strategy=merge_strategy
         )
         
-        # 5. Export Pipeline Files to Structured Layered Directories
+        # 6. Export Pipeline Files to Structured Layered Directories
         exported_pipeline_files = MedallionPipelineGenerator.export_pipeline_files(
             output_base_dir=self.output_dir,
             domain=domain,
@@ -180,6 +193,8 @@ class CaptainOrchestrator:
             "erd_markdown": erd_markdown,
             "generated_sql": generated_sql,
             "contract_markdown": contract_markdown,
+            "sttm_markdown": sttm_markdown,
+            "sttm_file_path": sttm_file_path,
             "medallion_pipeline": medallion_pipeline,
             "exported_pipeline_files": exported_pipeline_files,
             "scanned_source_tables": len(scanned_tables),
