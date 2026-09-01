@@ -148,13 +148,14 @@ class IntakeCompletenessScorer:
             resolved_vectors["temporal_policy"] = False
             missing_vectors.append("temporal_policy")
             
-        # Vector 4: Lifecycle Funnel
+        # Vector 4: Lifecycle Funnel (Transaction, Accumulating Snapshot, or Periodic Snapshot)
         lifecycle_keywords = [
             "stage", "milestone", "turnaround", "placed ->", "duration", "funnel",
             "sequential", "standalone event", "single event", "encounter",
             "picked to shipped", "admitted", "discharged", "inpatient stay",
             "admission to discharge", "stay", "transferred", "purchase", "checkout counter",
-            "point-of-sale", "sale", "sales", "checkout"
+            "point-of-sale", "sale", "sales", "checkout", "snapshot", "snapshots",
+            "periodic", "monthly summary", "daily summary", "balance rollup", "stock levels"
         ]
         if any(k in text for k in lifecycle_keywords):
             resolved_vectors["lifecycle_funnel"] = True
