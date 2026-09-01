@@ -113,7 +113,8 @@ class IntakeCompletenessScorer:
             "live website", "mobile app", "checkout", "sensor", "telemetry", "streaming",
             "ticker", "live point-of-care", "ehr application", "powers the live",
             "powers a live", "real-time", "bedside charting", "operational database",
-            "sub-second", "live app", "point-of-care"
+            "sub-second", "live app", "point-of-care", "analyze", "metrics", "performance",
+            "over time", "business metrics"
         ]
         if any(k in text for k in workload_keywords):
             resolved_vectors["workload_intent"] = True
@@ -128,7 +129,8 @@ class IntakeCompletenessScorer:
             "snapshot", "one row per", "individual", "prescription", "procedure",
             "order", "patient", "stay", "admission", "vitals", "product sales",
             "physical or digital goods", "subscription memberships", "monthly billing renewals",
-            "patient care", "credit lending", "revenue"
+            "patient care", "credit lending", "revenue", "insurance", "car insurance",
+            "policy", "driver", "coverage", "premium"
         ]
         if len(nouns) >= 2 and any(k in text for k in grain_keywords):
             resolved_vectors["entity_grain"] = True
