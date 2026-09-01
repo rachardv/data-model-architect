@@ -13,6 +13,8 @@ from src.medallion_generator import MedallionPipelineGenerator
 class CaptainOrchestrator:
     """
     Master Autonomous Data Modeler Factory Orchestrator.
+    Seamlessly orchestrates business semantic intake, architecture triage,
+    Core 4 risk audits, data contract compilation, and Medallion pipeline generation.
     """
     
     def __init__(self, output_dir: str = "docs"):
@@ -20,6 +22,10 @@ class CaptainOrchestrator:
         self.output_dir = output_dir
         self.state = "IDLE"
         self.disposition_matrix: List[Dict[str, Any]] = []
+        
+    def generate_intake_questions(self, narrative: str) -> List[Dict[str, Any]]:
+        """Generates 100% plain-English business discovery questions for stakeholders."""
+        return NounVerbSemanticParser.generate_business_discovery_questions(narrative)
         
     def execute_workflow(self, user_request: Dict[str, Any]) -> Dict[str, Any]:
         domain = user_request.get("domain", "ecommerce")
@@ -35,19 +41,31 @@ class CaptainOrchestrator:
             scan_result = FolderSchemaScanner.scan_folder(folder_path)
             scanned_tables = scan_result.get("tables_found", [])
             
-        # Step 2: Noun-Verb Parsing & 21 Questions Classification
+        # Step 2: Noun-Verb Parsing & Business Semantic Triage
         self.state = "DISCOVERY"
         narrative = user_request.get("narrative", "")
-        parsed_semantics = NounVerbSemanticParser.parse_workflow_narrative(narrative)
+        business_answers = user_request.get("business_answers", [])
         
-        usage_params = user_request.get("usage_params", {})
+        if business_answers:
+            enriched_narrative = f"{narrative} {' '.join(business_answers)}"
+        else:
+            enriched_narrative = narrative
+            
+        parsed_semantics = NounVerbSemanticParser.parse_workflow_narrative(enriched_narrative)
+        
+        # If usage_params were not explicitly provided, infer them from business semantics
+        usage_params = user_request.get("usage_params")
+        if not usage_params:
+            usage_params = NounVerbSemanticParser.infer_parameters_from_business_narrative(enriched_narrative)
+            
         architecture_decision = DataModelDecisionEngine.classify_architecture(**usage_params)
         
         # Step 3: Model Authoring (Data Model Architect Agent)
         self.state = "AUTHORING"
         self.spawner.spawn_agent("data_model_architect_agent", {
             "semantics": parsed_semantics,
-            "architecture": architecture_decision
+            "architecture": architecture_decision,
+            "inferred_usage_params": usage_params
         })
         
         # Build Schema Specification
@@ -78,7 +96,7 @@ class CaptainOrchestrator:
                     "primary_key": "order_id"
                 }
             ],
-            "temporal_strategy": "SCD2"
+            "temporal_strategy": architecture_decision.get("temporal", "SCD2")
         })
         
         # Step 4: Dispatch Parallel 4-Risk Reviewers
@@ -133,7 +151,7 @@ class CaptainOrchestrator:
             merge_strategy=merge_strategy
         )
         
-        # 5. Export Pipeline Files to Structured Layered Directories (docs/pipelines/<domain>/)
+        # 5. Export Pipeline Files to Structured Layered Directories
         exported_pipeline_files = MedallionPipelineGenerator.export_pipeline_files(
             output_base_dir=self.output_dir,
             domain=domain,
@@ -145,6 +163,7 @@ class CaptainOrchestrator:
             "state": self.state,
             "domain": domain,
             "architecture_pattern": architecture_decision["pattern"],
+            "inferred_usage_params": usage_params,
             "quality_index": final_quality_index,
             "disposition_matrix": self.disposition_matrix,
             "erd_markdown": erd_markdown,

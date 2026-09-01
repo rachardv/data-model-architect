@@ -22,34 +22,60 @@ def main():
     parser.add_argument("--story", type=str, help="Raw business workflow story")
     parser.add_argument("--domain", type=str, default="ecommerce", help="Target business domain name")
     parser.add_argument("--folder", type=str, help="Optional upstream folder path containing source schema files")
+    parser.add_argument("--answers", nargs="*", help="Optional plain-English answers to business discovery questions")
     parser.add_argument("--medallion", action="store_true", help="Generate full Bronze -> Silver -> Gold Medallion SQL pipeline")
     parser.add_argument("--duckdb", action="store_true", help="Execute and verify generated SQL in an in-memory DuckDB instance")
-    parser.add_argument("--bench", action="store_true", help="Run 10-scenario ground-truth evaluation benchmark")
+    parser.add_argument("--interactive", action="store_true", help="Run interactive plain-English business intake interview")
     
     args = parser.parse_args()
     
+    captain = CaptainOrchestrator()
+    
+    if args.interactive:
+        story = args.story or input("Enter your business narrative: ")
+        questions = captain.generate_intake_questions(story)
+        answers = []
+        print("\n=== 💬 PLAIN-ENGLISH BUSINESS DISCOVERY INTERVIEW ===")
+        for i, q in enumerate(questions, 1):
+            print(f"\nQ{i}: {q['question']}")
+            for opt_idx, opt in enumerate(q["options"], 1):
+                print(f"   [{opt_idx}] {opt}")
+            choice = input("Select an option (1-3) or press Enter to accept recommended: ").strip()
+            if choice and choice.isdigit() and 1 <= int(choice) <= len(q["options"]):
+                answers.append(q["options"][int(choice)-1])
+            else:
+                answers.append(q["options"][0])
+                
+        payload = {
+            "domain": args.domain,
+            "branch": "NEW_MODEL",
+            "narrative": story,
+            "business_answers": answers,
+            "folder_path": args.folder
+        }
+        result = captain.execute_workflow(payload)
+        print("\n=== 🏛️ DATA MODEL ARCHITECT DELIVERABLES ===")
+        print(f"Status:             {result['status']}")
+        print(f"Architecture:       {result['architecture_pattern']}")
+        print(f"Quality Index:      {result['quality_index']}%")
+        print(f"Medallion Artifacts: {result['medallion_pipeline']['total_sql_artifacts']} SQL files generated")
+        print(f"Exported Pipelines: docs/pipelines/{args.domain}/")
+        return
+        
     if args.story or args.medallion or args.duckdb:
-        captain = CaptainOrchestrator()
         payload = {
             "domain": args.domain,
             "branch": "NEW_MODEL",
             "narrative": args.story or "A customer places an order on our e-commerce platform.",
-            "folder_path": args.folder,
-            "usage_params": {
-                "is_live_app": False,
-                "is_high_frequency_stream": False,
-                "needs_history": True,
-                "has_retroactive_backdating": False,
-                "has_multi_stage_milestones": False,
-                "is_periodic_state_rollup": False,
-                "has_high_churn_ml_scores": False
-            }
+            "business_answers": args.answers or [],
+            "folder_path": args.folder
         }
         
         result = captain.execute_workflow(payload)
         print("=== 🏛️ DATA MODEL ARCHITECT DELIVERABLES ===")
         print(f"Status:             {result['status']}")
         print(f"Architecture:       {result['architecture_pattern']}")
+        print(f"Inferred Semantics: {result['inferred_usage_params']}")
         print(f"Quality Index:      {result['quality_index']}%")
         print(f"Medallion Artifacts: {result['medallion_pipeline']['total_sql_artifacts']} SQL files generated")
         print(f"Exported Pipelines: docs/pipelines/{args.domain}/ (01_bronze, 02_silver, 03_gold)")
