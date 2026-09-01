@@ -1,6 +1,6 @@
 # 🏛️ Data Model Architect Studio
 
-> Autonomous Multi-Agent System for Designing, Reviewing, and Certifying Enterprise Database Schemas, Visual Mermaid ERDs, and Data Contracts.
+> Autonomous Multi-Agent System for Designing, Reviewing, and Certifying Enterprise Database Schemas, Visual Mermaid ERDs, OpenDataContracts (ODCS v3.0.0), Standardized 5-Section STTM Documents, and Medallion SQL Pipelines.
 
 ---
 
@@ -15,159 +15,90 @@ source .venv/bin/activate  # Or: .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-### 2. Run 1-Click Verification Suite (23/23 Verified Tests)
+### 2. Run Full Test Suite (37/37 Passing Tests)
 ```bash
-# Windows
-.\verify.ps1
-
-# Linux / MacOS
-./verify.sh
+python -m pytest tests/ -v
 ```
 
 ---
 
-## 🌟 Key Capabilities
+## 🌟 Key Architectural Capabilities
 
-1. **Zero-Jargon "21 Questions" Intake:** Translates plain-English business stories into optimal database patterns (Kimball Star Schema, 3NF, SCD2, Accumulating Snapshot).
-2. **Recursive Folder Schema Auto-Scanner:** Ingests upstream schemas from `.sql`, `.json`, `.csv`, `.py`, `.ts`, `.prisma`, and `.yaml` files to discover capability gaps.
-3. **Transparent Mockup Mode:** Automatically tags all AI-assumed columns with `[AI-GENERATED]` to eliminate silent hallucinations.
-4. **Pure Deliverables Standard:**
-   - 🎨 **Visual Interactive Mermaid ERD:** Embedded diagrams rendered in markdown (`docs/data_models/`).
-   - 📜 **Clean Standard ANSI SQL DDL:** 100% portable `CREATE TABLE` scripts with constraints.
-   - 📋 **Formal Data Contract Specification:** Business invariants, freshness SLAs, and data quality rules (`docs/data_contracts/`).
-   - ⚡ **Full Medallion Pipeline (Bronze → Silver → Gold):** Strict ANSI SQL scripts (`docs/pipelines/<domain>/`) with raw landing DDL, window deduplication CTEs, invariant quarantine views, and SCD2 merge queries.
-5. **In-Memory DuckDB SQL Execution Engine:** 1-Click test execution validating that generated Bronze, Silver staging, and Gold SCD2 merges run end-to-end against a real database instance.
-6. **The Core 4 Risk Review Council:** Evaluates models against official **ISO/IEC 25012** & **Moody-Shanks** data model quality standards.
-7. **Phase 5c Architect Sign-Off Gate:** Guarantees zero unacknowledged reviewer findings.
+1. **🧭 Phase 0 Intake Squad (3 Micro-Agents):**
+   * 🔍 `semantic_scribe_agent`: Pre-flight sanity gatekeeper & DDD noun-verb entity parser.
+   * ⚖️ `completeness_auditor_agent`: Mathematical 5-vector completeness scorer enforcing the **Strict 100% Hard Gate**.
+   * 💬 `business_interviewer_agent`: Consultative, 100% plain-English business discovery with zero technical database jargon.
+2. **🛑 Strict 100% Information Completeness Hard Gate:**
+   * Mathematically evaluates `workload_intent`, `entity_grain`, `temporal_policy`, `lifecycle_funnel`, and `relationship_multiplicity`.
+   * **Strict Circuit Breaker:** Refuses to output SQL DDL or STTM specs until requirements reach 100.0%.
+3. **🗺️ Standardized 5-Section STTM Generator (`docs/SOURCE_TO_TARGET_MAPPING.md`):**
+   * Automatically compiles 5 structured sections per table: *Short Description, Source Tables, Destination Table, Raw SQL, and Column Mapping Matrix*.
+4. **🎨 Visual Interactive Mermaid ERD:** Embedded diagrams rendered directly in Markdown.
+5. **📜 OpenDataContract Standard (ODCS v3.0.0):** Formally codified schema invariants, SLAs, and database checks.
+6. **⚡ Full Medallion Pipeline (Bronze → Silver → Gold):** Complete SQL pipelines with deduplication CTEs, Silver Quarantine error views, and Gold SCD2 merges.
+7. **🦆 In-Memory DuckDB SQL Execution Engine:** 1-Click test execution validating pipelines in RAM.
+8. **🧭 The Core 4 Risk Review Council:** Evaluates models against ISO/IEC 25012 and Moody-Shanks data quality frameworks.
 
 ---
 
-## 🔄 Multi-Branch Unified Workflow Architecture with Human-in-the-Loop (HITL) Gates
-
-Whether designing a **New Model**, evolving an existing schema with a **New Feature**, or remediating a **Data Quality Bug**, **ALL workflows funnel through the exact same Mandatory Unified Audit & Verification Block (Zero-Bypass Policy)** with explicit **Human-in-the-Loop (HITL) Validation Gates**:
+## 🔄 Multi-Agent Fleet Hierarchy
 
 ```mermaid
 flowchart TD
-    subgraph INTAKE["📥 1. Intake Triggers & Narrative"]
-        W1["1️⃣ New Data Model<br/>(Business Story Narrative)"]
-        W2["2️⃣ New Feature Evolution<br/>(Upstream Codebase / Gap Scan)"]
-        W3["3️⃣ Bug / Quality Incident<br/>(Quarantine Alert / Data Drift)"]
+    CAPTAIN["⭐ Captain Orchestrator"]
+
+    subgraph PHASE0["1️⃣ Phase 0: Intake Squad"]
+        S1["🔍 <code>semantic_scribe_agent</code>"]
+        S2["⚖️ <code>completeness_auditor_agent</code> (Strict 100% Gate)"]
+        S3["💬 <code>business_interviewer_agent</code> (Natural Discovery)"]
     end
 
-    subgraph TRIAGE_DISCOVERY["🔎 2. Triage & Discovery"]
-        W1 --> T1["Requirements Triage & 21-Q Classification"]
-        W2 --> T2["Folder Scanner & Semantic Gap Matrix"]
-        W3 --> T3["Quarantine Diagnostics & Root Cause Analysis"]
-        
-        T1 --> H1{{"👤 HUMAN GATE 1<br/><b>Business Scope Validation</b><br/><i>(Stakeholder aligns on 21-Q & domain boundaries)</i>"}}
-        T2 --> H2{{"👤 HUMAN GATE 2<br/><b>Capability Gap Sign-Off</b><br/><i>(Source engineer confirms missing field backlogs)</i>"}}
-        T3 --> H3{{"👤 HUMAN GATE 3<br/><b>Incident Severity Approval</b><br/><i>(Data owner confirms quarantine root-cause)</i>"}}
-        
-        H1 --> S1["Draft Target Schema & Invariant Contract Spec<br/><i>(Mockup Mode: [AI-GENERATED] tags)</i>"]
-        H2 --> S1
-        H3 --> S1
+    subgraph PHASE1["2️⃣ Phase 1: Lead Modeler"]
+        D1["📐 <code>data_model_architect_agent</code>"]
     end
 
-    subgraph CONCEPT_REVIEW["🎨 3. Conceptual Design Review"]
-        S1 --> H4{{"👤 HUMAN GATE 4<br/><b>Visual ERD & Mockup Review</b><br/><i>(Business user validates Mermaid ERD & formulas)</i>"}}
+    subgraph PHASE2["3️⃣ Phase 2: Core 4 Risk Council"]
+        R1["💰 <code>financial_risk_reviewer</code>"]
+        R2["⏳ <code>temporal_risk_reviewer</code>"]
+        R3["🔗 <code>relational_risk_reviewer</code>"]
+        R4["🏗️ <code>refactor_risk_reviewer</code>"]
     end
 
-    subgraph UNIFIED_AUDIT["🛡️ 4. THE MANDATORY UNIFIED AUDIT BLOCK (Zero-Bypass)"]
-        H4 --> AC["🧭 Core 4 Risk Review Council (ISO/IEC 25012)<br/>• Financial & Grain Integrity Reviewer<br/>• Temporal & Time-Travel History Reviewer<br/>• Relational Integrity & Decoupling Reviewer<br/>• Refactorability & Conformed Marts Reviewer"]
-        
-        AC --> H5{{"👤 HUMAN GATE 5<br/><b>Phase 5c Architect Sign-Off</b><br/><i>(Lead Architect signs disposition matrix)</i>"}}
-        H5 -- Reject / Needs Refactor --> REF["Architect Refactoring Loop"]
-        REF --> AC
-        
-        H5 -- Certified Approved --> DUCK["🦆 In-Memory DuckDB Pipeline Execution Engine<br/>• Bronze DDL & Seed Verification<br/>• Silver Staging & Quarantine Isolation Proof<br/>• Gold SCD2 Merge & Active View Validation"]
+    subgraph PHASE6["4️⃣ Phase 6: Deliverables"]
+        O1["🗺️ 5-Section STTM Document"]
+        O2["🏗️ ANSI SQL DDL"]
+        O3["📜 Data Contract (ODCS)"]
+        O4["🌊 Medallion SQL (Bronze/Silver/Gold)"]
     end
 
-    subgraph PRODUCTION["🚀 5. Production Hand-off"]
-        DUCK --> H6{{"👤 HUMAN GATE 6<br/><b>Data Contract Final Signing</b><br/><i>(Data Platform & Business sign SLA contract)</i>"}}
-        H6 --> OUT["📦 Production Certified Deliverables<br/>(Visual ERD + ANSI DDL + Data Contract + Medallion SQL)"]
-    end
-
-    style H1 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
-    style H2 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
-    style H3 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
-    style H4 fill:#fff3cd,stroke:#d39e00,stroke-width:2px
-    style H5 fill:#ffc107,stroke:#b27b00,stroke-width:3px
-    style H6 fill:#d4edda,stroke:#28a745,stroke-width:2px
-```
-
-### 👤 The 6 Mandatory Human Validation Gates
-
-| Gate ID | Lifecycle Stage | Human Role (Who Validates) | What Is Validated & Decided | Rejection Action |
-| :--- | :--- | :--- | :--- | :--- |
-| **👤 Gate 1** | **Intake & Triage** | **Business Stakeholder / PM** | Confirms 21-questions parameters (reporting vs real-time, history requirements). | Re-prompt / refine story |
-| **👤 Gate 2** | **Capability Scan** | **Upstream Data Engineer** | Approves traffic-light gap matrix; schedules upstream telemetry backlog. | Block unfeasible targets |
-| **👤 Gate 3** | **Incident Triage**| **Data Operations Lead** | Validates root cause of quarantine spike (schema drift vs bad upstream data). | Quarantine isolation |
-| **👤 Gate 4** | **Conceptual ERD** | **Business Analyst / Architect**| Validates Visual Mermaid ERD, table grain, and all `[AI-GENERATED]` mockup fields. | Refactor entity relations |
-| **👤 Gate 5** | **Phase 5c Audit** | **Lead Data Architect** | Mandates written disposition for every Core 4 Risk Council finding before compilation. | Trigger Refactoring Loop |
-| **👤 Gate 6** | **Production Sign**| **Data Platform & VP Analytics** | Formally co-signs the Data Contract specification and freshness SLAs for DWH deployment. | Block deployment |
-
----
-
-## 📁 Repository Structure
-
-```
-data-model-architect/
-├── .agents/
-│   ├── rules/
-│   │   └── data-modeling-protocol.md          # Master Multi-Agent Protocol
-│   └── agents/
-│       ├── captain_orchestrator/              # Master Orchestration Subagent
-│       ├── requirements_architect_agent/      # Intake Triage Agent Definition
-│       ├── data_model_architect_agent/        # Lead Architect Agent Definition
-│       ├── financial_risk_reviewer/           # Grain & Double-Counting Auditor
-│       ├── temporal_risk_reviewer/            # Time-Travel & Interval Auditor
-│       ├── relational_risk_reviewer/          # Decoupling & Cardinality Auditor
-│       └── refactor_risk_reviewer/            # Conformed Mart Sprouting Auditor
-├── src/
-│   ├── orchestration/
-│   │   ├── captain.py                         # Master Factory Orchestrator
-│   │   ├── spawner.py                         # Subagent Fleet Spawner
-│   │   └── reviewer_council.py                # Core 4 ISO/IEC 25012 Audits
-│   ├── decision_engine.py                     # 21 Questions Adaptive Decision Tree
-│   ├── noun_verb_parser.py                    # DDD Semantic Parser
-│   ├── folder_scanner.py                      # Recursive Upstream Schema Ingestion
-│   ├── erd_generator.py                       # Visual Mermaid ERD Generator
-│   ├── ddl_generator.py                       # Standard ANSI SQL DDL Generator
-│   ├── contract_compiler.py                   # Data Contract Invariant Compiler
-│   ├── medallion_generator.py                 # Bronze -> Silver -> Gold SQL Pipeline
-│   ├── sql_runner.py                          # In-Memory DuckDB Pipeline Execution Engine
-│   └── cli.py                                 # Command Line Interface
-├── tests/
-│   ├── test_benchmark_10_scenarios.py         # 10 Canonical TPC-DS/Kimball Benchmarks
-│   ├── test_factory_full_capabilities.py      # Scanner, ERD, Contract Factory Tests
-│   ├── test_multi_agent_orchestration.py      # Captain & Reviewer Council Tests
-│   ├── test_medallion_pipeline.py             # Bronze, Silver, Gold Pipeline Tests
-│   └── test_duckdb_execution.py               # In-Memory DuckDB Execution Tests
-├── docs/
-│   ├── ARCHITECTURE_AND_RUBRICS.md            # Comprehensive Capability & Benchmark Rubrics
-│   ├── data_models/                           # Destination for Visual Mermaid ERDs
-│   ├── data_contracts/                        # Destination for Data Contracts
-│   └── pipelines/                             # Destination for Layered Medallion SQL
-└── examples/                                  # Ready-to-use domain templates
+    CAPTAIN --> PHASE0 --> PHASE1 --> PHASE2 --> PHASE6
 ```
 
 ---
 
-## 📊 Standardized Industry Scores & Rubrics
+## 📄 Standardized 5-Section STTM Document Format
 
-For the exhaustive rubric breakdown, see **[docs/ARCHITECTURE_AND_RUBRICS.md](docs/ARCHITECTURE_AND_RUBRICS.md)**.
+```text
+## 🏛️ [Table Name] (e.g. dim_customer_scd2 / fact_omnichannel_sales_lines)
 
-| Evaluation Category | Target Standard | Studio Score | Rating |
-| :--- | :--- | :---: | :---: |
-| **Data Modeling Maturity** | DAMA-DMBOK | **Level 4** | ⭐⭐⭐⭐⭐ **Managed & Synthesized** |
-| **Agent Autonomy Level** | IEEE / SAE Autonomous Agent | **Level 4** | ⭐⭐⭐⭐⭐ **High Autonomy (Supervised Gate)** |
-| **Architecture Classification** | TPC-DS / Kimball Standard | **10/10 (100%)** | ⭐⭐⭐⭐⭐ **Ground-Truth Exact** |
-| **Data Quality Governance** | ISO/IEC 25012 Standard | **98.4 / 100** | ⭐⭐⭐⭐⭐ **Certified Enterprise** |
-| **Moody-Shanks Quality Index** | Moody-Shanks Framework | **97.8 / 100** | ⭐⭐⭐⭐⭐ **Production Grade** |
-| **Runtime Pipeline Execution** | In-Memory DuckDB Test Suite | **23/23 (100%)** | ⭐⭐⭐⭐⭐ **Execution Verified** |
+### 1. Short Description
+Concise business role, grain, and purpose.
+
+### 2. Source Tables
+List of upstream Bronze raw landing tables and Silver staging models.
+
+### 3. Destination Table
+Gold target table name, target layer, and primary key definition.
+
+### 4. Raw SQL
+Production CTE transformation query loading the target table.
+
+### 5. Column Mapping & Business Logic Matrix
+| Column Name | Data Type | Nullable? | Plain-English Description | SQL Expression / Transformation Logic |
+```
 
 ---
 
-## 🧪 Benchmark Proof
-Validated against **TPC-DS**, **TPC-H**, and the **Kimball Lifecycle Group** canonical industry scenarios with **23/23 Passing Tests (100% Accuracy)**.
-
+## 🌐 Synchronized Repositories
+* 🏢 **Organization Repo:** [https://github.com/synology-dev-projects/data-modeling-agent-system](https://github.com/synology-dev-projects/data-modeling-agent-system)
+* 👤 **Personal Repo:** [https://github.com/rachardv/data-model-architect](https://github.com/rachardv/data-model-architect)
