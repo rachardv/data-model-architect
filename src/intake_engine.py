@@ -153,7 +153,8 @@ class IntakeCompletenessScorer:
             "stage", "milestone", "turnaround", "placed ->", "duration", "funnel",
             "sequential", "standalone event", "single event", "encounter",
             "picked to shipped", "admitted", "discharged", "inpatient stay",
-            "admission to discharge", "stay", "transferred"
+            "admission to discharge", "stay", "transferred", "purchase", "checkout counter",
+            "point-of-sale", "sale", "sales", "checkout"
         ]
         if any(k in text for k in lifecycle_keywords):
             resolved_vectors["lifecycle_funnel"] = True
