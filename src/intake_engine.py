@@ -31,7 +31,7 @@ class SemanticSanityFilter:
                 continue
                 
             # Check 4+ repeated identical characters (e.g. 'aaaa', 'zzzz')
-            if re.search(r"(.){3,}", w_clean):
+            if re.search(r"(.)\1{3,}", w_clean):
                 return {
                     "valid": False,
                     "reason": "REJECT_GIBBERISH_DETECTED",
@@ -89,6 +89,8 @@ class IntakeCompletenessScorer:
     3. Temporal History Policy (SCD2 historical vs. SCD1 in-place overwrite) - 20%
     4. Lifecycle Funnel (Single standalone event vs. Sequential multi-stage) - 20%
     5. Relationship Multiplicity (1:1, 1:N, M:N bridge) - 20%
+    
+    STRICT RULE: Completeness must reach exactly 100.0% before outputting specs.
     """
     
     VECTOR_WEIGHTS = {
@@ -144,7 +146,9 @@ class IntakeCompletenessScorer:
             missing_vectors.append("relationship_multiplicity")
             
         score = sum(cls.VECTOR_WEIGHTS[k] for k, v in resolved_vectors.items() if v)
-        is_sufficient = score >= 85.0
+        
+        # STRICT 100.0% COMPLETENESS HARD GATE
+        is_sufficient = (score >= 100.0)
         
         return {
             "completeness_score": score,
@@ -214,8 +218,8 @@ class AdaptiveBusinessInterviewer:
 
 class IntakeEngine:
     """
-    Master Phase 0 Intake Engine orchestrating sanity filtering,
-    completeness scoring, adaptive plain-English interviews, and requirements handoff.
+    Master Phase 0 Intake Engine enforcing strict 100% information completeness
+    before allowing downstream data model authoring or spec output.
     """
     
     @classmethod
@@ -240,10 +244,10 @@ class IntakeEngine:
         # 3. Parse Entities via DDD Noun-Verb Parser
         parsed_semantics = NounVerbSemanticParser.parse_workflow_narrative(enriched_narrative)
         
-        # 4. Score Information Completeness
+        # 4. Score Information Completeness (Strict 100% Gate)
         completeness = IntakeCompletenessScorer.score_completeness(enriched_narrative, parsed_semantics)
         
-        # 5. Check if Sufficient or Generate Targeted Questions
+        # 5. HARD GATE: If Completeness < 100.0%, block spec output and generate targeted questions
         if not completeness["is_sufficient"]:
             questions = AdaptiveBusinessInterviewer.get_questions_for_missing_vectors(completeness["missing_vectors"])
             return {
@@ -253,10 +257,10 @@ class IntakeEngine:
                 "missing_vectors": completeness["missing_vectors"],
                 "parsed_semantics": parsed_semantics,
                 "questions": questions,
-                "message": f"Intake is {completeness['completeness_score']:.0f}% complete. Please answer the {len(questions)} clarifying question(s) to reach the 85% certified threshold."
+                "message": f"Intake is {completeness['completeness_score']:.0f}% complete. All 5 architectural vectors must reach 100% before generating data model specs. Please answer the remaining {len(questions)} question(s)."
             }
             
-        # 6. If Completeness >= 85%, Infer Technical Parameters & Classify Architecture
+        # 6. If Completeness == 100%, Infer Technical Parameters & Classify Architecture
         inferred_params = NounVerbSemanticParser.infer_parameters_from_business_narrative(enriched_narrative)
         arch_decision = DataModelDecisionEngine.classify_architecture(**inferred_params)
         
@@ -270,5 +274,5 @@ class IntakeEngine:
             "inferred_params": inferred_params,
             "architecture_decision": arch_decision,
             "questions": [],
-            "message": "Intake successfully certified at 100% completeness. Ready for Data Model Architect handoff."
+            "message": "Intake certified at 100% completeness. Ready for Data Model Architect handoff."
         }

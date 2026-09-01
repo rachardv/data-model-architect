@@ -25,16 +25,31 @@ def test_contradiction_detection_oltp_vs_monthly_rollup():
     assert res["reason"] == "FLAG_CONTRADICTION"
 
 def test_incomplete_narrative_triggers_targeted_questions():
-    # Narrative has entities but lacks workload intent, history policy, and stage funnel
     raw_narrative = "A customer places an order for a product from a retail store."
     res = IntakeEngine.process_intake(raw_narrative)
     
     assert res["status"] == "NEEDS_CLARIFICATION"
-    assert res["completeness_score"] < 85.0
+    assert res["completeness_score"] < 100.0
     assert len(res["questions"]) > 0
     assert "workload_intent" in res["missing_vectors"]
 
-def test_enriched_narrative_reaches_certified_ready():
+def test_incomplete_narrative_hard_blocks_spec_generation_in_captain():
+    captain = CaptainOrchestrator()
+    # Narrative is only partially complete (missing workload intent and temporal policy)
+    payload = {
+        "domain": "ecommerce",
+        "narrative": "A customer places an order for a product from a retail store."
+    }
+    result = captain.execute_workflow(payload)
+    
+    # Must hard-block and not generate SQL DDL or STTM
+    assert result["status"] == "INTAKE_INCOMPLETE_BLOCKED"
+    assert result["completeness_score"] < 100.0
+    assert "generated_sql" not in result
+    assert "sttm_markdown" not in result
+    assert len(result["questions"]) > 0
+
+def test_enriched_narrative_reaches_100_percent_certified_ready():
     raw_narrative = "A customer places an order for a product from a retail store."
     business_answers = [
         "We want to build executive dashboards, BI reports, and analyze sales trends over time.",
@@ -44,7 +59,7 @@ def test_enriched_narrative_reaches_certified_ready():
     res = IntakeEngine.process_intake(raw_narrative, business_answers)
     
     assert res["status"] == "CERTIFIED_READY"
-    assert res["completeness_score"] >= 85.0
+    assert res["completeness_score"] == 100.0
     assert res["architecture_decision"]["pattern"] == "KIMBALL_STAR_SCD2"
     assert len(res["questions"]) == 0
 
@@ -58,7 +73,7 @@ def test_captain_orchestrator_rejects_gibberish():
     assert result["status"] == "REJECTED_INPUT_INVALID"
     assert "rejection_reason" in result
 
-def test_captain_orchestrator_executes_certified_intake():
+def test_captain_orchestrator_executes_only_when_100_percent():
     captain = CaptainOrchestrator()
     payload = {
         "domain": "ecommerce",
@@ -72,5 +87,7 @@ def test_captain_orchestrator_executes_certified_intake():
     result = captain.execute_workflow(payload)
     assert result["status"] == "CERTIFIED_PRODUCTION_READY"
     assert result["architecture_pattern"] == "ACCUMULATING_SNAPSHOT_FACT"
-    assert result["intake_completeness_score"] >= 85.0
+    assert result["intake_completeness_score"] == 100.0
     assert result["quality_index"] >= 98.0
+    assert "generated_sql" in result
+    assert "sttm_markdown" in result

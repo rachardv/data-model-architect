@@ -13,9 +13,7 @@ from src.sttm_generator import STTMGenerator
 class CaptainOrchestrator:
     """
     Master Autonomous Data Modeler Factory Orchestrator.
-    Seamlessly orchestrates Phase 0 Intake verification via the 3-Tier Intake Squad,
-    Architecture Triage, Core 4 Risk Council Audits, ODCS Data Contract Compilation,
-    Standardized 5-Section STTM Generation, and Medallion SQL Pipeline Generation.
+    Enforces a strict 100% Information Completeness Gate before releasing any data model specs.
     """
     
     def __init__(self, output_dir: str = "docs"):
@@ -32,6 +30,7 @@ class CaptainOrchestrator:
         domain = user_request.get("domain", "ecommerce")
         narrative = user_request.get("narrative", "")
         business_answers = user_request.get("business_answers", [])
+        explicit_params = user_request.get("usage_params")
         
         # Step 1: Phase 0 Intake Squad Dispatch
         self.state = "TRIAGE"
@@ -42,6 +41,8 @@ class CaptainOrchestrator:
         self.spawner.dispatch_intake_squad(narrative, business_answers)
         
         intake_res = IntakeEngine.process_intake(narrative, business_answers)
+        
+        # Hard Check 1: Input Sanity Rejection (Gibberish)
         if intake_res["status"] == "REJECTED":
             return {
                 "status": "REJECTED_INPUT_INVALID",
@@ -51,6 +52,21 @@ class CaptainOrchestrator:
                 "message": intake_res["message"],
                 "spawner_log_count": len(self.spawner.message_log)
             }
+            
+        # Hard Check 2: Strict 100% Completeness Hard Gate (Enforced unless explicit technical params are provided)
+        if not explicit_params:
+            if intake_res["status"] != "CERTIFIED_READY" or intake_res.get("completeness_score", 0.0) < 100.0:
+                return {
+                    "status": "INTAKE_INCOMPLETE_BLOCKED",
+                    "state": "TRIAGE_AWAITING_INPUT",
+                    "domain": domain,
+                    "completeness_score": intake_res.get("completeness_score", 0.0),
+                    "resolved_vectors": intake_res.get("resolved_vectors", []),
+                    "missing_vectors": intake_res.get("missing_vectors", []),
+                    "questions": intake_res.get("questions", []),
+                    "message": f"Execution halted: Intake is {intake_res.get('completeness_score', 0.0):.0f}% complete. All 5 vectors must reach 100% before generating data model specs.",
+                    "spawner_log_count": len(self.spawner.message_log)
+                }
             
         folder_path = user_request.get("folder_path")
         scanned_tables = []
@@ -64,10 +80,10 @@ class CaptainOrchestrator:
         architecture_decision = intake_res.get("architecture_decision")
         inferred_params = intake_res.get("inferred_params", {})
         
-        if not architecture_decision:
-            explicit_params = user_request.get("usage_params", inferred_params)
+        if explicit_params:
             from src.decision_engine import DataModelDecisionEngine
             architecture_decision = DataModelDecisionEngine.classify_architecture(**explicit_params)
+            inferred_params = explicit_params
         
         # Step 3: Model Authoring (Data Model Architect Agent)
         self.state = "AUTHORING"
