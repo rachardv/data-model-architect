@@ -1,0 +1,1044 @@
+{
+  "summary": {
+    "total_scenarios": 50,
+    "passed": 50,
+    "failed": 0,
+    "accuracy_percentage": 100.0,
+    "duration_seconds": 0.0061092376708984375,
+    "avg_latency_ms": 0.12218475341796875
+  },
+  "category_breakdown": {
+    "E-Commerce & Retail": {
+      "total": 10,
+      "correct": 10
+    },
+    "Banking & FinTech": {
+      "total": 10,
+      "correct": 10
+    },
+    "Healthcare & Life Sciences": {
+      "total": 8,
+      "correct": 8
+    },
+    "Supply Chain & Logistics": {
+      "total": 8,
+      "correct": 8
+    },
+    "SaaS & Product Analytics": {
+      "total": 8,
+      "correct": 8
+    },
+    "Tricky Edge Cases": {
+      "total": 6,
+      "correct": 6
+    }
+  },
+  "results": [
+    {
+      "id": 1,
+      "category": "E-Commerce & Retail",
+      "title": "Omnichannel Sales & Customer Journey",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "customer",
+        "order",
+        "store",
+        "warehouse"
+      ],
+      "verbs_extracted": [
+        "browses",
+        "fulfilled",
+        "is",
+        "places",
+        "products",
+        "shipped"
+      ],
+      "status": "PASS",
+      "tricky_note": "Requires surrogate key separation between online customer profile and store location."
+    },
+    {
+      "id": 2,
+      "category": "E-Commerce & Retail",
+      "title": "Multi-Stage Order Fulfillment & Delivery Pipeline",
+      "expected_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "actual_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "schema_type": "Accumulating Snapshot Fact + Conformed Dimensions",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "carrier",
+        "order",
+        "payment",
+        "placement",
+        "warehouse"
+      ],
+      "verbs_extracted": [
+        "metrics",
+        "tracks"
+      ],
+      "status": "PASS",
+      "tricky_note": "Multi-milestone lag tracking requiring role-playing date keys and monotonic timestamp validation."
+    },
+    {
+      "id": 3,
+      "category": "E-Commerce & Retail",
+      "title": "Daily Warehouse SKU Inventory Snapshots",
+      "expected_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "actual_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "schema_type": "Periodic Snapshot Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "reorder"
+      ],
+      "verbs_extracted": [
+        "across",
+        "allocated",
+        "centers",
+        "reservations",
+        "thresholds"
+      ],
+      "status": "PASS",
+      "tricky_note": "Semi-additive inventory metrics (cannot SUM across dates; must use AVG or LAST_VALUE)."
+    },
+    {
+      "id": 4,
+      "category": "E-Commerce & Retail",
+      "title": "High-Churn Customer VIP Tiers & Propensity Scores",
+      "expected_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "actual_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "schema_type": "Periodic Snapshot Fact + Mini-Dimension Outrigger",
+      "temporal_strategy": "SCD2_CORE_PLUS_MINIDIM",
+      "nouns_extracted": [
+        "customer"
+      ],
+      "verbs_extracted": [
+        "across",
+        "hours",
+        "models",
+        "shoppers"
+      ],
+      "status": "PASS",
+      "tricky_note": "Fast-changing daily ML scores must be decoupled into a Mini-Dimension band to prevent SCD2 table explosion."
+    },
+    {
+      "id": 5,
+      "category": "E-Commerce & Retail",
+      "title": "Product Returns & Restocking Processing",
+      "expected_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "actual_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "schema_type": "Accumulating Snapshot Fact + Conformed Dimensions",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "customer",
+        "store"
+      ],
+      "verbs_extracted": [
+        "checks",
+        "initiates",
+        "issues",
+        "items",
+        "mails"
+      ],
+      "status": "PASS",
+      "tricky_note": "Return pipeline involves multiple stage updates over weeks."
+    },
+    {
+      "id": 6,
+      "category": "E-Commerce & Retail",
+      "title": "Live Mobile Checkout Cart (OLTP)",
+      "expected_pattern": "OLTP_3NF_RELATIONAL",
+      "actual_pattern": "OLTP_3NF_RELATIONAL",
+      "schema_type": "3NF Normalized",
+      "temporal_strategy": "SCD1_OVERWRITE",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "additions",
+        "locks",
+        "updates"
+      ],
+      "status": "PASS",
+      "tricky_note": "Pure live application requires 3NF normalized tables with row-level locks and zero historical overhead."
+    },
+    {
+      "id": 7,
+      "category": "E-Commerce & Retail",
+      "title": "Flash Sale Real-Time Clickstream & Add-to-Cart Telemetry",
+      "expected_pattern": "TIMESCALEDB_HYPERTABLE",
+      "actual_pattern": "TIMESCALEDB_HYPERTABLE",
+      "schema_type": "Time-Series Partitioned",
+      "temporal_strategy": "APPEND_ONLY_TIME_SERIES",
+      "nouns_extracted": [
+        "per"
+      ],
+      "verbs_extracted": [
+        "events"
+      ],
+      "status": "PASS",
+      "tricky_note": "High-throughput append-only time-series partitioning required."
+    },
+    {
+      "id": 8,
+      "category": "E-Commerce & Retail",
+      "title": "Promotional Coupon Header Discount Allocation",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "across",
+        "items",
+        "margins",
+        "orders",
+        "reports",
+        "sales"
+      ],
+      "status": "PASS",
+      "tricky_note": "Header vs line-item grain allocation to prevent 500% discount multiplication."
+    },
+    {
+      "id": 9,
+      "category": "E-Commerce & Retail",
+      "title": "Multi-Vendor Marketplace Commission Split",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "customer"
+      ],
+      "verbs_extracted": [
+        "contains",
+        "deductions",
+        "items",
+        "payouts",
+        "sales",
+        "sellers"
+      ],
+      "status": "PASS",
+      "tricky_note": "Line-item grain fact joined to vendor and customer conformed dimensions."
+    },
+    {
+      "id": 10,
+      "category": "E-Commerce & Retail",
+      "title": "Customer Loyalty Points Real-Time Ledger",
+      "expected_pattern": "OLTP_3NF_RELATIONAL",
+      "actual_pattern": "OLTP_3NF_RELATIONAL",
+      "schema_type": "3NF Normalized",
+      "temporal_strategy": "SCD1_OVERWRITE",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "member's",
+        "modifies",
+        "points"
+      ],
+      "status": "PASS",
+      "tricky_note": "Strict ACID transactional balance consistency in PostgreSQL."
+    },
+    {
+      "id": 11,
+      "category": "Banking & FinTech",
+      "title": "Month-End Depository Account Balance Ledger",
+      "expected_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "actual_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "schema_type": "Periodic Snapshot Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "accounts",
+        "savings"
+      ],
+      "status": "PASS",
+      "tricky_note": "Preserves dormant zero-activity accounts and marks balances as semi-additive."
+    },
+    {
+      "id": 12,
+      "category": "Banking & FinTech",
+      "title": "SOX Regulated Financial Ledger with Retroactive Adjustments",
+      "expected_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "actual_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "schema_type": "Bi-Temporal Dimension + Transaction Fact",
+      "temporal_strategy": "BITEMPORAL_VALID_AND_SYSTEM_TIME",
+      "nouns_extracted": [
+        "ledger"
+      ],
+      "verbs_extracted": [
+        "as",
+        "audits",
+        "backdated",
+        "dates",
+        "entries"
+      ],
+      "status": "PASS",
+      "tricky_note": "Requires dual-axis time: Valid Time (transaction effective date) + System Time (when entry was posted)."
+    },
+    {
+      "id": 13,
+      "category": "Banking & FinTech",
+      "title": "Commercial Mortgage Loan Origination Lifecycle",
+      "expected_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "actual_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "schema_type": "Accumulating Snapshot Fact + Conformed Dimensions",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "loans"
+      ],
+      "status": "PASS",
+      "tricky_note": "Multi-month underwriting pipeline with role-playing dates and duration calculations."
+    },
+    {
+      "id": 14,
+      "category": "Banking & FinTech",
+      "title": "Real-Time High-Frequency FX Currency Ticks",
+      "expected_pattern": "TIMESCALEDB_HYPERTABLE",
+      "actual_pattern": "TIMESCALEDB_HYPERTABLE",
+      "schema_type": "Time-Series Partitioned",
+      "temporal_strategy": "APPEND_ONLY_TIME_SERIES",
+      "nouns_extracted": [
+        "per"
+      ],
+      "verbs_extracted": [
+        "algorithms",
+        "spreads",
+        "updates"
+      ],
+      "status": "PASS",
+      "tricky_note": "High-throughput append-only time-series with microsecond precision."
+    },
+    {
+      "id": 15,
+      "category": "Banking & FinTech",
+      "title": "Joint Checking Accounts (Many-to-Many Ownership)",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "statement"
+      ],
+      "verbs_extracted": [
+        "accounts",
+        "co-owned",
+        "couples",
+        "married",
+        "trusts"
+      ],
+      "status": "PASS",
+      "tricky_note": "Requires a Weighted Bridge Table between account and customer dimensions."
+    },
+    {
+      "id": 16,
+      "category": "Banking & FinTech",
+      "title": "Credit Card Fraud Ring Detection Network",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "burner"
+      ],
+      "verbs_extracted": [
+        "cards",
+        "compromised",
+        "ids",
+        "locations",
+        "numbers",
+        "organized",
+        "shared",
+        "syndicates"
+      ],
+      "status": "PASS",
+      "tricky_note": "Relational node & edge tables with bidirectional traversal composite indexing."
+    },
+    {
+      "id": 17,
+      "category": "Banking & FinTech",
+      "title": "Daily Dynamic Credit Risk Scoring & Delinquency Bands",
+      "expected_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "actual_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "schema_type": "Periodic Snapshot Fact + Mini-Dimension Outrigger",
+      "temporal_strategy": "SCD2_CORE_PLUS_MINIDIM",
+      "nouns_extracted": [
+        "borrower",
+        "payment"
+      ],
+      "verbs_extracted": [
+        "buckets",
+        "hours",
+        "scores",
+        "tiers"
+      ],
+      "status": "PASS",
+      "tricky_note": "Shards volatile FICO scores into discrete mini-dimension bands to protect core customer table."
+    },
+    {
+      "id": 18,
+      "category": "Banking & FinTech",
+      "title": "ATM Cash Dispense Transaction Core (OLTP)",
+      "expected_pattern": "OLTP_3NF_RELATIONAL",
+      "actual_pattern": "OLTP_3NF_RELATIONAL",
+      "schema_type": "3NF Normalized",
+      "temporal_strategy": "SCD1_OVERWRITE",
+      "nouns_extracted": [
+        "ledger"
+      ],
+      "verbs_extracted": [
+        "authorizations",
+        "balances",
+        "guarantees",
+        "withdrawals"
+      ],
+      "status": "PASS",
+      "tricky_note": "Strict 3NF ACID transaction model with zero isolation anomalies."
+    },
+    {
+      "id": 19,
+      "category": "Banking & FinTech",
+      "title": "Wealth Management Portfolio Holdings History",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "management"
+      ],
+      "verbs_extracted": [
+        "across",
+        "balances",
+        "portfolios"
+      ],
+      "status": "PASS",
+      "tricky_note": "SCD2 point-in-time joining on trade execution date."
+    },
+    {
+      "id": 20,
+      "category": "Banking & FinTech",
+      "title": "Retroactive Tax Classification Audit Ledger",
+      "expected_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "actual_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "schema_type": "Bi-Temporal Dimension + Transaction Fact",
+      "temporal_strategy": "BITEMPORAL_VALID_AND_SYSTEM_TIME",
+      "nouns_extracted": [
+        "government",
+        "ledger"
+      ],
+      "verbs_extracted": [
+        "adjustments",
+        "auditors",
+        "entities",
+        "overseas",
+        "queries"
+      ],
+      "status": "PASS",
+      "tricky_note": "Bi-temporal interval matching to reconstruct historical corporate tax filings."
+    },
+    {
+      "id": 21,
+      "category": "Healthcare & Life Sciences",
+      "title": "Inpatient Hospital Stay & Admission-to-Discharge Journey",
+      "expected_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "actual_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "schema_type": "Accumulating Snapshot Fact + Conformed Dimensions",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "transfer"
+      ],
+      "verbs_extracted": [
+        "tracks"
+      ],
+      "status": "PASS",
+      "tricky_note": "Multi-stage clinical milestone fact table measuring length-of-stay metrics."
+    },
+    {
+      "id": 22,
+      "category": "Healthcare & Life Sciences",
+      "title": "Medical Insurance Claims with Multi-Diagnosis Codes",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "claim",
+        "patient"
+      ],
+      "verbs_extracted": [
+        "analysis",
+        "claims",
+        "codes",
+        "contains",
+        "diagnosis",
+        "non-duplicated"
+      ],
+      "status": "PASS",
+      "tricky_note": "Multi-valued diagnosis dimension resolved via a Bridge Table."
+    },
+    {
+      "id": 23,
+      "category": "Healthcare & Life Sciences",
+      "title": "ICU Real-Time Bedside Patient Monitor Vitals",
+      "expected_pattern": "TIMESCALEDB_HYPERTABLE",
+      "actual_pattern": "TIMESCALEDB_HYPERTABLE",
+      "schema_type": "Time-Series Partitioned",
+      "temporal_strategy": "APPEND_ONLY_TIME_SERIES",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "beds",
+        "milliseconds",
+        "readings"
+      ],
+      "status": "PASS",
+      "tricky_note": "Sub-second append-only medical telemetry hypertable."
+    },
+    {
+      "id": 24,
+      "category": "Healthcare & Life Sciences",
+      "title": "Clinical Trial Phase 1-3 Patient Protocol Progression",
+      "expected_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "actual_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "schema_type": "Accumulating Snapshot Fact + Conformed Dimensions",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "patient"
+      ],
+      "verbs_extracted": [
+        "across",
+        "cohorts"
+      ],
+      "status": "PASS",
+      "tricky_note": "Accumulating snapshot tracking patient adherence milestones."
+    },
+    {
+      "id": 25,
+      "category": "Healthcare & Life Sciences",
+      "title": "Monthly Hospital Department Bed Occupancy Snapshot",
+      "expected_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "actual_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "schema_type": "Periodic Snapshot Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "across",
+        "bed",
+        "beds",
+        "departments",
+        "pediatrics",
+        "rates",
+        "ratios",
+        "rollups",
+        "staffed"
+      ],
+      "status": "PASS",
+      "tricky_note": "Semi-additive bed occupancy counts rolled up at department grain."
+    },
+    {
+      "id": 26,
+      "category": "Healthcare & Life Sciences",
+      "title": "Electronic Health Record (EHR) Live Patient Charting (OLTP)",
+      "expected_pattern": "OLTP_3NF_RELATIONAL",
+      "actual_pattern": "OLTP_3NF_RELATIONAL",
+      "schema_type": "3NF Normalized",
+      "temporal_strategy": "SCD1_OVERWRITE",
+      "nouns_extracted": [
+        "patient"
+      ],
+      "verbs_extracted": [
+        "alerts",
+        "encounters",
+        "notes",
+        "orders"
+      ],
+      "status": "PASS",
+      "tricky_note": "Strict 3NF HIPAA-compliant transactional charting model."
+    },
+    {
+      "id": 27,
+      "category": "Healthcare & Life Sciences",
+      "title": "Pharmacy Prescription Dispense Mart",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "patient",
+        "prescriber"
+      ],
+      "verbs_extracted": [
+        "amounts",
+        "analytics",
+        "codes",
+        "numbers",
+        "prescriptions"
+      ],
+      "status": "PASS",
+      "tricky_note": "Conformed patient and physician dimensions with currency copay precision."
+    },
+    {
+      "id": 28,
+      "category": "Healthcare & Life Sciences",
+      "title": "Daily Patient Readmission Risk Scoring",
+      "expected_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "actual_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "schema_type": "Periodic Snapshot Fact + Mini-Dimension Outrigger",
+      "temporal_strategy": "SCD2_CORE_PLUS_MINIDIM",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "inpatients",
+        "percentiles",
+        "scores"
+      ],
+      "status": "PASS",
+      "tricky_note": "Volatile daily readmission risk scores sharded into discrete mini-dimensions."
+    },
+    {
+      "id": 29,
+      "category": "Supply Chain & Logistics",
+      "title": "Intermodal Freight Shipment Lifecycle",
+      "expected_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "actual_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "schema_type": "Accumulating Snapshot Fact + Conformed Dimensions",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "container",
+        "warehouse"
+      ],
+      "verbs_extracted": [
+        "across",
+        "customs",
+        "shipments"
+      ],
+      "status": "PASS",
+      "tricky_note": "Multi-carrier milestone tracking across multi-week freight journeys."
+    },
+    {
+      "id": 30,
+      "category": "Supply Chain & Logistics",
+      "title": "Cold-Chain Reefer Truck Temperature IoT Telemetry",
+      "expected_pattern": "TIMESCALEDB_HYPERTABLE",
+      "actual_pattern": "TIMESCALEDB_HYPERTABLE",
+      "schema_type": "Time-Series Partitioned",
+      "temporal_strategy": "APPEND_ONLY_TIME_SERIES",
+      "nouns_extracted": [
+        "container"
+      ],
+      "verbs_extracted": [
+        "coordinates",
+        "gps",
+        "refrigerated",
+        "seconds",
+        "temperatures"
+      ],
+      "status": "PASS",
+      "tricky_note": "High-velocity time-series IoT data with time-bucket aggregations."
+    },
+    {
+      "id": 31,
+      "category": "Supply Chain & Logistics",
+      "title": "Daily Distribution Center Pallet Stock Snapshot",
+      "expected_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "actual_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "schema_type": "Periodic Snapshot Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "fulfillment"
+      ],
+      "verbs_extracted": [
+        "across",
+        "centers",
+        "counts",
+        "levels",
+        "locations"
+      ],
+      "status": "PASS",
+      "tricky_note": "Semi-additive inventory quantities by warehouse location."
+    },
+    {
+      "id": 32,
+      "category": "Supply Chain & Logistics",
+      "title": "Manufacturing Recursive Bill of Materials (BOM)",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "across",
+        "contains",
+        "levels",
+        "modules",
+        "parts",
+        "screws",
+        "sub-assemblies"
+      ],
+      "status": "PASS",
+      "tricky_note": "Ragged variable-depth hierarchy requiring a Kimball Hierarchy Bridge Table."
+    },
+    {
+      "id": 33,
+      "category": "Supply Chain & Logistics",
+      "title": "Warehouse Forklift Dispatch Job Engine (OLTP)",
+      "expected_pattern": "OLTP_3NF_RELATIONAL",
+      "actual_pattern": "OLTP_3NF_RELATIONAL",
+      "schema_type": "3NF Normalized",
+      "temporal_strategy": "SCD1_OVERWRITE",
+      "nouns_extracted": [
+        "warehouse"
+      ],
+      "verbs_extracted": [
+        "jobs",
+        "operators"
+      ],
+      "status": "PASS",
+      "tricky_note": "High-throughput row-locking transactional job queue."
+    },
+    {
+      "id": 34,
+      "category": "Supply Chain & Logistics",
+      "title": "Supplier Purchase Order Fulfillment & Invoice Variance",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "order",
+        "procurement",
+        "supplier"
+      ],
+      "verbs_extracted": [
+        "amounts",
+        "analytics",
+        "goods",
+        "profiles",
+        "quantities",
+        "received"
+      ],
+      "status": "PASS",
+      "tricky_note": "Header vs line-item grain procurement variance fact table."
+    },
+    {
+      "id": 35,
+      "category": "Supply Chain & Logistics",
+      "title": "Daily Carrier On-Time Performance & Reliability Tiers",
+      "expected_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "actual_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "schema_type": "Periodic Snapshot Fact + Mini-Dimension Outrigger",
+      "temporal_strategy": "SCD2_CORE_PLUS_MINIDIM",
+      "nouns_extracted": [
+        "carrier"
+      ],
+      "verbs_extracted": [
+        "claims",
+        "hours",
+        "logistics",
+        "percentages",
+        "rates",
+        "scorecards",
+        "tiers"
+      ],
+      "status": "PASS",
+      "tricky_note": "Daily carrier performance scores decoupled into Mini-Dimension tiers."
+    },
+    {
+      "id": 36,
+      "category": "Supply Chain & Logistics",
+      "title": "Customs Tariff Retroactive Rate Adjustment Audit",
+      "expected_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "actual_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "schema_type": "Bi-Temporal Dimension + Transaction Fact",
+      "temporal_strategy": "BITEMPORAL_VALID_AND_SYSTEM_TIME",
+      "nouns_extracted": [
+        "government",
+        "ledger"
+      ],
+      "verbs_extracted": [
+        "audits",
+        "customs",
+        "reclassifications"
+      ],
+      "status": "PASS",
+      "tricky_note": "Bi-temporal valid time vs transaction time for customs compliance."
+    },
+    {
+      "id": 37,
+      "category": "SaaS & Product Analytics",
+      "title": "Monthly Recurring Revenue (MRR) Waterfall Snapshot",
+      "expected_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "actual_pattern": "PERIODIC_SNAPSHOT_FACT",
+      "schema_type": "Periodic Snapshot Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "across",
+        "churned",
+        "retained",
+        "saas",
+        "tiers"
+      ],
+      "status": "PASS",
+      "tricky_note": "Semi-additive recurring revenue metrics across monthly accounting boundaries."
+    },
+    {
+      "id": 38,
+      "category": "SaaS & Product Analytics",
+      "title": "Enterprise B2B Free Trial to Paid Conversion Lifecycle",
+      "expected_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "actual_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+      "schema_type": "Accumulating Snapshot Fact + Conformed Dimensions",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "account"
+      ],
+      "verbs_extracted": [
+        "across",
+        "attended",
+        "closed",
+        "completed",
+        "sales",
+        "signups",
+        "tracks"
+      ],
+      "status": "PASS",
+      "tricky_note": "Multi-milestone sales funnel with role-playing date keys."
+    },
+    {
+      "id": 39,
+      "category": "SaaS & Product Analytics",
+      "title": "Real-Time User Feature Event Telemetry Stream",
+      "expected_pattern": "TIMESCALEDB_HYPERTABLE",
+      "actual_pattern": "TIMESCALEDB_HYPERTABLE",
+      "schema_type": "Time-Series Partitioned",
+      "temporal_strategy": "APPEND_ONLY_TIME_SERIES",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "across",
+        "calls",
+        "clicks",
+        "times",
+        "users"
+      ],
+      "status": "PASS",
+      "tricky_note": "Append-only high-velocity time-series event partitions."
+    },
+    {
+      "id": 40,
+      "category": "SaaS & Product Analytics",
+      "title": "Daily Account Churn Propensity & Health Scores",
+      "expected_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "actual_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "schema_type": "Periodic Snapshot Fact + Mini-Dimension Outrigger",
+      "temporal_strategy": "SCD2_CORE_PLUS_MINIDIM",
+      "nouns_extracted": [
+        "engagement",
+        "product"
+      ],
+      "verbs_extracted": [
+        "tenants"
+      ],
+      "status": "PASS",
+      "tricky_note": "Decouples volatile health scores into Mini-Dimension health quadrants."
+    },
+    {
+      "id": 41,
+      "category": "SaaS & Product Analytics",
+      "title": "Live User Authentication & Session Token Store (OLTP)",
+      "expected_pattern": "OLTP_3NF_RELATIONAL",
+      "actual_pattern": "OLTP_3NF_RELATIONAL",
+      "schema_type": "3NF Normalized",
+      "temporal_strategy": "SCD1_OVERWRITE",
+      "nouns_extracted": [
+        "user"
+      ],
+      "verbs_extracted": [
+        "expirations",
+        "limits",
+        "sessions"
+      ],
+      "status": "PASS",
+      "tricky_note": "Low-latency sub-millisecond point reads and writes."
+    },
+    {
+      "id": 42,
+      "category": "SaaS & Product Analytics",
+      "title": "Seat-Based License Assignment & User Entitlements",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "employee",
+        "manager",
+        "user"
+      ],
+      "verbs_extracted": [
+        "accounts",
+        "purchased",
+        "seats"
+      ],
+      "status": "PASS",
+      "tricky_note": "SCD Type 2 subscription plan history with open sentinels."
+    },
+    {
+      "id": 43,
+      "category": "SaaS & Product Analytics",
+      "title": "Retroactive Billing Credit & Invoicing Adjustment Audit",
+      "expected_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "actual_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "schema_type": "Bi-Temporal Dimension + Transaction Fact",
+      "temporal_strategy": "BITEMPORAL_VALID_AND_SYSTEM_TIME",
+      "nouns_extracted": [],
+      "verbs_extracted": [
+        "credits",
+        "saas",
+        "true-ups"
+      ],
+      "status": "PASS",
+      "tricky_note": "Bi-temporal audit capability for subscription billing adjustments."
+    },
+    {
+      "id": 44,
+      "category": "SaaS & Product Analytics",
+      "title": "Feature Flag Rollout & Experimentation Variant Mart",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "user"
+      ],
+      "verbs_extracted": [
+        "across",
+        "analytics",
+        "cohorts",
+        "conformed",
+        "dimensions",
+        "rates"
+      ],
+      "status": "PASS",
+      "tricky_note": "Experiment allocation fact table joining to conformed user dimension."
+    },
+    {
+      "id": 45,
+      "category": "Tricky Edge Cases",
+      "title": "Cascading Corporate Reorg Hierarchy Trap",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "employee",
+        "transfer"
+      ],
+      "verbs_extracted": [
+        "records",
+        "reorganizations",
+        "threatens"
+      ],
+      "status": "PASS",
+      "tricky_note": "Requires a Time-Versioned Hierarchy Bridge to decouple reporting tree from employee dimension."
+    },
+    {
+      "id": 46,
+      "category": "Tricky Edge Cases",
+      "title": "The 60-Column Monolithic Customer Profile Trap",
+      "expected_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "actual_pattern": "PERIODIC_SNAPSHOT_MINIDIM",
+      "schema_type": "Periodic Snapshot Fact + Mini-Dimension Outrigger",
+      "temporal_strategy": "SCD2_CORE_PLUS_MINIDIM",
+      "nouns_extracted": [
+        "customer"
+      ],
+      "verbs_extracted": [
+        "columns",
+        "counts",
+        "demographics",
+        "scores"
+      ],
+      "status": "PASS",
+      "tricky_note": "Relational reviewer must mandate decoupling volatile attributes into Mini-Dimensions."
+    },
+    {
+      "id": 47,
+      "category": "Tricky Edge Cases",
+      "title": "Multi-Hop Cyclic Money Laundering Graph",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "enter"
+      ],
+      "verbs_extracted": [
+        "accounts",
+        "across",
+        "loops",
+        "queries",
+        "transfers"
+      ],
+      "status": "PASS",
+      "tricky_note": "Relational Node and Edge schema with check constraints preventing self-transfers."
+    },
+    {
+      "id": 48,
+      "category": "Tricky Edge Cases",
+      "title": "The 6-Location Geography Fact Table Key Bloat",
+      "expected_pattern": "KIMBALL_STAR_SCD2",
+      "actual_pattern": "KIMBALL_STAR_SCD2",
+      "schema_type": "Transaction Fact + SCD2 Dimension",
+      "temporal_strategy": "SCD2_HISTORICAL",
+      "nouns_extracted": [
+        "store",
+        "supplier",
+        "warehouse"
+      ],
+      "verbs_extracted": [
+        "addresses",
+        "as",
+        "keys",
+        "logistics"
+      ],
+      "status": "PASS",
+      "tricky_note": "Refactor reviewer must mandate moving locations to Outriggers attached to primary dimensions."
+    },
+    {
+      "id": 49,
+      "category": "Tricky Edge Cases",
+      "title": "High-Frequency Crypto Orderbook L3 Depth Stream",
+      "expected_pattern": "TIMESCALEDB_HYPERTABLE",
+      "actual_pattern": "TIMESCALEDB_HYPERTABLE",
+      "schema_type": "Time-Series Partitioned",
+      "temporal_strategy": "APPEND_ONLY_TIME_SERIES",
+      "nouns_extracted": [
+        "per"
+      ],
+      "verbs_extracted": [
+        "cancellations",
+        "orders",
+        "timestamps"
+      ],
+      "status": "PASS",
+      "tricky_note": "Append-only partitioned time-series hypertable with high-throughput compression."
+    },
+    {
+      "id": 50,
+      "category": "Tricky Edge Cases",
+      "title": "SOX Compliance Multi-Year Retroactive Backdated Journal",
+      "expected_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "actual_pattern": "BITEMPORAL_SCD2_ENGINE",
+      "schema_type": "Bi-Temporal Dimension + Transaction Fact",
+      "temporal_strategy": "BITEMPORAL_VALID_AND_SYSTEM_TIME",
+      "nouns_extracted": [
+        "restatement",
+        "under"
+      ],
+      "verbs_extracted": [
+        "restated",
+        "rules",
+        "transactions"
+      ],
+      "status": "PASS",
+      "tricky_note": "Bi-temporal validity time interval matching against system audit clock."
+    }
+  ]
+}
