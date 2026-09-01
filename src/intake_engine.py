@@ -108,7 +108,14 @@ class IntakeCompletenessScorer:
         missing_vectors = []
         
         # Vector 1: Workload Intent
-        if any(k in text for k in ["dashboard", "reporting", "bi report", "analytics", "trends over time", "live website", "mobile app", "checkout", "sensor", "telemetry", "streaming", "ticker", "powers a live", "real-time care", "physician charting"]):
+        workload_keywords = [
+            "dashboard", "reporting", "bi report", "analytics", "trends over time",
+            "live website", "mobile app", "checkout", "sensor", "telemetry", "streaming",
+            "ticker", "live point-of-care", "ehr application", "powers the live",
+            "powers a live", "real-time", "bedside charting", "operational database",
+            "sub-second", "live app", "point-of-care"
+        ]
+        if any(k in text for k in workload_keywords):
             resolved_vectors["workload_intent"] = True
         else:
             resolved_vectors["workload_intent"] = False
@@ -116,7 +123,12 @@ class IntakeCompletenessScorer:
             
         # Vector 2: Entity Grain
         nouns = parsed_entities.get("dimensions_nouns", [])
-        if len(nouns) >= 2 and any(k in text for k in ["line item", "order line", "transaction", "each encounter", "single event", "snapshot", "one row per", "individual", "prescription", "procedure", "order"]):
+        grain_keywords = [
+            "line item", "order line", "transaction", "each encounter", "single event",
+            "snapshot", "one row per", "individual", "prescription", "procedure",
+            "order", "patient", "stay", "admission", "vitals"
+        ]
+        if len(nouns) >= 2 and any(k in text for k in grain_keywords):
             resolved_vectors["entity_grain"] = True
         elif len(nouns) >= 3:
             resolved_vectors["entity_grain"] = True
@@ -125,14 +137,25 @@ class IntakeCompletenessScorer:
             missing_vectors.append("entity_grain")
             
         # Vector 3: Temporal History Policy
-        if any(k in text for k in ["preserve", "historical", "scd", "original address", "point-in-time", "overwrite", "newest address", "audit date", "regulated", "sox", "insurance at time"]):
+        temporal_keywords = [
+            "preserve", "historical", "scd", "original address", "point-in-time",
+            "overwrite", "newest address", "audit date", "regulated", "sox",
+            "insurance at time", "newest policy", "always overwrite"
+        ]
+        if any(k in text for k in temporal_keywords):
             resolved_vectors["temporal_policy"] = True
         else:
             resolved_vectors["temporal_policy"] = False
             missing_vectors.append("temporal_policy")
             
         # Vector 4: Lifecycle Funnel
-        if any(k in text for k in ["stage", "milestone", "turnaround", "placed ->", "duration", "funnel", "sequential", "standalone event", "single event", "encounter", "picked to shipped"]):
+        lifecycle_keywords = [
+            "stage", "milestone", "turnaround", "placed ->", "duration", "funnel",
+            "sequential", "standalone event", "single event", "encounter",
+            "picked to shipped", "admitted", "discharged", "inpatient stay",
+            "admission to discharge", "stay", "transferred"
+        ]
+        if any(k in text for k in lifecycle_keywords):
             resolved_vectors["lifecycle_funnel"] = True
         else:
             resolved_vectors["lifecycle_funnel"] = False
@@ -170,16 +193,16 @@ class AdaptiveBusinessInterviewer:
             "question": "How will your team or end-users primarily interact with this system?",
             "options": [
                 "(Recommended) We want to build executive dashboards, BI reports, and analyze performance trends over time.",
-                "This directly powers a live user-facing website, mobile app, or checkout screen where instant sub-second updates are critical.",
+                "This directly powers a live user-facing website, mobile app, point-of-care EHR, or checkout screen where instant sub-second updates are critical.",
                 "We are collecting continuous real-time data streams from sensors, tracking devices, or market tickers every second."
             ]
         },
         "temporal_policy": {
             "id": "q_temporal_policy",
-            "question": "When a customer, store, or profile changes (like moving to a new address), how should historical reports look?",
+            "question": "When a customer, patient, or profile changes (like moving to a new address or updating insurance), how should historical records look?",
             "options": [
-                "(Recommended) Past historical reports should preserve the original address at the time of each transaction so past regional sales remain accurate.",
-                "Always overwrite past records with their newest address everywhere across the system.",
+                "(Recommended) Past historical records should preserve the original profile and insurance policy at the time of each event so past billing and audits stay accurate.",
+                "Always overwrite past records with their newest address and policy everywhere across the system.",
                 "We are legally/financially regulated (SOX, Banking, HIPAA) and need to prove exactly what our accounting/clinical records showed on any past audit date."
             ]
         },
@@ -187,7 +210,7 @@ class AdaptiveBusinessInterviewer:
             "id": "q_lifecycle_funnel",
             "question": "Does this business process involve multiple sequential steps where you need to track turnaround time?",
             "options": [
-                "(Recommended) Yes, we need to track how long it takes to move across stages (e.g. from Order Placed -> Picked in Warehouse -> Shipped -> Delivered).",
+                "(Recommended) Yes, we need to track how long it takes to move across stages (e.g. from Order Placed -> Shipped -> Delivered, or Admission -> Bed Assignment -> Discharge).",
                 "No, we only need to record each individual event or transaction as a single standalone event.",
                 "We need periodic daily or monthly summary snapshots of total balances, inventory stock, or bed occupancy."
             ]
@@ -196,16 +219,16 @@ class AdaptiveBusinessInterviewer:
             "id": "q_entity_grain",
             "question": "What is the primary level of detail (grain) for measuring activity in this business?",
             "options": [
-                "(Recommended) Detailed line-item level (e.g., individual products in a cart, individual medications prescribed).",
-                "Order / Header summary level (e.g., total basket amount per checkout).",
-                "Periodic summary rollup level (e.g., daily total store revenue)."
+                "(Recommended) Detailed line-item or clinical event level (e.g., individual medications prescribed, individual line items).",
+                "Encounter / Order summary level (e.g., total basket or stay summary).",
+                "Periodic summary rollup level (e.g., daily total store revenue or hospital bed occupancy)."
             ]
         },
         "relationship_multiplicity": {
             "id": "q_relationship_multiplicity",
             "question": "Are there many-to-many relationships involved in this workflow?",
             "options": [
-                "(Recommended) Standard one-to-many relationships (e.g. 1 customer has many orders, 1 store fulfills many orders).",
+                "(Recommended) Standard one-to-many relationships (e.g. 1 patient has many stays, 1 customer has many orders).",
                 "Complex many-to-many co-ownership (e.g. joint accounts with multiple owners, claims with multiple primary diagnoses)."
             ]
         }

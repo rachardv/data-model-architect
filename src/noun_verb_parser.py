@@ -92,8 +92,8 @@ class NounVerbSemanticParser:
         # 2. Live Application (OLTP)
         is_live_app = any(k in text for k in [
             "live website", "mobile app", "checkout screen", "user clicks",
-            "instant updates", "powers a live", "microservice", "real time app",
-            "shopping cart", "session token"
+            "instant updates", "powers a live", "powers the live", "microservice", "real time app",
+            "shopping cart", "session token", "point-of-care", "ehr", "bedside charting"
         ])
         
         # 3. Temporal History Requirements (SCD2 / Audit)
