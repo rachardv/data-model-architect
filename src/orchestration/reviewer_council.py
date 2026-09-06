@@ -22,6 +22,7 @@ class ReviewFinding:
 class ReviewerCouncil:
     """
     Executes the Core 4 Pure Design Risk Audits on a proposed Data Model.
+    Includes Multi-Currency FX Triad and JSONB Polymorphic Column Audits.
     """
     
     @staticmethod
@@ -29,6 +30,7 @@ class ReviewerCouncil:
         findings: List[ReviewFinding] = []
         tables = schema_spec.get("tables", [])
         temporal_type = schema_spec.get("temporal_strategy", "")
+        is_multi_currency = schema_spec.get("is_multi_currency", False)
         
         # 1. Financial & Grain Audit
         for t in tables:
@@ -43,6 +45,20 @@ class ReviewerCouncil:
                     recommendation="Move order_discount_amount to the order header table; keep only line_discount_amount on item table.",
                     severity="CRITICAL"
                 ))
+            
+            # Check for multi-currency FX triad compliance
+            if t.get("type") == "FACT" and is_multi_currency:
+                has_fx_rate = any("exchange_rate" in c or "fx_rate" in c for c in cols)
+                has_currency = any("currency" in c for c in cols)
+                if not (has_fx_rate and has_currency):
+                    findings.append(ReviewFinding(
+                        reviewer="financial_risk_reviewer",
+                        title="Multi-Currency FX Conversion Distortion Hazard",
+                        description=f"Fact table {t.get('name')} handles international transactions but lacks exchange_rate or currency_code triad columns.",
+                        impact="Summing amounts across diverse currencies without normalized exchange rates will produce severely distorted financial totals.",
+                        recommendation="Implement Kimball Multi-Currency Fact Triad (amount_local, currency_code, exchange_rate_to_target, amount_target).",
+                        severity="CRITICAL"
+                    ))
                 
         # 2. Temporal & History Audit (Applies to Dimensions)
         for t in tables:
@@ -62,13 +78,15 @@ class ReviewerCouncil:
         # 3. Relational Decoupling Audit
         for t in tables:
             cols = t.get("columns", [])
-            if len(cols) > 40:
+            # Exempt valid JSONB / VARIANT semi-structured polymorphic attributes from flat scalar width limits
+            non_json_cols = [c for c in cols if c.get("type", "").upper() not in ["JSONB", "VARIANT", "RECORD"]]
+            if len(non_json_cols) > 40:
                 findings.append(ReviewFinding(
                     reviewer="relational_risk_reviewer",
                     title="Monolithic Ultra-Wide Table Trapping Volatile Attributes",
-                    description=f"Table {t.get('name')} contains {len(cols)} columns across multiple domains.",
+                    description=f"Table {t.get('name')} contains {len(non_json_cols)} scalar columns across multiple domains.",
                     impact="Volatile attribute changes will trigger massive SCD2 row churn, bloating storage and indexes.",
-                    recommendation="Decouple fast-changing attributes into a dedicated mini-dimension or outrigger table.",
+                    recommendation="Decouple fast-changing attributes into a dedicated mini-dimension, outrigger, or semi-structured JSONB column.",
                     severity="HIGH"
                 ))
                 
@@ -84,10 +102,13 @@ class ReviewerCouncil:
                     severity="MEDIUM"
                 ))
                 
-        is_clean = len(findings) == 0
+        # Final Council Consensus
+        passed = all(f.severity != "CRITICAL" for f in findings)
+        status = "APPROVED" if passed else "CHANGES_REQUIRED"
         return {
-            "status": "APPROVED" if is_clean else "CHANGES_REQUIRED",
+            "status": status,
+            "passed": passed,
             "findings_count": len(findings),
-            "findings": [f.to_dict() for f in findings],
-            "quality_index": 100.0 if is_clean else max(70.0, 100.0 - (len(findings) * 8.0))
+            "finding_count": len(findings),
+            "findings": [f.to_dict() for f in findings]
         }

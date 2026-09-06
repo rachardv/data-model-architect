@@ -2,12 +2,13 @@ import os
 import json
 import csv
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 
 class FolderSchemaScanner:
     """
     Recursively scans directory folders for schema files (.sql, .json, .csv, .py, .ts, .prisma, .yaml, .yml)
     and extracts confirmed source tables, columns, and datatypes.
+    Supports multi-table .sql files with comment stripping.
     """
     
     SUPPORTED_EXTENSIONS = {".sql", ".json", ".csv", ".tsv", ".py", ".ts", ".prisma", ".yaml", ".yml"}
@@ -29,7 +30,10 @@ class FolderSchemaScanner:
                     file_path = os.path.join(root, file)
                     table_info = cls._parse_file(file_path, file, ext)
                     if table_info:
-                        tables.append(table_info)
+                        if isinstance(table_info, list):
+                            tables.extend(table_info)
+                        else:
+                            tables.append(table_info)
                         
         return {
             "status": "SUCCESS",
@@ -39,8 +43,8 @@ class FolderSchemaScanner:
         }
         
     @classmethod
-    def _parse_file(cls, file_path: str, filename: str, ext: str) -> Dict[str, Any]:
-        table_name = os.path.splitext(filename)[0]
+    def _parse_file(cls, file_path: str, filename: str, ext: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        default_table_name = os.path.splitext(filename)[0]
         columns = []
         
         try:
@@ -48,12 +52,56 @@ class FolderSchemaScanner:
                 content = f.read()
                 
             if ext == ".sql":
-                # Match CREATE TABLE col_name TYPE
-                matches = re.findall(r"([a-zA-Z0-9_]+)\s+([A-Za-z0-9_()]+)", content)
-                for col, dtype in matches:
-                    if col.upper() not in {"CREATE", "TABLE", "CONSTRAINT", "PRIMARY", "KEY", "FOREIGN", "REFERENCES"}:
-                        columns.append({"name": col.lower(), "type": dtype.upper(), "is_inferred": False})
+                # 1. Strip comments (single-line -- and multi-line /* */)
+                cleaned = re.sub(r"--.*?$", "", content, flags=re.MULTILINE)
+                cleaned = re.sub(r"/\*.*?\*/", "", cleaned, flags=re.DOTALL)
+                
+                # 2. Extract multiple CREATE TABLE statements
+                create_table_pattern = re.compile(
+                    r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s*\((.*?)\);",
+                    re.IGNORECASE | re.DOTALL
+                )
+                table_matches = list(create_table_pattern.finditer(cleaned))
+                
+                if table_matches:
+                    parsed_tables = []
+                    for match in table_matches:
+                        tbl_name = match.group(1).lower()
+                        body = match.group(2)
+                        tbl_columns = []
                         
+                        for line in body.splitlines():
+                            clean_line = line.strip().rstrip(",")
+                            if not clean_line:
+                                continue
+                            upper_line = clean_line.upper()
+                            if any(upper_line.startswith(k) for k in ["CONSTRAINT", "PRIMARY KEY", "FOREIGN KEY", "UNIQUE", "CHECK"]):
+                                continue
+                            col_match = re.match(r"^([a-zA-Z0-9_]+)\s+([A-Za-z0-9_()]+)", clean_line)
+                            if col_match:
+                                c_name = col_match.group(1).lower()
+                                c_type = col_match.group(2).upper()
+                                if c_name not in {"create", "table", "constraint", "primary", "key", "foreign", "references"}:
+                                    tbl_columns.append({"name": c_name, "type": c_type, "is_inferred": False})
+                                    
+                        parsed_tables.append({
+                            "table_name": tbl_name,
+                            "source_file": filename,
+                            "columns": tbl_columns
+                        })
+                    return parsed_tables
+                else:
+                    # Fallback if no full CREATE TABLE block is closed with semicolon
+                    lines = cleaned.splitlines()
+                    for line in lines:
+                        clean_line = line.strip().rstrip(",")
+                        col_match = re.match(r"^([a-zA-Z0-9_]+)\s+([A-Za-z0-9_()]+)", clean_line)
+                        if col_match:
+                            c_name = col_match.group(1).lower()
+                            c_type = col_match.group(2).upper()
+                            if c_name not in {"create", "table", "constraint", "primary", "key", "foreign", "references"}:
+                                columns.append({"name": c_name, "type": c_type, "is_inferred": False})
+                                
             elif ext == ".csv":
                 reader = csv.reader(content.splitlines())
                 headers = next(reader, [])
@@ -71,7 +119,6 @@ class FolderSchemaScanner:
                         columns.append({"name": str(k).lower(), "type": dtype, "is_inferred": False})
                         
             elif ext in {".py", ".ts", ".prisma"}:
-                # Extract field names from class/interface definitions
                 field_matches = re.findall(r"([a-zA-Z0-9_]+)\s*:\s*([A-Za-z0-9_\[\]]+)", content)
                 for col, dtype in field_matches:
                     columns.append({"name": col.lower(), "type": dtype, "is_inferred": False})
@@ -79,7 +126,7 @@ class FolderSchemaScanner:
             pass
             
         return {
-            "table_name": table_name,
+            "table_name": default_table_name,
             "source_file": filename,
             "columns": columns
         }

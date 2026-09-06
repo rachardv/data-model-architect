@@ -6,12 +6,22 @@ class STTMGenerator:
     Automated Source-to-Target Mapping (STTM) Generator.
     Compiles standardized, 5-section engineering mapping specifications directly from 
     the certified target schema and Data Contract, guaranteeing zero documentation drift.
+    Supports Kimball Multi-Fact Drill-Across Bus queries, Multi-Currency Triads, and JSONB.
     """
     
     @classmethod
     def derive_plain_english_description(cls, col_name: str, col_type: str, is_pk: bool, table_type: str) -> str:
         name_lower = col_name.lower()
+        type_upper = col_type.upper()
         
+        if type_upper in ["JSONB", "VARIANT", "RECORD"]:
+            return "Semi-structured JSON document storing dynamic polymorphic attributes without schema migration."
+        if name_lower.endswith("_local"):
+            return "Monetary financial metric recorded in original local transaction currency."
+        if name_lower == "currency_code":
+            return "ISO-4217 standard 3-letter currency code (e.g. USD, EUR, GBP, JPY)."
+        if name_lower.startswith("exchange_rate_to_"):
+            return "Daily spot foreign exchange conversion rate to normalized target currency."
         if name_lower.endswith("_sk"):
             return "Unique synthetic surrogate key identifying this specific record or historical version."
         if name_lower.startswith("scd_valid_from"):
@@ -25,7 +35,7 @@ class STTMGenerator:
         if name_lower.endswith("_id"):
             return f"Natural business identifier referencing the parent {name_lower.replace('_id', '')} entity."
         if any(k in name_lower for k in ["amount", "usd", "price", "cost", "discount", "tax", "fee"]):
-            return "Monetary financial metric formatted in USD with exact 2-decimal precision."
+            return "Monetary financial metric formatted with exact 2-decimal precision."
         if any(k in name_lower for k in ["qty", "quantity", "count", "days", "hours"]):
             return "Discrete additive integer metric measuring count or elapsed duration."
         if any(k in name_lower for k in ["date", "timestamp", "time", "_at"]):
@@ -40,7 +50,10 @@ class STTMGenerator:
     @classmethod
     def derive_sql_transformation(cls, col_name: str, col_type: str, is_pk: bool, table_type: str, domain: str) -> str:
         name_lower = col_name.lower()
+        type_upper = col_type.upper()
         
+        if type_upper in ["JSONB", "VARIANT", "RECORD"]:
+            return f"CAST({col_name} AS JSONB)"
         if name_lower.endswith("_sk"):
             natural_prefix = name_lower.replace("_sk", "_id")
             return f"MD5(CONCAT({natural_prefix}, '-', CAST(updated_at AS VARCHAR)))"
@@ -54,119 +67,176 @@ class STTMGenerator:
             return f"CAST({col_name} AS {col_type})"
         if name_lower.endswith("_id"):
             return f"TRIM(UPPER({col_name}))"
-        if any(k in name_lower for k in ["amount", "usd", "price", "cost", "tax"]):
+        if name_lower == "currency_code":
+            return f"TRIM(UPPER(COALESCE({col_name}, 'USD')))"
+        if name_lower.startswith("exchange_rate_to_"):
+            return f"COALESCE(CAST({col_name} AS DECIMAL(12,6)), 1.000000)"
+        if any(k in name_lower for k in ["amount", "usd", "price", "cost", "tax", "_local"]):
             return f"CAST({col_name} AS DECIMAL(14,2))"
         if "discount" in name_lower:
             return "CAST(ROUND(order_discount * (gross_amount / order_subtotal), 2) AS DECIMAL(14,2))"
-        if name_lower == "net_amount_usd":
-            return "CAST(gross_amount_usd - allocated_discount_usd AS DECIMAL(14,2))"
-        if any(k in name_lower for k in ["qty", "quantity", "count"]):
-            return f"CAST({col_name} AS INT)"
+        if any(k in name_lower for k in ["qty", "quantity", "count", "days"]):
+            return f"COALESCE(CAST({col_name} AS INT), 0)"
         if any(k in name_lower for k in ["date", "timestamp", "_at"]):
-            return f"CAST({col_name} AS {col_type})"
-        if any(k in name_lower for k in ["name", "title", "city", "state"]):
-            return f"TRIM({col_name})"
-        if any(k in name_lower for k in ["email"]):
-            return f"LOWER(TRIM({col_name}))"
+            return f"CAST({col_name} AS TIMESTAMPTZ)"
+        if any(k in name_lower for k in ["tier", "status", "type"]):
+            return f"TRIM(UPPER({col_name}))"
             
-        return f"CAST({col_name} AS {col_type})"
+        return f"TRIM({col_name})"
 
     @classmethod
-    def generate_table_sttm(cls, domain: str, table_spec: Dict[str, Any]) -> str:
-        table_name = table_spec["name"]
-        table_type = table_spec.get("type", "DIMENSION").upper()
-        primary_key = table_spec.get("primary_key", "id")
-        columns = table_spec.get("columns", [])
+    def generate_drill_across_cte(
+        cls,
+        fact1_name: str,
+        fact1_metric: str,
+        fact2_name: str,
+        fact2_metric: str,
+        conformed_dim_keys: List[str]
+    ) -> str:
+        """
+        Generates standard Kimball Drill-Across SQL CTE for multi-fact comparison (e.g. Budget vs Actuals).
+        Pre-aggregates each fact to the common conformed dimension grain before joining,
+        completely preventing the Chasm Trap / Cartesian row multiplication.
+        """
+        keys_str = ", ".join(conformed_dim_keys)
+        f1_select_keys = ", ".join([f"COALESCE(f1.{k}, f2.{k}) AS {k}" for k in conformed_dim_keys])
+        join_conditions = " AND ".join([f"f1.{k} = f2.{k}" for k in conformed_dim_keys])
         
-        # 1. Section 1: Short Description
-        if table_type == "FACT":
-            description = (
-                f"Atomic business event fact table recording numeric metrics, timestamps, and foreign key references for {domain} operations. "
-                f"**Grain:** One row per individual transaction or line item."
-            )
-        else:
-            description = (
-                f"Conformed {domain} dimensional entity providing standardized descriptive context, hierarchy filtering, and drill-across joins. "
-                f"**Grain:** One row per unique entity or historical SCD2 profile version."
-            )
+        return f"""-- ====================================================================
+-- KIMBALL DRILL-ACROSS BUS QUERY: {fact1_name.upper()} VS {fact2_name.upper()}
+-- Prevents Chasm Trap by pre-aggregating each fact to conformed grain
+-- ====================================================================
+WITH {fact1_name}_agg AS (
+    SELECT 
+        {keys_str},
+        SUM({fact1_metric}) AS total_{fact1_metric}
+    FROM gold.{fact1_name}
+    GROUP BY {keys_str}
+),
+{fact2_name}_agg AS (
+    SELECT 
+        {keys_str},
+        SUM({fact2_metric}) AS total_{fact2_metric}
+    FROM gold.{fact2_name}
+    GROUP BY {keys_str}
+)
+SELECT 
+    {f1_select_keys},
+    COALESCE(f1.total_{fact1_metric}, 0.00) AS total_{fact1_metric},
+    COALESCE(f2.total_{fact2_metric}, 0.00) AS total_{fact2_metric},
+    (COALESCE(f1.total_{fact1_metric}, 0.00) - COALESCE(f2.total_{fact2_metric}, 0.00)) AS variance_metric
+FROM {fact1_name}_agg f1
+FULL OUTER JOIN {fact2_name}_agg f2
+    ON {join_conditions};"""
+
+    @classmethod
+    def generate_table_sttm(
+        cls, 
+        domain: str, 
+        target_table: Dict[str, Any], 
+        source_tables: Optional[List[Dict[str, Any]]] = None,
+        rules: Optional[List[Dict[str, Any]]] = None
+    ) -> str:
+        table_name = target_table["name"]
+        table_type = target_table.get("type", "TABLE")
+        primary_key = target_table.get("primary_key", "id")
+        columns = target_table.get("columns", [])
+        
+        # 1. Short Description
+        desc = target_table.get("description", "")
+        if not desc:
+            if table_type == "FACT":
+                desc = f"Core transactional fact table recording {domain} business activity at atomic grain."
+            elif table_type == "DIMENSION":
+                desc = f"Conformed reference dimension providing business context, filtering, and grouping attributes for {domain} entities."
+            elif table_type == "BRIDGE":
+                desc = f"Kimball multi-valued bridge table decoupling parent-child or many-to-many associations for {domain} entities."
+            else:
+                desc = f"Standard relational entity table storing {domain} records."
+                
+        # 2. Source Tables
+        source_names = [s.get("table_name", s.get("source_file", "raw_source")) for s in (source_tables or [])]
+        if not source_names:
+            source_names = [f"bronze.raw_{domain}_events", f"silver.stg_{domain}_clean"]
             
-        # 2. Section 2: Source Tables
-        source_tables = [
-            f"`bronze.raw_{domain}_{table_name.replace('dim_', '').replace('fact_', '').replace('_scd2', '')}`",
-            f"`silver.stg_{domain}_{table_name.replace('dim_', '').replace('fact_', '').replace('_scd2', '')}`"
-        ]
+        sources_md = "\n".join([f"- `{src}`" for src in source_names])
         
-        # 3. Section 3: Destination Table
-        dest_table = f"`gold.{table_name}`"
+        # 3. Destination Table
+        dest_md = f"- **Table Name**: `{table_name}`\n- **Type**: `{table_type}`\n- **Primary Key**: `{primary_key}`"
         
-        # 4. Section 4: Raw SQL
-        raw_sql_lines = []
-        raw_sql_lines.append("WITH stg_source AS (")
-        raw_sql_lines.append(f"    SELECT * FROM silver.stg_{domain}_{table_name.replace('dim_', '').replace('fact_', '').replace('_scd2', '')}")
-        raw_sql_lines.append(")")
-        raw_sql_lines.append("SELECT")
-        for i, col in enumerate(columns):
-            c_name = col["name"]
-            c_type = col.get("type", "VARCHAR(255)")
-            is_pk = (c_name == primary_key)
-            sql_expr = cls.derive_sql_transformation(c_name, c_type, is_pk, table_type, domain)
-            comma = "," if i < len(columns) - 1 else ""
-            raw_sql_lines.append(f"    {sql_expr} AS {c_name}{comma}")
-        raw_sql_lines.append("FROM stg_source;")
-        raw_sql = "\n".join(raw_sql_lines)
+        # 4. Raw SQL (CTE)
+        col_selects = []
+        for col in columns:
+            col_name = col["name"]
+            col_type = col.get("type", "VARCHAR(255)")
+            is_pk = (col_name == primary_key)
+            trans = cls.derive_sql_transformation(col_name, col_type, is_pk, table_type, domain)
+            col_selects.append(f"    {trans:<70} AS {col_name}")
+            
+        select_clause = ",\n".join(col_selects)
+        from_table = source_names[0] if source_names else f"bronze.raw_{domain}_source"
         
-        # 5. Section 5: Column Mapping & Business Logic Matrix
+        raw_sql = f"""WITH source_clean AS (
+    SELECT *
+    FROM {from_table}
+    WHERE is_valid = TRUE
+)
+SELECT
+{select_clause}
+FROM source_clean;"""
+
+        # 5. Column Mapping Matrix
         matrix_rows = []
         for col in columns:
-            c_name = col["name"]
-            c_type = col.get("type", "VARCHAR(255)")
-            nullable_str = "✔️ YES" if col.get("nullable", True) else "❌ NO"
-            is_pk = (c_name == primary_key)
-            plain_desc = cls.derive_plain_english_description(c_name, c_type, is_pk, table_type)
-            sql_expr = cls.derive_sql_transformation(c_name, c_type, is_pk, table_type, domain)
-            matrix_rows.append(f"| `{c_name}` | `{c_type}` | {nullable_str} | {plain_desc} | `{sql_expr}` |")
+            col_name = col["name"]
+            col_type = col.get("type", "VARCHAR(255)")
+            nullable = "YES" if col.get("nullable", True) else "❌ NO"
+            is_pk = (col_name == primary_key)
+            plain_desc = cls.derive_plain_english_description(col_name, col_type, is_pk, table_type)
+            sql_trans = cls.derive_sql_transformation(col_name, col_type, is_pk, table_type, domain)
             
-        col_matrix = "\n".join(matrix_rows)
-        
-        source_tables_md = "\n".join(f"* {s}" for s in source_tables)
-        
-        # Assemble 5-Section Markdown
-        table_md = (
-            f"## 🏛️ `{table_name}`\n\n"
-            f"### 1. Short Description\n"
-            f"{description}\n\n"
-            f"### 2. Source Tables\n"
-            f"{source_tables_md}\n\n"
-            f"### 3. Destination Table\n"
-            f"* **Target Table:** {dest_table}\n"
-            f"* **Target Layer:** Gold Production Dimensional Mart\n"
-            f"* **Primary Key:** `{primary_key}`\n\n"
-            f"### 4. Raw SQL\n"
-            f"```sql\n"
-            f"{raw_sql}\n"
-            f"```\n\n"
-            f"### 5. Column Mapping & Business Logic Matrix\n\n"
-            f"| Column Name | Data Type | Nullable? | Plain-English Description | SQL Expression / Transformation Logic |\n"
-            f"| :--- | :--- | :---: | :--- | :--- |\n"
-            f"{col_matrix}\n"
+            # Escape pipes for markdown table
+            plain_desc = plain_desc.replace("|", "/")
+            sql_trans = sql_trans.replace("|", "/")
+            
+            matrix_rows.append(f"| `{col_name}` | `{col_type}` | {nullable} | {plain_desc} | `{sql_trans}` |")
+            
+        matrix_table = (
+            "| Column Name | Data Type | Nullable? | Plain-English Description | SQL Expression / Transformation Logic |\n"
+            "| :--- | :--- | :---: | :--- | :--- |\n" +
+            "\n".join(matrix_rows)
         )
-        return table_md
+        
+        return f"""## 🏛️ `{table_name}`
+
+### 1. Short Description
+{desc}
+
+### 2. Source Tables
+{sources_md}
+
+### 3. Destination Table
+{dest_md}
+
+### 4. Raw SQL (Production Transformation CTE)
+```sql
+{raw_sql}
+```
+
+### 5. Column Mapping & Business Logic Matrix
+{matrix_table}
+"""
 
     @classmethod
     def generate_sttm_document(
-        cls,
-        domain: str,
-        target_schema: Dict[str, Any],
+        cls, 
+        domain: str, 
+        target_schema: Dict[str, Any], 
         source_tables: Optional[List[Dict[str, Any]]] = None,
         rules: Optional[List[Dict[str, Any]]] = None
     ) -> str:
         lines = [
-            f"# 🗺️ Source-to-Target Mapping (STTM) Specification",
-            f"**Domain:** `{domain}`  ",
-            f"**Governance Standard:** OpenDataContract Standard (ODCS) v3.0.0  ",
-            f"**Compiled By:** Autonomous Data Model Factory  ",
-            f"",
-            f"---",
+            f"# 🗺️ Source-to-Target Mapping (STTM) Specification: `{domain.upper()}`",
             f"",
             f"## 📋 Overview & Architectural Invariants",
             f"This document provides the standardized, 5-section transformation and lineage specification for the `{domain}` domain.",
@@ -178,7 +248,7 @@ class STTMGenerator:
         
         tables = target_schema.get("tables", [])
         for t in tables:
-            lines.append(cls.generate_table_sttm(domain, t))
+            lines.append(cls.generate_table_sttm(domain, t, source_tables, rules))
             lines.append("\n---\n")
             
         return "\n".join(lines)
