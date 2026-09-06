@@ -2,7 +2,7 @@ from typing import Dict, Any, List
 import os
 from src.orchestration.spawner import SubagentSpawner
 from src.orchestration.reviewer_council import ReviewerCouncil
-from src.intake_engine import IntakeEngine
+from src.intake_engine import IntakeEngine, VectorConflictDetector
 from src.ddl_generator import ANSISQLGenerator
 from src.folder_scanner import FolderSchemaScanner
 from src.erd_generator import VisualMermaidERDGenerator
@@ -31,6 +31,27 @@ class CaptainOrchestrator:
         narrative = user_request.get("narrative", "")
         business_answers = user_request.get("business_answers", [])
         explicit_params = user_request.get("usage_params")
+        rules = user_request.get("rules", [])
+        baseline_vectors = user_request.get("baseline_vectors")
+        architectural_choice = user_request.get("architectural_choice")
+        
+        # Step 0: Pre-Flight Vector Conflict Guardrail (Workflow 2)
+        if rules and baseline_vectors:
+            conflict_res = VectorConflictDetector.detect_conflicts(rules, baseline_vectors)
+            if conflict_res and not architectural_choice:
+                self.state = "TRIAGE_AWAITING_CONFIRMATION"
+                return {
+                    "status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+                    "state": self.state,
+                    "domain": domain,
+                    "conflict_count": conflict_res["conflict_count"],
+                    "primary_conflict": conflict_res["primary_conflict"],
+                    "alert": conflict_res["alert"],
+                    "options": conflict_res["options"],
+                    "message": "Execution halted: A newly submitted business rule conflicts with a baseline vector. User confirmation required.",
+                    "spawner_log_count": len(self.spawner.message_log)
+                }
+
         
         # Step 1: Phase 0 Intake Squad Dispatch
         self.state = "TRIAGE"
@@ -124,6 +145,101 @@ class CaptainOrchestrator:
             ],
             "temporal_strategy": architecture_decision.get("temporal", "SCD2")
         })
+
+        # Handle Architectural Choice Resolution (Additive vs Refactor)
+        resolution_applied = None
+        migration_artifacts = {}
+        if architectural_choice == "ADD_COMPANION_MART" and rules and baseline_vectors:
+            conflict_res = VectorConflictDetector.detect_conflicts(rules, baseline_vectors)
+            if conflict_res:
+                primary = conflict_res["primary_conflict"]
+                violated = primary["vector_violated"]
+                resolution_applied = "ENTERPRISE_BUS_ADDITIVE_EXPANSION"
+                
+                # Sprout appropriate companion table
+                if violated == "entity_grain":
+                    schema_spec["tables"].append({
+                        "name": f"fact_{domain}_orders_summary",
+                        "type": "FACT",
+                        "description": "Companion Order Header Fact Mart sharing conformed customer dimension",
+                        "columns": [
+                            {"name": "order_id", "type": "BIGINT", "nullable": False},
+                            {"name": "customer_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "order_total_usd", "type": "DECIMAL(14,2)", "nullable": False},
+                            {"name": "shipping_fee_usd", "type": "DECIMAL(14,2)", "nullable": False},
+                            {"name": "order_tax_usd", "type": "DECIMAL(14,2)", "nullable": False}
+                        ],
+                        "primary_key": "order_id"
+                    })
+                elif violated == "relationship_multiplicity":
+                    schema_spec["tables"].append({
+                        "name": f"bridge_{domain}_policy_drivers",
+                        "type": "BRIDGE",
+                        "description": "Kimball Multi-Valued Bridge Table decoupling co-drivers",
+                        "columns": [
+                            {"name": "policy_id", "type": "BIGINT", "nullable": False},
+                            {"name": "driver_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "allocation_pct", "type": "DECIMAL(5,2)", "nullable": False, "default": "100.00"}
+                        ],
+                        "primary_key": "policy_id, driver_sk"
+                    })
+                elif violated == "temporal_policy":
+                    schema_spec["tables"].append({
+                        "name": f"dim_{domain}_customer_history_outrigger",
+                        "type": "DIMENSION",
+                        "description": "SCD2 Historical Time-Travel Outrigger with '9999-12-31 UTC' sentinels",
+                        "columns": [
+                            {"name": "customer_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "credit_tier", "type": "VARCHAR(32)", "nullable": False},
+                            {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "default": "'9999-12-31 UTC'"},
+                            {"name": "is_current", "type": "BOOLEAN", "nullable": False, "default": "TRUE"}
+                        ],
+                        "primary_key": "customer_sk"
+                    })
+        elif architectural_choice == "FULL_REFACTOR" and rules and baseline_vectors:
+            resolution_applied = "FULL_MODEL_REFACTOR_MIGRATION"
+            # Generate Phased Migration Safeguards: Backfill SQL & Downstream Impact Report
+            migrations_dir = os.path.join(self.output_dir, "migrations")
+            os.makedirs(migrations_dir, exist_ok=True)
+            
+            backfill_sql_path = os.path.join(migrations_dir, "backfill_migration.sql")
+            backfill_sql = f"""-- ====================================================================
+-- PHASED MIGRATION BACKFILL SCRIPT
+-- Target Domain: {domain} | Paradigm: FULL_REFACTOR
+-- ====================================================================
+INSERT INTO gold.fact_{domain}_orders (order_id, customer_sk, total_amount_usd)
+SELECT order_id, customer_sk, total_amount_usd
+FROM bronze.legacy_raw_{domain}_orders
+ON CONFLICT (order_id) DO NOTHING;
+"""
+            with open(backfill_sql_path, "w", encoding="utf-8") as bf:
+                bf.write(backfill_sql)
+                
+            impact_md_path = os.path.join(migrations_dir, "downstream_impact_report.md")
+            impact_md = f"""# Downstream Impact Report: Full Refactor of {domain}
+
+> [!WARNING]
+> This full model refactor replaces existing table schemas. The following downstream dashboards and ETL pipelines will be impacted:
+
+### Impacted Downstream Dashboards & Reports:
+1. `BI/Executive_Revenue_Summary.dashboard`: Broken join on legacy order grain.
+2. `Finance/Monthly_Reconciliation_Report`: Requires updating column mappings to new target DDL.
+3. `dbt/models/marts/fct_{domain}.sql`: Model query must be updated to reference refactored primary keys.
+
+### Recommended Migration Action:
+- Run `{backfill_sql_path}` to backfill historical records.
+- Notify BI and analytics teams to update downstream Looker/Tableau data models prior to cutover.
+"""
+            with open(impact_md_path, "w", encoding="utf-8") as imf:
+                imf.write(impact_md)
+                
+            migration_artifacts = {
+                "backfill_sql_path": backfill_sql_path,
+                "downstream_impact_report_path": impact_md_path
+            }
+
         
         # Step 4: Dispatch Parallel 4-Risk Reviewers
         self.state = "REVIEW"
@@ -214,5 +330,7 @@ class CaptainOrchestrator:
             "medallion_pipeline": medallion_pipeline,
             "exported_pipeline_files": exported_pipeline_files,
             "scanned_source_tables": len(scanned_tables),
+            "resolution_applied": resolution_applied,
+            "migration_artifacts": migration_artifacts,
             "spawner_log_count": len(self.spawner.message_log)
         }

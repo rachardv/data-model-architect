@@ -274,6 +274,150 @@ class AdaptiveBusinessInterviewer:
         ]
 
 
+
+class VectorConflictDetector:
+    """
+    Hybrid Deterministic Engine that audits newly submitted business rules against
+    the 5 baseline architectural vectors. Detects vector breaks and generates
+    plain-English impact alerts presenting Additive Expansion vs Full Refactor.
+    """
+    
+    @classmethod
+    def detect_conflicts(
+        cls, 
+        rules: List[Dict[str, Any]], 
+        baseline_vectors: Dict[str, Any],
+        existing_tables: Optional[List[Dict[str, Any]]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Audits rules for conflicts against baseline vectors:
+        - entity_grain (e.g. order-header metrics on line-item grain)
+        - relationship_multiplicity (e.g. multi-driver on 1:1 policy)
+        - temporal_policy (e.g. SCD2 point-in-time audit on SCD1 table)
+        - workload_intent (e.g. multi-year analytical warehouse queries on live OLTP table)
+        - lifecycle_funnel (e.g. multi-stage turnaround tracking on single-event transaction fact)
+        """
+        conflicts = []
+        
+        for rule in rules:
+            desc = rule.get("description", "").lower()
+            definition = rule.get("definition", "").lower()
+            combined = f"{desc} {definition}"
+            
+            # 1. Grain Conflict: Header metrics on Line-Item Grain
+            current_grain = str(baseline_vectors.get("entity_grain", "LINE_ITEM")).upper()
+            if any(g in current_grain for g in ["LINE_ITEM", "ATOMIC_LINE_ITEM", "ITEM_LINE", "LINE"]):
+                header_indicators = ["shipping fee", "shipping amount", "total order discount", "order total", "cart total", "order tax", "basket level"]
+                if any(ind in combined for ind in header_indicators):
+                    conflicts.append({
+                        "rule": rule.get("description"),
+                        "vector_violated": "entity_grain",
+                        "current_state": "Atomic Line-Item Grain (1 row per product sold)",
+                        "rule_demands": "Order-Level Header Summary Metric",
+                        "business_risk": "Risk of severe revenue and cost distortion (multiplying an order-level fee across multiple line-items inflates financial metrics)",
+                        "additive_remedy": "Sprout an Order-Level Header Fact Mart (fact_orders_summary) sharing conformed dimensions",
+                        "refactor_remedy": "Collapse the line-item fact into an order header fact table (permanently destroys product-level SKU analytics)"
+                    })
+                    
+            # 2. Multiplicity Conflict: Multi-party / Co-ownership on 1:1 Schema
+            current_multiplicity = str(baseline_vectors.get("relationship_multiplicity", "ONE_TO_ONE")).upper()
+            if any(m in current_multiplicity for m in ["ONE_TO_ONE", "1:1", "ONE_TO_MANY"]):
+                multi_indicators = ["multiple drivers", "co-driver", "co-signers", "joint owners", "shared account", "multiple owners", "up to 5 drivers", "co-borrower"]
+                if any(ind in combined for ind in multi_indicators):
+                    conflicts.append({
+                        "rule": rule.get("description"),
+                        "vector_violated": "relationship_multiplicity",
+                        "current_state": "Standard 1:1 / 1:N Ownership (1 primary owner per account/policy)",
+                        "rule_demands": "Multi-Valued Co-Ownership (M:N)",
+                        "business_risk": "Risk of duplicate rows and false double-counting of policy premiums or account balances",
+                        "additive_remedy": "Sprout a Kimball Multi-Valued Bridge Table (e.g. bridge_policy_drivers) to decouple co-owners without modifying existing foreign keys",
+                        "refactor_remedy": "Deprecate existing foreign key and rebuild the entity graph with array columns or a new junction model"
+                    })
+                    
+            # 3. Temporal Policy Conflict: Point-in-time Audit on SCD1
+            current_temporal = str(baseline_vectors.get("temporal_policy", "SCD1_OVERWRITE")).upper()
+            if any(t in current_temporal for t in ["SCD1", "SCD1_OVERWRITE", "OVERWRITE"]):
+                temporal_indicators = ["preserve history", "point-in-time", "historical audit", "scd type 2", "scd2", "effective date", "never overwrite", "time-travel", "historical price at time"]
+                if any(ind in combined for ind in temporal_indicators):
+                    conflicts.append({
+                        "rule": rule.get("description"),
+                        "vector_violated": "temporal_policy",
+                        "current_state": "SCD Type 1 (In-place overwrite of past records)",
+                        "rule_demands": "SCD Type 2 Historical Time-Travel Tracking",
+                        "business_risk": "Risk of non-compliance with audit regulations (SCD1 permanently destroys historical profile state)",
+                        "additive_remedy": "Sprout an SCD2 Historical Outrigger or Dimension alongside the base table with '9999-12-31 UTC' sentinels",
+                        "refactor_remedy": "Convert the dimension to full SCD2, deprecate natural keys, and backfill historical surrogate keys"
+                    })
+                    
+            # 4. Workload Intent Conflict: Analytical Warehouse on Live OLTP
+            current_workload = str(baseline_vectors.get("workload_intent", "OLAP")).upper()
+            if any(w in current_workload for w in ["OLTP", "LIVE_APP", "TRANSACTIONAL"]):
+                olap_indicators = ["10-year trend", "multi-year analytical", "data warehouse", "billion row", "olap cube", "executive bi", "long-term history"]
+                if any(ind in combined for ind in olap_indicators):
+                    conflicts.append({
+                        "rule": rule.get("description"),
+                        "vector_violated": "workload_intent",
+                        "current_state": "Live Sub-Second Application (OLTP 3NF)",
+                        "rule_demands": "Analytical Warehouse Reporting (OLAP)",
+                        "business_risk": "Risk of live production application slowdowns or locking crashes if heavy analytical aggregation runs on operational tables",
+                        "additive_remedy": "Decouple into a Medallion Gold Dimensional Mart fed asynchronously via CDC from the OLTP source",
+                        "refactor_remedy": "Migrate the database to an OLAP columnar engine (requires refactoring all application write queries)"
+                    })
+                    
+            # 5. Lifecycle Funnel Conflict: Multi-stage tracking on single-event transaction fact
+            current_lifecycle = str(baseline_vectors.get("lifecycle_funnel", "SINGLE_EVENT")).upper()
+            if any(l in current_lifecycle for l in ["SINGLE_EVENT", "TRANSACTION"]):
+                lifecycle_indicators = ["multi-stage turnaround", "stage tracking", "placed to delivered", "lead to closed", "applied to funded", "milestones duration", "turnaround time"]
+                if any(ind in combined for ind in lifecycle_indicators):
+                    conflicts.append({
+                        "rule": rule.get("description"),
+                        "vector_violated": "lifecycle_funnel",
+                        "current_state": "Single-Event Transaction Fact (1 row per checkout/event)",
+                        "rule_demands": "Multi-Stage Accumulating Snapshot Fact",
+                        "business_risk": "Risk of data bloat and inability to compute milestone lag durations without massive self-joins",
+                        "additive_remedy": "Sprout an Accumulating Snapshot Fact Mart (fact_lifecycle_milestones) with milestone date foreign keys",
+                        "refactor_remedy": "Rebuild the transaction fact table into an accumulating milestone model"
+                    })
+
+        if not conflicts:
+            return None
+            
+        primary = conflicts[0]
+        plain_alert = (
+            f"🚨 ARCHITECTURAL CONFLICT DETECTED ON VECTOR: {primary['vector_violated'].upper()}\n\n"
+            f"• Conflicting Business Rule: \"{primary['rule']}\"\n"
+            f"• Current Model Baseline: {primary['current_state']}\n"
+            f"• Rule Requirement: {primary['rule_demands']}\n"
+            f"• Specific Business Risk: {primary['business_risk']}\n\n"
+            f"Please choose how you would like the model to resolve this conflict:\n"
+            f"1. [RECOMMENDED] ADD_COMPANION_MART: Add as an additional requirement on top (Enterprise Bus Pattern).\n"
+            f"   Pros: Zero downtime, existing dashboards continue running without disruption.\n"
+            f"   Action: {primary['additive_remedy']}.\n\n"
+            f"2. FULL_REFACTOR: Refactor the whole model (Destructive Replacement).\n"
+            f"   Pros: Unified single model; Cons: Breaks existing downstream dashboards and requires a historical backfill.\n"
+            f"   Action: {primary['refactor_remedy']}."
+        )
+        
+        return {
+            "conflict_count": len(conflicts),
+            "conflicts": conflicts,
+            "primary_conflict": primary,
+            "alert": plain_alert,
+            "options": [
+                {
+                    "id": "ADD_COMPANION_MART",
+                    "title": "(Recommended) Add as an additional requirement on top (Enterprise Bus Pattern)",
+                    "description": primary["additive_remedy"]
+                },
+                {
+                    "id": "FULL_REFACTOR",
+                    "title": "Refactor the whole model (Replace existing architecture)",
+                    "description": primary["refactor_remedy"]
+                }
+            ]
+        }
+
+
 class IntakeEngine:
     """
     Master Phase 0 Intake Engine enforcing strict 100% information completeness
@@ -281,7 +425,27 @@ class IntakeEngine:
     """
     
     @classmethod
-    def process_intake(cls, narrative: str, business_answers: Optional[List[str]] = None) -> Dict[str, Any]:
+    def process_intake(
+        cls, 
+        narrative: str, 
+        business_answers: Optional[List[str]] = None,
+        rules: Optional[List[Dict[str, Any]]] = None,
+        baseline_vectors: Optional[Dict[str, Any]] = None,
+        architectural_choice: Optional[str] = None
+    ) -> Dict[str, Any]:
+        # 0. Pre-Flight Vector Conflict Detection (Workflow 2 Guardrail)
+        if rules and baseline_vectors:
+            conflict_res = VectorConflictDetector.detect_conflicts(rules, baseline_vectors)
+            if conflict_res and not architectural_choice:
+                return {
+                    "status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+                    "completeness_score": 100.0,
+                    "conflict_details": conflict_res,
+                    "alert": conflict_res["alert"],
+                    "options": conflict_res["options"],
+                    "message": "Execution halted: A newly submitted business rule conflicts with a baseline vector. User confirmation required."
+                }
+                
         # 1. Semantic Sanity Check on Base Narrative
         sanity_res = SemanticSanityFilter.validate_narrative(narrative)
         if not sanity_res["valid"]:
