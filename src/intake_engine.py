@@ -192,13 +192,14 @@ class IntakeCompletenessScorer:
 class AdaptiveBusinessInterviewer:
     """
     Dynamically conducts natural, consultative business discovery interviews.
-    Translates technical architecture gaps into 100% natural, human-friendly business questions.
+    Translates technical architecture gaps into 100% natural, human-friendly business questions
+    and explicitly includes bracketed explanations of what technical decision each question determines.
     """
     
     QUESTION_BANK = {
         "workload_intent": {
             "id": "q_workload_intent",
-            "question": "How will your team or end-users primarily interact with this system?",
+            "question": "How will your team or end-users primarily interact with this system? [Determines: Whether to build an Analytical Reporting Warehouse (OLAP), a Live User-Facing App (OLTP), or a Streaming Pipeline]",
             "options": [
                 "(Recommended) We want to build executive dashboards, BI reports, and analyze business trends over time.",
                 "This directly powers a live customer-facing app, website, point-of-care EHR, or checkout screen where instant sub-second updates are critical.",
@@ -207,7 +208,7 @@ class AdaptiveBusinessInterviewer:
         },
         "entity_grain": {
             "id": "q_entity_grain",
-            "question": "What does your company primarily sell or provide, and what is the primary activity you want to measure?",
+            "question": "What does your company primarily sell or provide, and what is the primary activity you want to measure? [Determines: The atomic grain of your primary Fact Table and the core business metrics/KPIs to calculate]",
             "options": [
                 "(Recommended) Detailed product sales & shopping cart line items (e.g. customers buying physical or digital goods).",
                 "Recurring subscription memberships & monthly billing renewals (e.g. SaaS software, gym memberships, subscriptions).",
@@ -217,7 +218,7 @@ class AdaptiveBusinessInterviewer:
         },
         "temporal_policy": {
             "id": "q_temporal_policy",
-            "question": "When a customer, store, or patient updates their profile (like moving to a new address), how should historical reports behave?",
+            "question": "When a customer, store, or patient updates their profile (like moving to a new address), how should historical reports behave? [Determines: Historical time-travel tracking (SCD Type 2 with effective dates) vs simple in-place overwriting (SCD Type 1)]",
             "options": [
                 "(Recommended) Historical reports should preserve their original address and profile at the exact time of each event so past regional sales remain accurate (SCD Type 2).",
                 "Always overwrite past records with their newest address and profile everywhere across the system (SCD Type 1).",
@@ -226,7 +227,7 @@ class AdaptiveBusinessInterviewer:
         },
         "lifecycle_funnel": {
             "id": "q_lifecycle_funnel",
-            "question": "Does this business workflow involve tracking turnaround time across multiple sequential stages?",
+            "question": "Does this business workflow involve tracking turnaround time across multiple sequential stages? [Determines: Accumulating Snapshot Fact Table with milestone date foreign keys vs discrete single-event Transaction Fact Table]",
             "options": [
                 "(Recommended) Yes, multi-stage turnaround tracking (e.g. from Order Placed -> Picked -> Shipped -> Delivered, or Loan Applied -> Approved -> Funded).",
                 "No, single standalone transaction events (e.g. discrete store sales, point-of-sale receipt scans).",
@@ -235,7 +236,7 @@ class AdaptiveBusinessInterviewer:
         },
         "relationship_multiplicity": {
             "id": "q_relationship_multiplicity",
-            "question": "In your day-to-day operations, do multiple people share accounts, or can an order/case involve multiple primary owners?",
+            "question": "In your day-to-day operations, do multiple people share accounts, or can an order/case involve multiple primary owners? [Determines: Standard 1:N foreign keys vs a multi-valued Bridge Table to prevent accidental revenue double-counting]",
             "options": [
                 "(Recommended) Standard one-to-one ownership (e.g. 1 customer per order, 1 primary owner per account).",
                 "Shared co-ownership (e.g. joint bank accounts with multiple co-signers, patient cases with multiple attending doctors)."
@@ -246,6 +247,31 @@ class AdaptiveBusinessInterviewer:
     @classmethod
     def get_questions_for_missing_vectors(cls, missing_vectors: List[str]) -> List[Dict[str, Any]]:
         return [cls.QUESTION_BANK[vec] for vec in missing_vectors if vec in cls.QUESTION_BANK]
+        
+    @classmethod
+    def generate_delta_entity_questions(cls, new_entity_name: str) -> List[Dict[str, Any]]:
+        """
+        Dynamically generates Kimball-compliant discovery questions with bracketed explanations
+        whenever an unreferenced entity is introduced in Workflow 2.
+        """
+        return [
+            {
+                "id": f"q_{new_entity_name}_cardinality",
+                "question": f"In your daily operations, can a single transaction/order be split across multiple {new_entity_name}s, or is there always strictly 1 primary {new_entity_name}? [Determines: Direct Foreign Key vs Kimball Multi-Valued Bridge Table for {new_entity_name}]",
+                "options": [
+                    f"(Recommended) Standard 1:1 {new_entity_name}: Exactly 1 {new_entity_name} per record.",
+                    f"Multi-Valued Split: Multiple {new_entity_name}s can be attached to one record."
+                ]
+            },
+            {
+                "id": f"q_{new_entity_name}_scd",
+                "question": f"When a {new_entity_name}'s profile, tier, or address updates, how should historical reports behave? [Determines: Slowly Changing Dimension (SCD) historical time-travel policy for {new_entity_name}]",
+                "options": [
+                    f"(Recommended) Preserve historical {new_entity_name} profile at the time of each transaction (SCD Type 2).",
+                    f"Always overwrite past records with the newest {new_entity_name} profile everywhere (SCD Type 1)."
+                ]
+            }
+        ]
 
 
 class IntakeEngine:
