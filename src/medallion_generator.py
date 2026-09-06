@@ -241,7 +241,8 @@ class MedallionPipelineGenerator:
         cls,
         domain: str,
         target_schema: Dict[str, Any],
-        merge_strategy: str = "ANSI_MERGE"
+        merge_strategy: str = "ANSI_MERGE",
+        use_point_in_time_join: bool = False
     ) -> Dict[str, str]:
         """
         Generates Gold Dimensional Marts & Transformation SQL:
@@ -333,8 +334,15 @@ class MedallionPipelineGenerator:
                         
                 lines.append(",\n".join(sel_items))
                 lines.append(f"FROM {stg_source} o")
-                lines.append(f"LEFT JOIN v_current_dim_{domain}_customer_core c")
-                lines.append(f"  ON o.customer_id = c.customer_id")
+                if use_point_in_time_join:
+                    lines.append(f"-- Point-in-Time Range Join for Late-Arriving Fact Handling")
+                    lines.append(f"LEFT JOIN dim_{domain}_customer_core c")
+                    lines.append(f"  ON o.customer_id = c.customer_id")
+                    lines.append(f" AND o.order_timestamp >= c.scd_valid_from")
+                    lines.append(f" AND o.order_timestamp < c.scd_valid_to")
+                else:
+                    lines.append(f"LEFT JOIN v_current_dim_{domain}_customer_core c")
+                    lines.append(f"  ON o.customer_id = c.customer_id")
                 lines.append(f"WHERE NOT EXISTS (")
                 lines.append(f"    SELECT 1 FROM {tname} existing WHERE existing.{pk} = o.{pk}")
                 lines.append(f");")

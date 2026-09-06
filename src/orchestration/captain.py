@@ -116,35 +116,77 @@ class CaptainOrchestrator:
         })
         
         # Build Schema Specification
-        schema_spec = user_request.get("schema_spec", {
-            "tables": [
-                {
-                    "name": f"dim_{domain}_customer_core",
-                    "type": "DIMENSION",
-                    "is_conformed": True,
-                    "columns": [
-                        {"name": "customer_sk", "type": "BIGINT", "nullable": False, "is_inferred": False},
-                        {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
-                        {"name": "customer_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
-                        {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
-                        {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"}
-                    ],
-                    "primary_key": "customer_sk"
-                },
-                {
-                    "name": f"fact_{domain}_orders",
-                    "type": "FACT",
-                    "columns": [
-                        {"name": "order_id", "type": "BIGINT", "nullable": False, "is_inferred": False},
-                        {"name": "customer_sk", "type": "BIGINT", "nullable": False, "is_inferred": False},
-                        {"name": "total_amount_usd", "type": "DECIMAL(14,2)", "nullable": False, "is_inferred": False},
-                        {"name": "estimated_delivery_days", "type": "INT", "nullable": True, "is_inferred": True}
-                    ],
-                    "primary_key": "order_id"
-                }
-            ],
-            "temporal_strategy": architecture_decision.get("temporal", "SCD2")
-        })
+        if "schema_spec" in user_request:
+            schema_spec = user_request["schema_spec"]
+        elif architecture_decision.get("pattern") == "FACTLESS_FACT_COVERAGE" or user_request.get("is_factless_event"):
+            schema_spec = {
+                "tables": [
+                    {
+                        "name": f"dim_{domain}_attendee",
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "columns": [
+                            {"name": "attendee_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "attendee_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "attendee_name", "type": "VARCHAR(255)", "nullable": False}
+                        ],
+                        "primary_key": "attendee_sk"
+                    },
+                    {
+                        "name": f"dim_{domain}_event",
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "columns": [
+                            {"name": "event_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "event_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "event_title", "type": "VARCHAR(255)", "nullable": False}
+                        ],
+                        "primary_key": "event_sk"
+                    },
+                    {
+                        "name": f"fact_{domain}_attendance_coverage",
+                        "type": "FACTLESS_FACT",
+                        "description": "Factless fact tracking event attendance coverage with zero numeric measures",
+                        "columns": [
+                            {"name": "attendee_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "event_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "date_sk", "type": "INT", "nullable": False}
+                        ],
+                        "primary_key": "attendee_sk, event_sk, date_sk"
+                    }
+                ],
+                "temporal_strategy": "SCD1"
+            }
+        else:
+            schema_spec = {
+                "tables": [
+                    {
+                        "name": f"dim_{domain}_customer_core",
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "columns": [
+                            {"name": "customer_sk", "type": "BIGINT", "nullable": False, "is_inferred": False},
+                            {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                            {"name": "customer_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                            {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
+                            {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"}
+                        ],
+                        "primary_key": "customer_sk"
+                    },
+                    {
+                        "name": f"fact_{domain}_orders",
+                        "type": "FACT",
+                        "columns": [
+                            {"name": "order_id", "type": "BIGINT", "nullable": False, "is_inferred": False},
+                            {"name": "customer_sk", "type": "BIGINT", "nullable": False, "is_inferred": False},
+                            {"name": "total_amount_usd", "type": "DECIMAL(14,2)", "nullable": False, "is_inferred": False},
+                            {"name": "estimated_delivery_days", "type": "INT", "nullable": True, "is_inferred": True}
+                        ],
+                        "primary_key": "order_id"
+                    }
+                ],
+                "temporal_strategy": architecture_decision.get("temporal", "SCD2")
+            }
 
         # Handle Architectural Choice Resolution (Additive vs Refactor)
         resolution_applied = None
@@ -265,8 +307,13 @@ ON CONFLICT (order_id) DO NOTHING;
         # 1. Visual Mermaid ERD
         erd_markdown = VisualMermaidERDGenerator.generate_erd(domain, schema_spec["tables"])
         
-        # 2. ANSI SQL DDL
+        # 2. ANSI SQL DDL & Automated Role-Playing Views
         generated_sql = {}
+        role_playing_views = []
+        for t in schema_spec["tables"]:
+            if t.get("type") in ["FACT", "FACTLESS_FACT"]:
+                rp = ANSISQLGenerator.generate_role_playing_views(t, base_dimension_name=f"dim_{domain}_date")
+                role_playing_views.extend(rp)
         for t in schema_spec["tables"]:
             generated_sql[t["name"]] = ANSISQLGenerator.generate_table_sql(
                 table_name=t["name"],
@@ -332,5 +379,6 @@ ON CONFLICT (order_id) DO NOTHING;
             "scanned_source_tables": len(scanned_tables),
             "resolution_applied": resolution_applied,
             "migration_artifacts": migration_artifacts,
+            "role_playing_views": role_playing_views,
             "spawner_log_count": len(self.spawner.message_log)
         }

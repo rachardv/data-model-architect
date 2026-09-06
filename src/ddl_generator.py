@@ -88,3 +88,29 @@ class ANSISQLGenerator:
             primary_key=f"ancestor_{clean_name}_id, descendant_{clean_name}_id",
             check_constraints=["depth_level >= 0"]
         )
+
+    @staticmethod
+    def generate_role_playing_views(fact_table: Dict[str, Any], base_dimension_name: str = "dim_date") -> List[str]:
+        """
+        Inspects fact table columns for multiple role-playing keys referencing the same parent dimension
+        (e.g., order_date_sk, shipped_date_sk, delivered_date_sk pointing to dim_date).
+        Emits aliased SQL views to eliminate circular join loops in BI tools (Looker, Tableau, PowerBI).
+        """
+        views = []
+        cols = fact_table.get("columns", [])
+        
+        # Check for date roles
+        if "date" in base_dimension_name.lower():
+            date_roles = []
+            for c in cols:
+                cname = c["name"].lower()
+                if ("_date_sk" in cname or "_date_id" in cname or cname.endswith("_date")) and cname not in {"date_sk", "date_id", "calendar_date"}:
+                    role = cname.replace("_sk", "").replace("_id", "")
+                    if role not in date_roles:
+                        date_roles.append(role)
+                        
+            if len(date_roles) >= 2:
+                for role in date_roles:
+                    views.append(f"CREATE OR REPLACE VIEW v_{role} AS SELECT * FROM {base_dimension_name};")
+                    
+        return views

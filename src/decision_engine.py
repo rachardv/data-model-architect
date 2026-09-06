@@ -17,8 +17,18 @@ class DataModelDecisionEngine:
         is_periodic_state_rollup: bool,
         has_high_churn_ml_scores: bool,
         has_recursive_hierarchy: bool = False,
-        is_multi_currency: bool = False
+        is_multi_currency: bool = False,
+        is_factless_event: bool = False
     ) -> Dict[str, Any]:
+        # 0. Factless Fact Table (Event Attendance / Coverage Matrix)
+        if is_factless_event:
+            return {
+                "pattern": "FACTLESS_FACT_COVERAGE",
+                "storage": "Kimball Star Schema",
+                "schema_type": "Factless Event / Coverage Matrix",
+                "temporal": "SCD1_OVERWRITE"
+            }
+            
         # 1. High-Frequency Streaming Telemetry / Market Data
         if is_high_frequency_stream:
             res = {

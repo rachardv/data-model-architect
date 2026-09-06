@@ -85,6 +85,24 @@ class STTMGenerator:
         return f"TRIM({col_name})"
 
     @classmethod
+    def generate_point_in_time_fact_join(
+        cls,
+        fact_alias: str,
+        dim_table_name: str,
+        dim_alias: str,
+        join_key: str,
+        timestamp_col: str = "event_timestamp"
+    ) -> str:
+        """
+        Generates standard Kimball Point-in-Time Range Join for SCD2 historical resolution.
+        Accurately resolves surrogate keys for late-arriving facts.
+        """
+        return f"""LEFT JOIN gold.{dim_table_name} {dim_alias}
+    ON {fact_alias}.{join_key} = {dim_alias}.{join_key}
+   AND {fact_alias}.{timestamp_col} >= {dim_alias}.scd_valid_from
+   AND {fact_alias}.{timestamp_col} < {dim_alias}.scd_valid_to"""
+
+    @classmethod
     def generate_drill_across_cte(
         cls,
         fact1_name: str,
