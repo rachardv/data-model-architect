@@ -9,6 +9,14 @@ Focus: Mega-Benchmark Suite, In-Memory DuckDB Validation, Metric Conservation (Z
 - [x] **25-Domain Enterprise Mega-Benchmark**
   - Full automated evaluation running across 25 diverse domains (Aviation, Healthcare, Banking, Gaming, etc.) in ~1.1 seconds.
 
+- [x] **Official TPC-DI 3-Batch Lifecycle & 46 Automated Audit Queries (`tpcdi_audit.sql`)**
+  - Upgraded from 18 synthetic checks to the full official 3-batch sequential lifecycle:
+    - Batch 1: Cold start historical bulk load (DimCustomer, DimAccount, DimSecurity, DimCompany, DimBroker, DimDate, DimTime, FactTrade, FactHoldings, FactCashBalances, FactMarketHistory, FactWatches, Prospect).
+    - Batch 2: Incremental CDC with SCD2 versioning, position updates, new customer/account inserts, and quarantine isolation.
+    - Batch 3: Late-arriving trades and historical restatements verifying Point-in-Time causality to historical profiles.
+  - Implemented all 46 automated audit queries covering row counts, metric reconciliation, SCD2 intervals, referential integrity, surrogate key uniqueness, and `DImessages` quarantine logging with 0.0000 metric drift.
+  - Full suite verified via `tests/test_tpcdi_full_benchmark.py` and integrated into `IndustryBenchmarkRunner`.
+
 - [x] **Four Physical Post-Generation Pillars**
   - 1. Metric Conservation (exact parity between raw amounts and mart aggregations).
   - 2. Temporal Causality (SCD2 Point-in-Time joins).

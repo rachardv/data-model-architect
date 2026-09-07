@@ -20,11 +20,14 @@ def test_industry_benchmark_suite_execution():
     assert results["tpcds"]["queries_passed"] >= 90
     assert "TPC-DS" in results["tpcds"]["details"]
     
-    # 3. TPC-DI (ETL & Integration - 18 scenarios)
+    # 3. TPC-DI (Official 3-Batch Lifecycle & 46 Audit Queries)
     assert results["tpcdi"]["status"] == "PASS"
     assert results["tpcdi"]["score"] == 25
-    assert results["tpcdi"]["scenarios_executed"] == 18
-    assert results["tpcdi"]["scenarios_passed"] == 18
+    assert results["tpcdi"]["total_audits"] == 46
+    assert results["tpcdi"]["audits_passed"] == 46
+    assert results["tpcdi"]["total_batches"] == 3
+    assert results["tpcdi"]["batches_executed"] == 3
+    assert results["tpcdi"]["metric_drift"] == 0.0
     assert "TPC-DI" in results["tpcdi"]["details"]
     
     # 4. TPC-H (Decision Support Fan-out & Discounts - 22 queries)
