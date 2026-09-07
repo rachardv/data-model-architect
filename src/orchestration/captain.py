@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import os
 from src.orchestration.spawner import SubagentSpawner
 from src.orchestration.reviewer_council import ReviewerCouncil
