@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--folder", type=str, help="Optional upstream folder path containing source schema files")
     parser.add_argument("--answers", nargs="*", help="Optional plain-English answers to business discovery questions")
     parser.add_argument("--medallion", action="store_true", help="Generate full Bronze -> Silver -> Gold Medallion SQL pipeline")
+    parser.add_argument("--dbt", action="store_true", help="Generate full production-ready dbt Core project repository")
     parser.add_argument("--duckdb", action="store_true", help="Execute and verify generated SQL in an in-memory DuckDB instance")
     parser.add_argument("--interactive", action="store_true", help="Run interactive plain-English business intake interview")
     
@@ -60,9 +61,12 @@ def main():
         print(f"Quality Index:      {result['quality_index']}%")
         print(f"Medallion Artifacts: {result['medallion_pipeline']['total_sql_artifacts']} SQL files generated")
         print(f"Exported Pipelines: docs/pipelines/{args.domain}/")
+        if "dbt_project" in result:
+            print(f"dbt Core Models:    {result['dbt_project']['total_models']} models compiled")
+            print(f"Exported dbt Repo:  docs/dbt/{args.domain}/")
         return
         
-    if args.story or args.medallion or args.duckdb:
+    if args.story or args.medallion or args.duckdb or args.dbt:
         payload = {
             "domain": args.domain,
             "branch": "NEW_MODEL",
@@ -73,12 +77,29 @@ def main():
         
         result = captain.execute_workflow(payload)
         print("=== 🏛️ DATA MODEL ARCHITECT DELIVERABLES ===")
-        print(f"Status:             {result['status']}")
+        print(f"Status:             {result.get('status')}")
+        
+        if result.get("status") != "CERTIFIED_PRODUCTION_READY":
+            print(f"Message:            {result.get('message', 'Workflow halted.')}")
+            if "completeness_score" in result:
+                print(f"Completeness Score: {result.get('completeness_score', 0):.0f}%")
+            if "questions" in result and result["questions"]:
+                print("\nPending Discovery Questions:")
+                for i, q in enumerate(result["questions"], 1):
+                    print(f"  Q{i}: {q['question']}")
+            if "conflict_report" in result:
+                conf = result["conflict_report"]
+                print(f"\nArchitecture Conflict Detected: {conf.get('message')}")
+            return
+
         print(f"Architecture:       {result['architecture_pattern']}")
         print(f"Inferred Semantics: {result['inferred_usage_params']}")
         print(f"Quality Index:      {result['quality_index']}%")
         print(f"Medallion Artifacts: {result['medallion_pipeline']['total_sql_artifacts']} SQL files generated")
         print(f"Exported Pipelines: docs/pipelines/{args.domain}/ (01_bronze, 02_silver, 03_gold)")
+        if "dbt_project" in result:
+            print(f"dbt Core Models:    {result['dbt_project']['total_models']} models compiled")
+            print(f"Exported dbt Repo:  docs/dbt/{args.domain}/")
         
         if args.duckdb:
             from src.sql_runner import DuckDBPipelineRunner

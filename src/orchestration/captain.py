@@ -9,6 +9,7 @@ from src.erd_generator import VisualMermaidERDGenerator
 from src.contract_compiler import DataContractCompiler
 from src.medallion_generator import MedallionPipelineGenerator
 from src.sttm_generator import STTMGenerator
+from src.dbt_generator import DBTProjectGenerator
 
 class CaptainOrchestrator:
     """
@@ -360,6 +361,18 @@ ON CONFLICT (order_id) DO NOTHING;
             pipeline=medallion_pipeline
         )
         
+        # 7. Enterprise dbt Core Project Generation & Export
+        dbt_project = DBTProjectGenerator.generate_dbt_project(
+            domain=domain,
+            target_schema=schema_spec,
+            source_tables=scanned_tables
+        )
+        exported_dbt_files = DBTProjectGenerator.export_dbt_project(
+            output_base_dir=self.output_dir,
+            domain=domain,
+            project_data=dbt_project
+        )
+        
         return {
             "status": "CERTIFIED_PRODUCTION_READY",
             "state": self.state,
@@ -380,5 +393,7 @@ ON CONFLICT (order_id) DO NOTHING;
             "resolution_applied": resolution_applied,
             "migration_artifacts": migration_artifacts,
             "role_playing_views": role_playing_views,
+            "dbt_project": dbt_project,
+            "exported_dbt_files": exported_dbt_files,
             "spawner_log_count": len(self.spawner.message_log)
         }
