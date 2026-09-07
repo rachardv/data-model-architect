@@ -34,6 +34,9 @@ This directory tracks bugs, architectural improvements, and planned enhancements
 3. **Comprehensive Model Validation Strategy & Risk Matrix** — See [04_testing_and_benchmarking.md](04_testing_and_benchmarking.md)
    - Profiling 6 key failure modes (Semantic Inversion, Chasm Traps, Temporal Leakage, FK Orphans, Cartesian Traps, Contract Drift).
    - Formal deliverable: `docs/VALIDATION_STRATEGY.md` with integrated DuckDB risk scorecard.
+4. **Multi-Process Bus Matrix Explosion (Global Conformed Dimension Registry)** — See [02_decision_and_classification.md](02_decision_and_classification.md)
+   - Preventing fractured dimensions across multi-department workflows (ordering $\rightarrow$ fulfillment $\rightarrow$ billing $\rightarrow$ refunds).
+   - Enforcing identical surrogate key algorithms and canonical schemas across independent compilation passes.
 
 ---
 
