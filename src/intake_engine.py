@@ -244,8 +244,103 @@ class AdaptiveBusinessInterviewer:
         }
     }
     
+    @staticmethod
+    def _pluralize(word: str) -> str:
+        w = word.strip()
+        if not w:
+            return w
+        parts = w.split()
+        last = parts[-1]
+        if last.endswith("s") or last.endswith("x") or last.endswith("ch") or last.endswith("sh"):
+            pl_last = last + "es"
+        elif last.endswith("y") and len(last) > 1 and last[-2] not in "aeiou":
+            pl_last = last[:-1] + "ies"
+        else:
+            pl_last = last + "s"
+        parts[-1] = pl_last
+        return " ".join(parts)
+
     @classmethod
-    def get_questions_for_missing_vectors(cls, missing_vectors: List[str]) -> List[Dict[str, Any]]:
+    def build_dynamic_question(cls, vector_name: str, domain_roles: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if not domain_roles:
+            return cls.QUESTION_BANK.get(vector_name, {})
+
+        event = domain_roles.get("primary_event", "transaction")
+        events_pl = cls._pluralize(event)
+        actor = domain_roles.get("primary_actor", "user")
+        actors_pl = cls._pluralize(actor)
+        loc = domain_roles.get("resource_location", "location")
+        locs_pl = cls._pluralize(loc)
+        child = domain_roles.get("child_entity", "item / sub-unit")
+        child_pl = cls._pluralize(child)
+        sec_events = domain_roles.get("secondary_events", [])
+
+        if vector_name == "workload_intent":
+            return {
+                "id": "q_workload_intent",
+                "question": f"How will your team or end-users primarily interact with this {event} system? [Determines: Whether to build an Analytical Reporting Warehouse (OLAP), a Live User-Facing App (OLTP), or a Streaming Pipeline]",
+                "options": [
+                    f"(Recommended - OLAP) Analytical reporting & executive dashboards: Analyzing historical trends, {event} availability rates, and performance over time across {locs_pl}.",
+                    f"(OLTP) Live customer-facing application: Directly powering the portal or screen where {actors_pl} search, create, and update {events_pl} with instant sub-second response times.",
+                    f"(Streaming) Real-time event streams: Collecting continuous high-frequency status pings, telemetry, or ticker updates every second."
+                ]
+            }
+
+        elif vector_name == "entity_grain":
+            options = [
+                f"(Recommended - Event Header) One row per {event}: Tracking total counts, status, and utilization by {actor} and {loc}.",
+                f"(Line-Item Detail) One row per {child} inside each {event}: If a single {event} contains multiple distinct components requiring separate breakdown.",
+                f"(State Change) One row per status update: Recording every milestone or state transition as a {event} progresses from start to finish."
+            ]
+            if sec_events:
+                sec_ev = sec_events[0].rstrip("s")
+                options.append(
+                    f"Multi-Fact Bus Matrix: Build coordinated separate fact tables (e.g. fact_{event.replace(' ', '_')} and fact_{sec_ev.replace(' ', '_')}) sharing conformed dimensions ({loc}, {actor}) to avoid chasm traps."
+                )
+            return {
+                "id": "q_entity_grain",
+                "question": f"When your team pulls up a report or spreadsheet of {events_pl}, what should each single row represent? [Determines: The atomic grain of your primary Fact Table and the core business metrics/KPIs to calculate]",
+                "options": options
+            }
+
+        elif vector_name == "temporal_policy":
+            return {
+                "id": "q_temporal_policy",
+                "question": f"When a {loc} or {actor} updates their profile (such as operating hours, address, or capacity), how should historical reports behave? [Determines: Historical time-travel tracking (SCD Type 2 with effective dates) vs simple in-place overwriting (SCD Type 1)]",
+                "options": [
+                    f"(Recommended - SCD Type 2) Historical reports should preserve the original {loc} profile at the exact time of each {event} so past utilization and regional reports remain 100% accurate (SCD Type 2).",
+                    f"(SCD Type 1) Always overwrite past records with their newest {loc} details everywhere across the system (SCD Type 1).",
+                    f"(Bi-Temporal / Regulatory Audit) We are strictly regulated (Government, SOX, Banking, HIPAA) and need to prove exactly what records showed on any historical audit date."
+                ]
+            }
+
+        elif vector_name == "lifecycle_funnel":
+            return {
+                "id": "q_lifecycle_funnel",
+                "question": f"How does your team need to measure and report on {events_pl} over time? [Determines: Accumulating Snapshot Fact Table with milestone date foreign keys vs Periodic Snapshot vs discrete Transaction Fact Table]",
+                "options": [
+                    f"(Recommended for capacity & availability) Periodic Daily Snapshots: One row per {loc} each day recording total capacity, open {events_pl}, and booked counts.",
+                    f"(Transaction Fact) Discrete Point-in-Time Events: One row recorded each time an individual {event} is created, reserved, or cancelled.",
+                    f"(Accumulating Funnel) Multi-Stage Turnaround: One row per {event} measuring turnaround duration across sequential stages."
+                ]
+            }
+
+        elif vector_name == "relationship_multiplicity":
+            return {
+                "id": "q_relationship_multiplicity",
+                "question": f"Can a single {event} involve multiple {actors_pl}, or is there always strictly 1 primary {actor} per {event}? [Determines: Standard 1:N foreign keys vs a multi-valued Bridge Table to prevent accidental double-counting]",
+                "options": [
+                    f"(Recommended) Standard one-to-one ownership: Exactly 1 primary {actor} per {event} (direct foreign key).",
+                    f"Shared co-ownership: Multiple {actors_pl} can be attached to one {event} (requires a Kimball Bridge Table to avoid double-counting)."
+                ]
+            }
+
+        return cls.QUESTION_BANK.get(vector_name, {})
+
+    @classmethod
+    def get_questions_for_missing_vectors(cls, missing_vectors: List[str], domain_roles: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        if domain_roles:
+            return [cls.build_dynamic_question(vec, domain_roles) for vec in missing_vectors if vec in cls.QUESTION_BANK]
         return [cls.QUESTION_BANK[vec] for vec in missing_vectors if vec in cls.QUESTION_BANK]
         
     @classmethod
@@ -471,7 +566,8 @@ class IntakeEngine:
         
         # 5. HARD GATE: If Completeness < 100.0%, block spec output and generate targeted natural questions
         if not completeness["is_sufficient"]:
-            questions = AdaptiveBusinessInterviewer.get_questions_for_missing_vectors(completeness["missing_vectors"])
+            domain_roles = NounVerbSemanticParser.extract_domain_roles(enriched_narrative, parsed_semantics)
+            questions = AdaptiveBusinessInterviewer.get_questions_for_missing_vectors(completeness["missing_vectors"], domain_roles=domain_roles)
             return {
                 "status": "NEEDS_CLARIFICATION",
                 "completeness_score": completeness["completeness_score"],

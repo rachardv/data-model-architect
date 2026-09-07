@@ -1,11 +1,13 @@
-from typing import Dict, List, Any
+import re
+from typing import Dict, List, Any, Optional
 
 class NounVerbSemanticParser:
     """
     Domain-Driven Design (DDD) parser that:
     1. Decomposes raw business workflow text into Dimensions (Nouns), Facts (Verbs), and Statuses (Adjectives).
-    2. Generates 100% Plain-English, Non-Technical Business Discovery Questions for stakeholders.
-    3. Infers technical database parameters directly from enriched business language narratives.
+    2. Performs deterministic Semantic Role Labeling (SRL) for dynamic question generation.
+    3. Generates 100% Plain-English, Non-Technical Business Discovery Questions for stakeholders.
+    4. Infers technical database parameters directly from enriched business language narratives.
     """
     
     @staticmethod
@@ -37,6 +39,121 @@ class NounVerbSemanticParser:
             "dimensions_nouns": extracted_nouns,
             "facts_verbs": extracted_verbs,
             "statuses_adjectives": extracted_adjectives
+        }
+
+    @staticmethod
+    def extract_domain_roles(narrative: str, parsed_entities: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+        """
+        Performs deterministic Domain-Driven Semantic Role Labeling on the narrative.
+        Maps domain entities into 5 semantic roles:
+        - primary_event: Core transactional activity/event
+        - primary_actor: Animate citizen, customer, patient, user
+        - resource_location: Physical or logical facility, office, station
+        - child_entity: Sub-unit, pallet, service, test, dish, line item
+        - secondary_events: Other candidate event nouns (e.g. fee, payment)
+        - secondary_actors: Other actors (e.g. examiner, doctor, clerk)
+        - secondary_resources: Other resources (e.g. counter, dock, bay)
+        """
+        text = narrative.lower()
+        words = [re.sub(r"[^a-z0-9]", "", w) for w in text.split()]
+        words = [w for w in words if w]
+
+        actor_seeds = {
+            "driver", "drivers", "customer", "customers", "patient", "patients", "student", "students",
+            "user", "users", "client", "clients", "employee", "employees", "borrower", "borrowers",
+            "passenger", "passengers", "applicant", "applicants", "doctor", "doctors", "examiner", "examiners",
+            "member", "members", "shopper", "shoppers", "guest", "guests", "citizen", "citizens", "clerk", "clerks",
+            "carrier", "teacher", "teachers", "physician", "physicians", "nurse", "nurses", "agent", "agents"
+        }
+        
+        event_seeds = {
+            "appointment", "appointments", "slot", "slots", "order", "orders", "claim", "claims",
+            "ticket", "tickets", "visit", "visits", "booking", "bookings", "reservation", "reservations",
+            "encounter", "encounters", "admission", "admissions", "enrollment", "enrollments",
+            "purchase", "purchases", "sale", "sales", "transaction", "transactions", "flight", "flights",
+            "shipment", "shipments", "delivery", "deliveries", "case", "cases", "lesson", "lessons",
+            "exam", "exams", "test", "tests", "payment", "payments", "fee", "fees", "refund", "refunds"
+        }
+
+        resource_seeds = {
+            "office", "offices", "warehouse", "warehouses", "store", "stores", "clinic", "clinics",
+            "hospital", "hospitals", "branch", "branches", "counter", "counters", "dock", "docks",
+            "bay", "bays", "station", "stations", "terminal", "terminals", "school", "schools",
+            "university", "universities", "department", "departments", "center", "centers", "facility", "facilities"
+        }
+
+        child_seeds = {
+            "item", "items", "pallet", "pallets", "cargo", "dish", "dishes", "meal", "meals",
+            "prescription", "prescriptions", "package", "packages", "service", "services",
+            "procedure", "procedures", "question", "questions", "part", "parts"
+        }
+
+        inanimate_er_words = {
+            "number", "order", "paper", "water", "tier", "layer", "letter", "quarter",
+            "center", "meter", "server", "cluster", "container", "buffer", "header",
+            "footer", "manner", "matter", "power", "weather", "ledger", "calendar"
+        }
+
+        found_actors = [w for w in words if w in actor_seeds]
+        if not found_actors:
+            found_actors = [
+                w for w in words 
+                if len(w) > 4 and (w.endswith("er") or w.endswith("or") or w.endswith("ee")) 
+                and w not in event_seeds and w not in resource_seeds and w not in inanimate_er_words
+            ]
+
+        found_events = [w for w in words if w in event_seeds]
+        if not found_events:
+            found_events = [
+                w for w in words 
+                if len(w) > 5 and (w.endswith("ment") or w.endswith("tion") or w.endswith("ing")) 
+                and w not in actor_seeds and w not in resource_seeds and w not in inanimate_er_words
+            ]
+
+        found_resources = [w for w in words if w in resource_seeds]
+        found_children = [w for w in words if w in child_seeds]
+
+        # Compound domain entity handling
+        if "appointment" in text and "slot" in text:
+            primary_event = "appointment slot"
+        elif found_events:
+            cand = found_events[0]
+            primary_event = cand.rstrip("s") if cand.endswith("s") and not cand.endswith("ss") else cand
+        else:
+            primary_event = "transaction"
+
+        if any(k in text for k in ["driver license", "driver licence", "licence office", "license office", "dmv"]):
+            resource_loc = "driver license office"
+        elif found_resources:
+            cand = found_resources[0]
+            resource_loc = cand.rstrip("s") if cand.endswith("s") and not cand.endswith("ss") else cand
+        else:
+            resource_loc = "location"
+
+        if found_actors:
+            cand = found_actors[0]
+            primary_actor = cand.rstrip("s") if cand.endswith("s") and not cand.endswith("ss") else cand
+        else:
+            primary_actor = "user"
+
+        if found_children:
+            cand = found_children[0]
+            child_item = cand.rstrip("s") if cand.endswith("s") and not cand.endswith("ss") else cand
+        else:
+            child_item = "item / sub-unit"
+
+        sec_events = [e for e in set(found_events) if e.rstrip("s") != primary_event.rstrip("s")]
+        sec_actors = [a for a in set(found_actors) if a.rstrip("s") != primary_actor.rstrip("s")]
+        sec_resources = [r for r in set(found_resources) if r.rstrip("s") != resource_loc.rstrip("s")]
+
+        return {
+            "primary_event": primary_event,
+            "primary_actor": primary_actor,
+            "resource_location": resource_loc,
+            "child_entity": child_item,
+            "secondary_events": sorted(sec_events),
+            "secondary_actors": sorted(sec_actors),
+            "secondary_resources": sorted(sec_resources)
         }
 
     @staticmethod
