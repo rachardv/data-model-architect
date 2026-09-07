@@ -147,12 +147,13 @@ SELECT * FROM renamed
                     else:
                         col_selects.append(f"        {cname}")
                         
+                col_selects_str = ",\n".join(col_selects)
                 sql = f"""WITH source AS (
     SELECT * FROM {{{{ ref('{stg_ref}') }}}}
 ),
 final AS (
     SELECT
-{',\n'.join(col_selects)}
+{col_selects_str}
     FROM source
 )
 SELECT * FROM final
@@ -190,11 +191,12 @@ SELECT * FROM final
                 if joins_str:
                     joins_str = "\n" + joins_str
                     
+                sel_items_str = ",\n".join(sel_items)
                 sql = f"""WITH src AS (
     SELECT * FROM {{{{ ref('{stg_order_ref}') }}}}
 )
 SELECT
-{',\n'.join(sel_items)}
+{sel_items_str}
 FROM src{joins_str}
 """
                 marts_models[tname] = sql
