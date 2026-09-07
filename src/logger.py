@@ -1,3 +1,4 @@
+from src.config import settings
 import logging
 import json
 import os
@@ -43,7 +44,7 @@ class StructuredJSONFormatter(logging.Formatter):
 
 def configure_logging(level: Optional[str] = None, json_format: bool = True) -> None:
     """Configures root and application loggers."""
-    log_level_str = level or os.environ.get("LOG_LEVEL", "INFO").upper()
+    log_level_str = level or settings.log_level
     log_level = getattr(logging, log_level_str, logging.INFO)
     
     root_logger = logging.getLogger("data_model_architect")
@@ -82,4 +83,4 @@ def get_trace_id() -> str:
     return tid
 
 # Initialize logging on module load
-configure_logging()
+configure_logging(level=settings.log_level, json_format=settings.log_json)

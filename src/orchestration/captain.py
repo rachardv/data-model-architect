@@ -11,6 +11,7 @@ from src.medallion_generator import MedallionPipelineGenerator
 from src.sttm_generator import STTMGenerator
 from src.dbt_generator import DBTProjectGenerator
 from src.logger import get_logger, set_trace_id, get_trace_id
+from src.config import settings
 
 logger = get_logger('captain')
 
@@ -20,9 +21,9 @@ class CaptainOrchestrator:
     Enforces a strict 100% Information Completeness Gate before releasing any data model specs.
     """
     
-    def __init__(self, output_dir: str = "docs"):
+    def __init__(self, output_dir: Optional[str] = None):
         self.spawner = SubagentSpawner()
-        self.output_dir = output_dir
+        self.output_dir = output_dir or settings.output_dir
         self.state = "IDLE"
         self.disposition_matrix: List[Dict[str, Any]] = []
         
