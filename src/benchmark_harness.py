@@ -40,17 +40,22 @@ class ModelBenchmarkHarness:
         target_schema: Dict[str, Any],
         medallion_pipeline: Dict[str, Any],
         dbt_project: Optional[Dict[str, Any]] = None,
-        run_industry_suites: bool = True
+        run_industry_suites: bool = True,
+        conn: Optional[duckdb.DuckDBPyConnection] = None
     ) -> Dict[str, Any]:
         """
-        Executes the comprehensive benchmark suites in an ephemeral in-memory DuckDB instance:
+        Executes the comprehensive benchmark suites in an in-memory DuckDB instance:
           1. 4 Deterministic Physical Pillars (Metric Conservation, Temporal Causality, Grain, Query Plan)
           2. Gold Standard Industry Benchmarks (SSB, TPC-DS, TPC-DI, TPC-H)
           3. dbt-project-evaluator Automated Dimensional Modeling Audit
           4. BIRD-SQL & Spider Academic AI Semantic Benchmarks
         """
         logger.info(f"Starting Comprehensive Benchmark Suite for domain='{domain}'")
-        con = duckdb.connect(":memory:")
+        created_local_con = False
+        con = conn
+        if con is None:
+            created_local_con = True
+            con = duckdb.connect(":memory:")
         start_time = time.perf_counter()
         
         scorecard = {
@@ -139,7 +144,8 @@ class ModelBenchmarkHarness:
             scorecard["error"] = str(e)
         finally:
             scorecard["execution_time_ms"] = round((time.perf_counter() - start_time) * 1000, 2)
-            con.close()
+            if created_local_con:
+                con.close()
             
         logger.info(f"Benchmark completed: score={scorecard['overall_score']}/100, status={scorecard['overall_status']}")
         return scorecard

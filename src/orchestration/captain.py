@@ -1,5 +1,6 @@
 from typing import Dict, Any, List, Optional
 import os
+import duckdb
 from src.orchestration.spawner import SubagentSpawner
 from src.orchestration.reviewer_council import ReviewerCouncil
 from src.intake_engine import IntakeEngine, VectorConflictDetector
@@ -12,6 +13,7 @@ from src.sttm_generator import STTMGenerator
 from src.dbt_generator import DBTProjectGenerator
 from src.benchmark_harness import ModelBenchmarkHarness
 from src.validation_strategy import ValidationStrategyEngine, ValidationContext
+from src.schema_author import DynamicSchemaAuthor
 from src.logger import get_logger, set_trace_id, get_trace_id
 from src.config import settings
 
@@ -124,78 +126,14 @@ class CaptainOrchestrator:
             "completeness_score": intake_res.get("completeness_score", 100.0)
         })
         
-        # Build Schema Specification
-        if "schema_spec" in user_request:
-            schema_spec = user_request["schema_spec"]
-        elif architecture_decision.get("pattern") == "FACTLESS_FACT_COVERAGE" or user_request.get("is_factless_event"):
-            schema_spec = {
-                "tables": [
-                    {
-                        "name": f"dim_{domain}_attendee",
-                        "type": "DIMENSION",
-                        "is_conformed": True,
-                        "columns": [
-                            {"name": "attendee_sk", "type": "VARCHAR(64)", "nullable": False},
-                            {"name": "attendee_id", "type": "VARCHAR(64)", "nullable": False},
-                            {"name": "attendee_name", "type": "VARCHAR(255)", "nullable": False}
-                        ],
-                        "primary_key": "attendee_sk"
-                    },
-                    {
-                        "name": f"dim_{domain}_event",
-                        "type": "DIMENSION",
-                        "is_conformed": True,
-                        "columns": [
-                            {"name": "event_sk", "type": "VARCHAR(64)", "nullable": False},
-                            {"name": "event_id", "type": "VARCHAR(64)", "nullable": False},
-                            {"name": "event_title", "type": "VARCHAR(255)", "nullable": False}
-                        ],
-                        "primary_key": "event_sk"
-                    },
-                    {
-                        "name": f"fact_{domain}_attendance_coverage",
-                        "type": "FACTLESS_FACT",
-                        "description": "Factless fact tracking event attendance coverage with zero numeric measures",
-                        "columns": [
-                            {"name": "attendee_sk", "type": "VARCHAR(64)", "nullable": False},
-                            {"name": "event_sk", "type": "VARCHAR(64)", "nullable": False},
-                            {"name": "date_sk", "type": "INT", "nullable": False}
-                        ],
-                        "primary_key": "attendee_sk, event_sk, date_sk"
-                    }
-                ],
-                "temporal_strategy": "SCD1"
-            }
-        else:
-            schema_spec = {
-                "tables": [
-                    {
-                        "name": f"dim_{domain}_customer_core",
-                        "type": "DIMENSION",
-                        "is_conformed": True,
-                        "columns": [
-                            {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
-                            {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
-                            {"name": "customer_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
-                            {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
-                            {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"}
-                        ],
-                        "primary_key": "customer_sk"
-                    },
-                    {
-                        "name": f"fact_{domain}_orders",
-                        "type": "FACT",
-                        "columns": [
-                            {"name": "order_id", "type": "BIGINT", "nullable": False, "is_inferred": False},
-                            {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
-                            {"name": "total_amount_usd", "type": "DECIMAL(14,2)", "nullable": False, "is_inferred": False},
-                            {"name": "estimated_delivery_days", "type": "INT", "nullable": True, "is_inferred": True}
-                        ],
-                        "primary_key": "order_id"
-                    }
-                ],
-                "temporal_strategy": architecture_decision.get("temporal", "SCD2")
-            }
+        # Build Schema Specification via Domain-Driven Dynamic Synthesizer
+        schema_spec = DynamicSchemaAuthor.synthesize_schema(
+            domain=domain,
+            parsed_semantics=parsed_semantics,
+            architecture_decision=architecture_decision,
+            inferred_params=inferred_params,
+            user_request=user_request
+        )
 
         # Handle Architectural Choice Resolution (Additive vs Refactor)
         resolution_applied = None
@@ -381,25 +319,31 @@ ON CONFLICT (order_id) DO NOTHING;
             project_data=dbt_project
         )
         
-        # 8. Deterministic Model Benchmark Verification Suite
+        # 8. Deterministic Model Benchmark Verification Suite & Validation Strategy
         run_industry_suites = user_request.get("run_industry_suites", False)
-        benchmark_scorecard = ModelBenchmarkHarness.run_full_benchmark(
-            domain=domain,
-            target_schema=schema_spec,
-            medallion_pipeline=medallion_pipeline,
-            dbt_project=dbt_project,
-            run_industry_suites=run_industry_suites
-        )
-        
-        # 9. Pluggable 4-Tier Model Validation Strategy & Risk Evaluator
-        validation_ctx = ValidationContext(
-            domain=domain,
-            target_schema=schema_spec,
-            medallion_pipeline=medallion_pipeline,
-            dbt_project=dbt_project,
-            inferred_usage_params=inferred_params
-        )
-        validation_scorecard = ValidationStrategyEngine.evaluate(validation_ctx)
+        benchmark_con = duckdb.connect(":memory:")
+        try:
+            benchmark_scorecard = ModelBenchmarkHarness.run_full_benchmark(
+                domain=domain,
+                target_schema=schema_spec,
+                medallion_pipeline=medallion_pipeline,
+                dbt_project=dbt_project,
+                run_industry_suites=run_industry_suites,
+                conn=benchmark_con
+            )
+            
+            # 9. Pluggable 4-Tier Model Validation Strategy & Risk Evaluator
+            validation_ctx = ValidationContext(
+                domain=domain,
+                target_schema=schema_spec,
+                medallion_pipeline=medallion_pipeline,
+                dbt_project=dbt_project,
+                duckdb_conn=benchmark_con,
+                inferred_usage_params=inferred_params
+            )
+            validation_scorecard = ValidationStrategyEngine.evaluate(validation_ctx)
+        finally:
+            benchmark_con.close()
 
         final_status = "CERTIFIED_PRODUCTION_READY"
         if benchmark_scorecard.get("overall_status") != "PASS":

@@ -89,13 +89,37 @@ class MedallionPipelineGenerator:
                     lines.append(f"    (5003, 'CUST-1001', -25.00, 'REJECTED_TEST', '2026-02-12 18:00:00 UTC', 'PAYLOAD-006', 'seed_data.csv', CURRENT_TIMESTAMP);")
                 else:
                     sample_cols = [c.get("name") for c in cols]
-                    sample_vals = ["'SAMPLE_VAL'" for _ in sample_cols]
+                    def _sample_val(c):
+                        ctype = str(c.get("type", "")).upper()
+                        cname = str(c.get("name", "")).lower()
+                        if "INT" in ctype:
+                            return "1001"
+                        elif any(t in ctype for t in ["DECIMAL", "NUMERIC", "FLOAT", "DOUBLE"]):
+                            return "99.50"
+                        elif "BOOL" in ctype:
+                            return "TRUE"
+                        elif any(t in ctype for t in ["TIME", "DATE"]):
+                            return "CURRENT_TIMESTAMP"
+                        else:
+                            return f"'{cname.upper()}_VAL'"
+                    sample_vals = [_sample_val(c) for c in cols]
                     lines.append(f"INSERT INTO {raw_table_name} ({', '.join(sample_cols)}, _raw_payload_id, _source_file, _ingested_at)")
                     lines.append(f"VALUES ({', '.join(sample_vals)}, 'PAYLOAD-999', 'seed.csv', CURRENT_TIMESTAMP);")
                     
             bronze_sql[raw_table_name] = "\n".join(lines)
             
         return bronze_sql
+
+    @staticmethod
+    def _singularize(name: str) -> str:
+        name = name.strip()
+        if name.endswith("ies") and len(name) > 3:
+            return name[:-3] + "y"
+        if name.endswith("ses") or name.endswith("xes") or name.endswith("ches") or name.endswith("shes"):
+            return name[:-2]
+        if name.endswith("s") and not name.endswith("ss") and not name.endswith("us") and not name.endswith("is"):
+            return name[:-1]
+        return name
 
     @classmethod
     def generate_silver_layer(
@@ -131,7 +155,7 @@ class MedallionPipelineGenerator:
             cols = src.get("columns", [])
             col_names = [c["name"] for c in cols]
             
-            sing_name = tname[:-1] if tname.endswith("s") else tname
+            sing_name = cls._singularize(tname)
             
             pk_candidates = [c["name"] for c in cols if "id" in c["name"].lower() or "key" in c["name"].lower()]
             pk_col = pk_candidates[0] if pk_candidates else cols[0]["name"] if cols else "id"
@@ -278,7 +302,7 @@ class MedallionPipelineGenerator:
                         f"-- Scenario A: Existing Record Changed -> Close Validity Interval",
                         f"WHEN MATCHED AND (target.customer_name != source.customer_name OR target.customer_id != source.customer_id) THEN",
                         f"    UPDATE SET",
-                        f"        scd_valid_to = source.updated_at",
+                        f"        scd_valid_to = source.updated_at" + (", is_current = FALSE" if any(c["name"] == "is_current" for c in cols) else ""),
                         f"",
                         f"-- Scenario B: New Entity Record -> Insert New Active Version",
                         f"WHEN NOT MATCHED THEN",
@@ -296,6 +320,8 @@ class MedallionPipelineGenerator:
                             val_mappings.append(f"source.updated_at")
                         elif cn == "scd_valid_to":
                             val_mappings.append(f"'9999-12-31 23:59:59 UTC'")
+                        elif cn == "is_current":
+                            val_mappings.append(f"TRUE")
                         elif cn.endswith("_id"):
                             val_mappings.append(f"source.customer_id")
                         elif "name" in cn.lower() or "title" in cn.lower():
@@ -322,7 +348,11 @@ class MedallionPipelineGenerator:
                         f"    source.customer_id,",
                         f"    source.customer_name",
                         f"FROM {stg_source} source",
-                        f"WHERE NOT EXISTS (SELECT 1 FROM {tname} existing WHERE existing.{pk} = source.customer_sk);"
+                        f"WHERE NOT EXISTS (SELECT 1 FROM {tname} existing WHERE existing.{pk} = source.customer_sk);",
+                        f"",
+                        f"-- Companion Gold View: Current Active State",
+                        f"CREATE OR REPLACE VIEW v_current_{tname} AS",
+                        f"SELECT * FROM {tname};"
                     ]
                     gold_sql[tname] = "\n".join(lines)
                 else:
@@ -354,7 +384,11 @@ class MedallionPipelineGenerator:
                         f"INSERT INTO {tname} ({', '.join(col_names)})",
                         f"VALUES",
                         f"    ({', '.join(val_row1)}),",
-                        f"    ({', '.join(val_row2)});"
+                        f"    ({', '.join(val_row2)});",
+                        f"",
+                        f"-- Companion Gold View: Current Active State",
+                        f"CREATE OR REPLACE VIEW v_current_{tname} AS",
+                        f"SELECT * FROM {tname};"
                     ]
                     gold_sql[tname] = "\n".join(lines)
                     

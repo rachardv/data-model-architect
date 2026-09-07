@@ -2,7 +2,10 @@ import os
 import json
 import csv
 import re
+import logging
 from typing import Dict, Any, List, Union
+
+logger = logging.getLogger(__name__)
 
 class FolderSchemaScanner:
     """
@@ -122,8 +125,8 @@ class FolderSchemaScanner:
                 field_matches = re.findall(r"([a-zA-Z0-9_]+)\s*:\s*([A-Za-z0-9_\[\]]+)", content)
                 for col, dtype in field_matches:
                     columns.append({"name": col.lower(), "type": dtype, "is_inferred": False})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed to parse schema file %s: %s", file_path, e)
             
         return {
             "table_name": default_table_name,
