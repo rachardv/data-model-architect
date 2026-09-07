@@ -39,8 +39,8 @@ This directory tracks bugs, architectural improvements, and planned enhancements
    - Automated inference of `PARTITION BY DATE(event_ts)` and `CLUSTER BY (tenant_id, customer_sk)` / Delta Z-Ordering.
 5. **64-Bit Integer Surrogate Keys & Numeric Hashing (`xxHash64`, `Murmur3`, `FARM_FINGERPRINT`)** — See [02_decision_and_classification.md](02_decision_and_classification.md)
    - Replacing 32-byte MD5 string keys with high-performance 64-bit integers to reduce join hash-table memory bloat.
-6. **Comprehensive Model Validation Strategy & Risk Matrix** — See [04_testing_and_benchmarking.md](04_testing_and_benchmarking.md)
-   - Profiling 6 key failure modes (Semantic Inversion, Chasm Traps, Temporal Leakage, FK Orphans, Cartesian Traps, Contract Drift).
+6. **Comprehensive Model Validation Strategy & Enterprise Risk Matrix** — See [04_testing_and_benchmarking.md](04_testing_and_benchmarking.md)
+   - Profiling 9 key failure modes (Semantic Inversion, Chasm Traps, Temporal Leakage, FK Orphans, Cartesian Traps, Skew, Requirement Volatility, GDPR Right to be Forgotten, and Downstream Blast Radius).
    - Formal deliverable: `docs/VALIDATION_STRATEGY.md` with integrated DuckDB risk scorecard.
 7. **Adversarial Chaos & Data Skew Stress Testing Engine** — See [04_testing_and_benchmarking.md](04_testing_and_benchmarking.md)
    - Benchmarking beyond clean synthetic data: Zipfian power-law key skew (80/20 distributions), clock drift ($\pm 48\text{h}$), corrupt payloads, and memory-constrained DuckDB spill-to-disk verification (`PRAGMA max_memory='16MB'`).

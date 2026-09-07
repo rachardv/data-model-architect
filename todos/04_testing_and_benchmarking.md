@@ -23,21 +23,25 @@ Focus: Mega-Benchmark Suite, In-Memory DuckDB Validation, Metric Conservation (Z
   - 3. Referential Integrity (zero duplicate PKs, caught orphan FKs).
   - 4. Query Execution (real hash-join execution in DuckDB).
 
-- [ ] **[Architecture] Comprehensive Model Validation Strategy & Risk Profiling Matrix**
+- [ ] **[Architecture] Comprehensive Model Validation Strategy & Enterprise Risk Profiling Matrix**
   - **Problem:** While the system validates 5 physical pillars in DuckDB, there is no formal, unified Validation Strategy document mapping out every architectural risk category, their business impact, automated pre/post-generation gates, and recovery remediation paths.
-  - **Risk Categories to Formally Profile:**
-    1. **Semantic Inversion Risk (Wrong Paradigm Built):** Business user requested live transactional CRUD, but engine compiled an analytical lakehouse (or vice versa), leading to severe database locking and latency bottlenecks.
-    2. **Chasm & Fan-Out Trap Risk (Metric Distortion):** Multi-fact drill-across joins or 1:N fan-out multiplying revenue, fees, or balances across line items without pre-aggregation CTEs.
-    3. **Temporal Leakage Risk (Point-in-Time Corruption):** Late-arriving dimension records or improper effective date joins attributing historical transactions to incorrect current states (SCD2 timeline bleed).
-    4. **Referential & Deduplication Risk:** Duplicate primary keys slipping through to Gold layer, or unhandled foreign key orphans (-1 sentinel mapping failure).
-    5. **Execution Plan Traps:** Unbounded recursive CTEs in hierarchy closure tables or accidental Cartesian cross-joins causing query timeouts or out-of-memory crashes.
-    6. **Schema Evolution & Silent Contract Drift:** Upstream schema changes breaking downstream marts without automated silver-layer quarantine routing.
+  - **The 9 Enterprise Risk Categories to Formally Profile:**
+    1. **RSK-01 (Semantic Inversion Trap):** Business user requested live transactional CRUD, but engine compiled an analytical lakehouse (or vice versa), causing database locking and latency bottlenecks.
+    2. **RSK-02 (Chasm & Fan-Out Trap):** Multi-fact drill-across joins or 1:N fan-out multiplying revenue, fees, or balances across line items without pre-aggregation CTEs.
+    3. **RSK-03 (Temporal Causality Leakage):** Late-arriving dimension records or improper effective date joins attributing historical transactions to incorrect current states (SCD2 timeline bleed).
+    4. **RSK-04 (Referential & Deduplication Risk):** Duplicate primary keys slipping through to Gold layer, or unhandled foreign key orphans (-1 sentinel mapping failure).
+    5. **RSK-05 (Execution Plan Traps):** Unbounded recursive CTEs in hierarchy closure tables or accidental Cartesian cross-joins causing query timeouts or out-of-memory crashes.
+    6. **RSK-06 (Adversarial Skew & Memory Spill):** Extreme key skew (Zipfian 80/20 power-law) causing partition hot-spots or hash-join memory blowout under constrained RAM.
+    7. **RSK-07 (Requirement Volatility & Refactoring Debt):** Schema rigidity where evolving business features force costly full schema rebuilds. Mitigated by enforcing Lowest Atomic Grain, Wide Additive Dimensions, Role-Playing Views, and Bronze Raw JSON buffers.
+    8. **RSK-08 (Right to be Forgotten & Privacy Erasure):** GDPR Art. 17 / CCPA erasure causing orphan foreign keys or breaking 7-year financial accounting rules. Mitigated by Pseudonymization Sentinels (`'REDACTED'`) and Cryptographic Shredding DDL.
+    9. **RSK-09 (Downstream Blast Radius & Contract Drift):** Renaming or altering core mart columns silently breaking downstream dashboards, ML feature stores, and reverse-ETL syncs. Mitigated by Column-Level Lineage checks and Semantic Versioning Views (`v1` on `v2`).
   - **Proposed Solution & Architecture:**
-    - **Pre-Generation Gates:** Strict 100% Vector Completeness hard-gate, Semantic Sanity gibberish filter, and Contradiction detection.
-    - **AST & Code Gen Linter:** Pre-execution SQL AST audit verifying absence of cartesian products and enforcing CTE pre-aggregation on multi-fact queries.
-    - **Physical In-Memory Validation:** DuckDB 5-pillar execution harness proving metric conservation ($\sum \text{Raw} == \sum \text{Mart}$), temporal causality, referential integrity, and query execution.
-    - **Adversarial Chaos Ingestion:** Injecting high-skew, late-arriving timestamps, and null keys to verify quarantine resilience.
-    - **Deliverable:** Document complete strategy in `docs/VALIDATION_STRATEGY.md` and wire automated risk scorecard into Captain Orchestrator.
+    - **4-Tier Defense-in-Depth:**
+      - *Tier 1:* Pre-Generation Intake & Semantic Static Analysis (Vector completeness & contradiction gate).
+      - *Tier 2:* SQL AST & Graph Traversal Linter (Anti-Cartesian, CTE pre-aggregation, blast radius linter).
+      - *Tier 3:* In-Memory Physical Proof Engine (DuckDB metric conservation, SCD2 point-in-time, GDPR pseudonymization proof).
+      - *Tier 4:* Adversarial Chaos & Skew Stress Engine (Zipfian 80/20 key skew, clock drift, 16MB RAM cap spill-to-disk proof).
+    - **Deliverable:** Document complete strategy in `docs/VALIDATION_STRATEGY.md` and wire automated `ValidationRiskScorecard` into Captain Orchestrator.
   - **Priority:** High / Critical
 
 - [ ] **[Architecture] Adversarial Chaos & Data Skew Stress Testing Engine**
