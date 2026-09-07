@@ -11,6 +11,7 @@ from src.medallion_generator import MedallionPipelineGenerator
 from src.sttm_generator import STTMGenerator
 from src.dbt_generator import DBTProjectGenerator
 from src.benchmark_harness import ModelBenchmarkHarness
+from src.validation_strategy import ValidationStrategyEngine, ValidationContext
 from src.logger import get_logger, set_trace_id, get_trace_id
 from src.config import settings
 
@@ -390,10 +391,23 @@ ON CONFLICT (order_id) DO NOTHING;
             run_industry_suites=run_industry_suites
         )
         
+        # 9. Pluggable 4-Tier Model Validation Strategy & Risk Evaluator
+        validation_ctx = ValidationContext(
+            domain=domain,
+            target_schema=schema_spec,
+            medallion_pipeline=medallion_pipeline,
+            dbt_project=dbt_project,
+            inferred_usage_params=inferred_params
+        )
+        validation_scorecard = ValidationStrategyEngine.evaluate(validation_ctx)
+
         final_status = "CERTIFIED_PRODUCTION_READY"
         if benchmark_scorecard.get("overall_status") != "PASS":
             final_status = "BENCHMARK_VERIFICATION_FAILED"
             logger.warning(f"Benchmark verification failed with score={benchmark_scorecard.get('overall_score')}")
+        elif validation_scorecard.get("critical_halt"):
+            final_status = "CRITICAL_RISK_HALT"
+            logger.error(f"Validation strategy halted model certification due to critical risks: {validation_scorecard.get('summary')}")
         
         return {
             "status": final_status,
@@ -418,5 +432,6 @@ ON CONFLICT (order_id) DO NOTHING;
             "dbt_project": dbt_project,
             "exported_dbt_files": exported_dbt_files,
             "benchmark_scorecard": benchmark_scorecard,
+            "validation_risk_scorecard": validation_scorecard,
             "spawner_log_count": len(self.spawner.message_log)
         }
