@@ -384,7 +384,8 @@ ON CONFLICT (order_id) DO NOTHING;
         benchmark_scorecard = ModelBenchmarkHarness.run_full_benchmark(
             domain=domain,
             target_schema=schema_spec,
-            medallion_pipeline=medallion_pipeline
+            medallion_pipeline=medallion_pipeline,
+            dbt_project=dbt_project
         )
         
         final_status = "CERTIFIED_PRODUCTION_READY"

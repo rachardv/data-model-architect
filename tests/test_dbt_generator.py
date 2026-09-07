@@ -115,8 +115,11 @@ def test_dbt_export_directory_structure(sample_schema, sample_sources, tmp_path)
     project_data = DBTProjectGenerator.generate_dbt_project("retail", sample_schema, sample_sources)
     exported = DBTProjectGenerator.export_dbt_project(str(tmp_path), "retail", project_data)
     
-    assert len(exported["config"]) == 1
-    assert os.path.exists(exported["config"][0])
+    assert len(exported["config"]) == 2
+    for p in exported["config"]:
+        assert os.path.exists(p)
+    assert any("packages.yml" in p for p in exported["config"])
+    assert any("dbt_project.yml" in p for p in exported["config"])
     
     assert len(exported["staging"]) >= 2
     for p in exported["staging"]:

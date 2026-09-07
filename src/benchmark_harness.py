@@ -3,6 +3,9 @@ import time
 from typing import Dict, Any, List, Optional
 from src.sql_runner import DuckDBPipelineRunner
 from src.ddl_generator import ANSISQLGenerator
+from src.industry_benchmarks import IndustryBenchmarkRunner
+from src.dbt_evaluator import DBTProjectEvaluator
+from src.semantic_benchmarks import SemanticBenchmarkRunner
 from src.logger import get_logger
 
 logger = get_logger("benchmark_harness")
@@ -35,12 +38,18 @@ class ModelBenchmarkHarness:
         cls,
         domain: str,
         target_schema: Dict[str, Any],
-        medallion_pipeline: Dict[str, Any]
+        medallion_pipeline: Dict[str, Any],
+        dbt_project: Optional[Dict[str, Any]] = None,
+        run_industry_suites: bool = True
     ) -> Dict[str, Any]:
         """
-        Executes the full 4-pillar deterministic benchmark suite in an ephemeral in-memory DuckDB instance.
+        Executes the comprehensive benchmark suites in an ephemeral in-memory DuckDB instance:
+          1. 4 Deterministic Physical Pillars (Metric Conservation, Temporal Causality, Grain, Query Plan)
+          2. Gold Standard Industry Benchmarks (SSB, TPC-DS, TPC-DI, TPC-H)
+          3. dbt-project-evaluator Automated Dimensional Modeling Audit
+          4. BIRD-SQL & Spider Academic AI Semantic Benchmarks
         """
-        logger.info(f"Starting Deterministic Benchmark Suite for domain='{domain}'")
+        logger.info(f"Starting Comprehensive Benchmark Suite for domain='{domain}'")
         con = duckdb.connect(":memory:")
         start_time = time.perf_counter()
         
@@ -83,15 +92,46 @@ class ModelBenchmarkHarness:
             # -------------------------------------------------------------
             cls._test_query_execution(con, domain, target_schema, scorecard)
 
-            # Calculate Overall Score
+            # Calculate Deterministic Pillars Score
             total_score = (
                 scorecard["metric_conservation"]["score"] +
                 scorecard["temporal_causality"]["score"] +
                 scorecard["referential_integrity"]["score"] +
                 scorecard["query_execution"]["score"]
             )
+            scorecard["deterministic_pillars_score"] = float(total_score)
+            deterministic_pass = (total_score == 100.0)
+
+            # -------------------------------------------------------------
+            # SUITE 2: dbt-project-evaluator (Automated Dimensional Modeling Audit)
+            # -------------------------------------------------------------
+            if dbt_project:
+                dbt_eval_res = DBTProjectEvaluator.evaluate_project(dbt_project)
+                scorecard["dbt_project_evaluator"] = dbt_eval_res
+            else:
+                scorecard["dbt_project_evaluator"] = {"status": "SKIPPED", "details": "No dbt project supplied"}
+
+            # -------------------------------------------------------------
+            # SUITE 3 & 4: Industry Standards (SSB, TPC-DS, TPC-DI, TPC-H) & BIRD/Spider
+            # -------------------------------------------------------------
+            if run_industry_suites:
+                industry_res = IndustryBenchmarkRunner.run_all_benchmarks(domain, target_schema, medallion_pipeline)
+                scorecard["industry_benchmarks"] = industry_res
+                
+                semantic_res = SemanticBenchmarkRunner.run_all_benchmarks()
+                scorecard["semantic_benchmarks"] = semantic_res
+                
+                all_passed = (
+                    deterministic_pass and
+                    (scorecard["dbt_project_evaluator"]["status"] in ["PASS", "SKIPPED"]) and
+                    (industry_res["overall_status"] == "PASS") and
+                    (semantic_res["overall_status"] == "PASS")
+                )
+            else:
+                all_passed = deterministic_pass
+
             scorecard["overall_score"] = float(total_score)
-            scorecard["overall_status"] = "PASS" if total_score == 100.0 else "FAIL"
+            scorecard["overall_status"] = "PASS" if all_passed else "FAIL"
 
         except Exception as e:
             logger.error(f"Benchmark run encountered an unhandled exception: {str(e)}")

@@ -42,6 +42,14 @@ models:
 """
 
     @classmethod
+    def generate_packages_yaml(cls) -> str:
+        return """packages:
+  - package: dbt-labs/dbt_project_evaluator
+    version: 0.9.0
+"""
+
+
+    @classmethod
     def generate_sources_yaml(cls, domain: str, source_tables: List[Dict[str, Any]]) -> str:
         clean_domain = domain.lower().replace(" ", "_").replace("-", "_")
         lines = [
@@ -287,6 +295,7 @@ FROM src{joins_str}
             ]
             
         dbt_project_yaml = cls.generate_dbt_project_yaml(clean_domain)
+        packages_yaml = cls.generate_packages_yaml()
         sources_yaml = cls.generate_sources_yaml(clean_domain, source_tables)
         staging_models = cls.generate_staging_models(clean_domain, source_tables)
         marts_models = cls.generate_marts_models(clean_domain, target_schema)
@@ -295,6 +304,7 @@ FROM src{joins_str}
         return {
             "domain": clean_domain,
             "dbt_project_yaml": dbt_project_yaml,
+            "packages_yaml": packages_yaml,
             "sources_yaml": sources_yaml,
             "staging_models": staging_models,
             "marts_models": marts_models,
@@ -313,6 +323,7 @@ FROM src{joins_str}
         Exports the in-memory dbt project directly into standard dbt folder structure:
           <output_base_dir>/dbt/<domain>/
             ├── dbt_project.yml
+            ├── packages.yml
             └── models/
                 ├── staging/
                 │   ├── sources.yml
@@ -342,27 +353,34 @@ FROM src{joins_str}
             f.write(project_data["dbt_project_yaml"])
         exported_files["config"].append(proj_path)
         
-        # 2. sources.yml
+        # 2. packages.yml (dbt-project-evaluator)
+        if "packages_yaml" in project_data:
+            pkg_path = os.path.join(dbt_root, "packages.yml")
+            with open(pkg_path, "w", encoding="utf-8") as f:
+                f.write(project_data["packages_yaml"])
+            exported_files["config"].append(pkg_path)
+            
+        # 3. sources.yml
         src_path = os.path.join(staging_dir, "sources.yml")
         with open(src_path, "w", encoding="utf-8") as f:
             f.write(project_data["sources_yaml"])
         exported_files["staging"].append(src_path)
         
-        # 3. Staging SQL models
+        # 4. Staging SQL models
         for name, sql in project_data.get("staging_models", {}).items():
             stg_path = os.path.join(staging_dir, f"{name}.sql")
             with open(stg_path, "w", encoding="utf-8") as f:
                 f.write(sql)
             exported_files["staging"].append(stg_path)
             
-        # 4. Marts SQL models
+        # 5. Marts SQL models
         for name, sql in project_data.get("marts_models", {}).items():
             mart_path = os.path.join(marts_dir, f"{name}.sql")
             with open(mart_path, "w", encoding="utf-8") as f:
                 f.write(sql)
             exported_files["marts"].append(mart_path)
             
-        # 5. schema.yml
+        # 6. schema.yml
         schema_path = os.path.join(dbt_root, "models", "schema.yml")
         with open(schema_path, "w", encoding="utf-8") as f:
             f.write(project_data["schema_tests_yaml"])
