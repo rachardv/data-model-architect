@@ -24,6 +24,15 @@ This directory tracks bugs, architectural improvements, and planned enhancements
 
 ---
 
+## 🎯 Current High-Priority Focus: Validation Strategy & Risk Architecture
+See [04_testing_and_benchmarking.md](04_testing_and_benchmarking.md):
+- **Comprehensive Model Validation Strategy & Risk Profiling Matrix**:
+  - Architecting 6 key failure modes (Semantic Inversion, Chasm Traps, Temporal Leakage, FK Orphans, Cartesian Traps, Silent Contract Drift).
+  - 5-stage validation defense (Vector Gates, AST Linters, In-Memory DuckDB Parity, Chaos Ingestion, dbt Evaluation).
+  - Formal deliverable: `docs/VALIDATION_STRATEGY.md` with integrated scorecard.
+
+---
+
 ## How to Add New Items
 Simply open the relevant file in this folder and add a new item under **Backlog** using this format:
 
