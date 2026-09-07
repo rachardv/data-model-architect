@@ -221,13 +221,13 @@ class IndustryBenchmarkRunner:
                 except Exception as q_err:
                     logger.debug(f"TPC-DS Q{qnr} execution note: {q_err}")
 
-            if passed >= 90 and sales_count > 0:
+            if passed == len(queries) and passed == 99 and sales_count > 0:
                 results["tpcds"] = {
                     "status": "PASS",
                     "score": 25,
                     "queries_executed": len(queries),
                     "queries_passed": passed,
-                    "details": f"TPC-DS: Successfully validated {passed}/{len(queries)} retail decision queries across {sales_count:,} sales and {returns_count:,} returns"
+                    "details": f"TPC-DS: All {passed}/{len(queries)} official retail decision queries passed across {sales_count:,} sales and {returns_count:,} returns"
                 }
             else:
                 results["tpcds"] = {

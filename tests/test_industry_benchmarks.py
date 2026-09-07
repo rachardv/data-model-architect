@@ -17,7 +17,7 @@ def test_industry_benchmark_suite_execution():
     assert results["tpcds"]["status"] == "PASS"
     assert results["tpcds"]["score"] == 25
     assert results["tpcds"]["queries_executed"] == 99
-    assert results["tpcds"]["queries_passed"] >= 90
+    assert results["tpcds"]["queries_passed"] == 99
     assert "TPC-DS" in results["tpcds"]["details"]
     
     # 3. TPC-DI (Official 3-Batch Lifecycle & 46 Audit Queries)

@@ -43,3 +43,15 @@ def test_mega_benchmark_export(tmp_path):
     assert loaded["total_cases_evaluated"] == 5
     assert loaded["overall_accuracy_pct"] == 100.0
     assert loaded["mode"] == "END_TO_END_MODEL_GENERATION"
+
+def test_mega_benchmark_full_25_domains_end_to_end():
+    """Verify all 25 enterprise domains execute end-to-end through DuckDB physical validation."""
+    report = MegaBenchmarkRunner.run_mega_benchmark(total_cases=25, verbose=False, end_to_end=True)
+    
+    assert report["overall_status"] == "PASS"
+    assert report["overall_accuracy_pct"] == 100.0
+    assert report["total_cases_evaluated"] == 25
+    assert report["cases_passed"] == 25
+    assert len(report["domain_accuracy_matrix"]) == 25
+    assert all(stats["accuracy_pct"] == 100.0 for stats in report["domain_accuracy_matrix"].values())
+
