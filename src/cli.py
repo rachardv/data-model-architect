@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--medallion", action="store_true", help="Generate full Bronze -> Silver -> Gold Medallion SQL pipeline")
     parser.add_argument("--dbt", action="store_true", help="Generate full production-ready dbt Core project repository")
     parser.add_argument("--duckdb", action="store_true", help="Execute and verify generated SQL in an in-memory DuckDB instance")
+    parser.add_argument("--benchmark", action="store_true", help="Display 4-pillar deterministic benchmark scorecard")
     parser.add_argument("--interactive", action="store_true", help="Run interactive plain-English business intake interview")
     
     args = parser.parse_args()
@@ -64,9 +65,18 @@ def main():
         if "dbt_project" in result:
             print(f"dbt Core Models:    {result['dbt_project']['total_models']} models compiled")
             print(f"Exported dbt Repo:  docs/dbt/{args.domain}/")
+            
+        if "benchmark_scorecard" in result:
+            sc = result["benchmark_scorecard"]
+            print(f"\n=== 🎯 DETERMINISTIC MODEL BENCHMARK SCORECARD ===")
+            print(f"Overall Status:          {sc['overall_status']} ({sc['overall_score']:.0f}/100 pts in {sc.get('execution_time_ms', 0):.1f}ms)")
+            print(f"1. Metric Conservation:  [{sc['metric_conservation']['status']}] {sc['metric_conservation']['details']}")
+            print(f"2. Temporal Causality:   [{sc['temporal_causality']['status']}] {sc['temporal_causality']['details']}")
+            print(f"3. Referential & Grain:  [{sc['referential_integrity']['status']}] {sc['referential_integrity']['details']}")
+            print(f"4. Query Plan & Perf:    [{sc['query_execution']['status']}] {sc['query_execution']['details']}")
         return
         
-    if args.story or args.medallion or args.duckdb or args.dbt:
+    if args.story or args.medallion or args.duckdb or args.dbt or args.benchmark:
         payload = {
             "domain": args.domain,
             "branch": "NEW_MODEL",
@@ -100,6 +110,15 @@ def main():
         if "dbt_project" in result:
             print(f"dbt Core Models:    {result['dbt_project']['total_models']} models compiled")
             print(f"Exported dbt Repo:  docs/dbt/{args.domain}/")
+            
+        if "benchmark_scorecard" in result:
+            sc = result["benchmark_scorecard"]
+            print(f"\n=== 🎯 DETERMINISTIC MODEL BENCHMARK SCORECARD ===")
+            print(f"Overall Status:          {sc['overall_status']} ({sc['overall_score']:.0f}/100 pts in {sc.get('execution_time_ms', 0):.1f}ms)")
+            print(f"1. Metric Conservation:  [{sc['metric_conservation']['status']}] {sc['metric_conservation']['details']}")
+            print(f"2. Temporal Causality:   [{sc['temporal_causality']['status']}] {sc['temporal_causality']['details']}")
+            print(f"3. Referential & Grain:  [{sc['referential_integrity']['status']}] {sc['referential_integrity']['details']}")
+            print(f"4. Query Plan & Perf:    [{sc['query_execution']['status']}] {sc['query_execution']['details']}")
         
         if args.duckdb:
             from src.sql_runner import DuckDBPipelineRunner

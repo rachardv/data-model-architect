@@ -8,7 +8,7 @@ INSERT INTO fact_retail_orders (
 SELECT
     o.order_id,
     COALESCE(c.customer_sk, 'UNKNOWN_SK') AS customer_sk,
-    o.total_amount AS total_amount_usd,
+    COALESCE(o.total_amount, 0.0) AS total_amount_usd,
     CAST(3 AS INT) AS estimated_delivery_days -- [AI-GENERATED FALLBACK]
 FROM stg_retail_orders o
 LEFT JOIN v_current_dim_retail_customer_core c

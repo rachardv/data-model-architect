@@ -10,6 +10,7 @@ from src.contract_compiler import DataContractCompiler
 from src.medallion_generator import MedallionPipelineGenerator
 from src.sttm_generator import STTMGenerator
 from src.dbt_generator import DBTProjectGenerator
+from src.benchmark_harness import ModelBenchmarkHarness
 from src.logger import get_logger, set_trace_id, get_trace_id
 from src.config import settings
 
@@ -133,7 +134,7 @@ class CaptainOrchestrator:
                         "type": "DIMENSION",
                         "is_conformed": True,
                         "columns": [
-                            {"name": "attendee_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "attendee_sk", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "attendee_id", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "attendee_name", "type": "VARCHAR(255)", "nullable": False}
                         ],
@@ -144,7 +145,7 @@ class CaptainOrchestrator:
                         "type": "DIMENSION",
                         "is_conformed": True,
                         "columns": [
-                            {"name": "event_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "event_sk", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "event_id", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "event_title", "type": "VARCHAR(255)", "nullable": False}
                         ],
@@ -155,8 +156,8 @@ class CaptainOrchestrator:
                         "type": "FACTLESS_FACT",
                         "description": "Factless fact tracking event attendance coverage with zero numeric measures",
                         "columns": [
-                            {"name": "attendee_sk", "type": "BIGINT", "nullable": False},
-                            {"name": "event_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "attendee_sk", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "event_sk", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "date_sk", "type": "INT", "nullable": False}
                         ],
                         "primary_key": "attendee_sk, event_sk, date_sk"
@@ -172,7 +173,7 @@ class CaptainOrchestrator:
                         "type": "DIMENSION",
                         "is_conformed": True,
                         "columns": [
-                            {"name": "customer_sk", "type": "BIGINT", "nullable": False, "is_inferred": False},
+                            {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
                             {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
                             {"name": "customer_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
                             {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
@@ -185,7 +186,7 @@ class CaptainOrchestrator:
                         "type": "FACT",
                         "columns": [
                             {"name": "order_id", "type": "BIGINT", "nullable": False, "is_inferred": False},
-                            {"name": "customer_sk", "type": "BIGINT", "nullable": False, "is_inferred": False},
+                            {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
                             {"name": "total_amount_usd", "type": "DECIMAL(14,2)", "nullable": False, "is_inferred": False},
                             {"name": "estimated_delivery_days", "type": "INT", "nullable": True, "is_inferred": True}
                         ],
@@ -213,7 +214,7 @@ class CaptainOrchestrator:
                         "description": "Companion Order Header Fact Mart sharing conformed customer dimension",
                         "columns": [
                             {"name": "order_id", "type": "BIGINT", "nullable": False},
-                            {"name": "customer_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "order_total_usd", "type": "DECIMAL(14,2)", "nullable": False},
                             {"name": "shipping_fee_usd", "type": "DECIMAL(14,2)", "nullable": False},
                             {"name": "order_tax_usd", "type": "DECIMAL(14,2)", "nullable": False}
@@ -238,7 +239,7 @@ class CaptainOrchestrator:
                         "type": "DIMENSION",
                         "description": "SCD2 Historical Time-Travel Outrigger with '9999-12-31 UTC' sentinels",
                         "columns": [
-                            {"name": "customer_sk", "type": "BIGINT", "nullable": False},
+                            {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False},
                             {"name": "credit_tier", "type": "VARCHAR(32)", "nullable": False},
                             {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False},
@@ -379,8 +380,20 @@ ON CONFLICT (order_id) DO NOTHING;
             project_data=dbt_project
         )
         
+        # 8. Deterministic Model Benchmark Verification Suite
+        benchmark_scorecard = ModelBenchmarkHarness.run_full_benchmark(
+            domain=domain,
+            target_schema=schema_spec,
+            medallion_pipeline=medallion_pipeline
+        )
+        
+        final_status = "CERTIFIED_PRODUCTION_READY"
+        if benchmark_scorecard.get("overall_status") != "PASS":
+            final_status = "BENCHMARK_VERIFICATION_FAILED"
+            logger.warning(f"Benchmark verification failed with score={benchmark_scorecard.get('overall_score')}")
+        
         return {
-            "status": "CERTIFIED_PRODUCTION_READY",
+            "status": final_status,
             "state": self.state,
             "domain": domain,
             "intake_completeness_score": intake_res.get("completeness_score", 100.0),
@@ -401,5 +414,6 @@ ON CONFLICT (order_id) DO NOTHING;
             "role_playing_views": role_playing_views,
             "dbt_project": dbt_project,
             "exported_dbt_files": exported_dbt_files,
+            "benchmark_scorecard": benchmark_scorecard,
             "spawner_log_count": len(self.spawner.message_log)
         }

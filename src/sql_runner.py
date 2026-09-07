@@ -27,13 +27,17 @@ class DuckDBPipelineRunner:
         cls,
         domain: str,
         target_schema: Dict[str, Any],
-        pipeline: Dict[str, Any]
+        pipeline: Dict[str, Any],
+        conn: Optional[Any] = None
     ) -> Dict[str, Any]:
         """
         Executes Bronze -> Silver -> Gold in an ephemeral in-memory DuckDB instance
         and returns a comprehensive verification report.
         """
-        conn = duckdb.connect(":memory:")
+        should_close = False
+        if conn is None:
+            conn = duckdb.connect(":memory:")
+            should_close = True
         execution_log = []
         
         # 1. Execute Bronze DDL & Inserts
@@ -96,7 +100,8 @@ class DuckDBPipelineRunner:
             except Exception:
                 pass
                 
-        conn.close()
+        if should_close:
+            conn.close()
         
         return {
             "status": "EXECUTION_VERIFIED",

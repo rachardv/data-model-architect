@@ -6,3 +6,13 @@ __pycache__/
 dist/
 build/
 .DS_Store
+
+# Test & runtime output directories
+docs/dbt/
+docs/migrations/
+docs/SOURCE_TO_TARGET_MAPPING.md
+docs/pipelines/*
+!docs/pipelines/ecommerce/
+!docs/pipelines/retail/
+docs/pipelines/ecommerce/SOURCE_TO_TARGET_MAPPING.md
+docs/pipelines/retail/SOURCE_TO_TARGET_MAPPING.md
