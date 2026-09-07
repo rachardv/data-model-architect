@@ -35,7 +35,7 @@ def _print_comprehensive_benchmark_scorecard(sc):
     # 2. Gold Standard Industry Benchmarks (SSB, TPC-DS, TPC-DI, TPC-H)
     if "industry_benchmarks" in sc:
         ind = sc["industry_benchmarks"]
-        print(f"\n--- 2. TPC & Academic Industry Standards [{ind.get('overall_status')}] ({ind.get('overall_score', 0):.0f}/100 pts) ---")
+        print(f"\n--- 2. TPC & Academic Industry Standards [{ind.get('overall_status')}] ({ind.get('total_test_cases_executed', 0)} physical queries & scenarios executed) ---")
         if "ssb" in ind:
             print(f"  • SSB (O'Neil):        [{ind['ssb']['status']}] {ind['ssb']['details']}")
         if "tpcds" in ind:
@@ -72,9 +72,16 @@ def main():
     parser.add_argument("--duckdb", action="store_true", help="Execute and verify generated SQL in an in-memory DuckDB instance")
     parser.add_argument("--benchmark", action="store_true", help="Display 4-pillar deterministic benchmark scorecard")
     parser.add_argument("--interactive", action="store_true", help="Run interactive plain-English business intake interview")
+    parser.add_argument("--mega-benchmark", action="store_true", help="Execute Option C: Academic & Enterprise Mega-Evaluation Suite")
+    parser.add_argument("--cases", type=int, default=500, help="Number of parameterized test cases for mega-benchmark (default: 500)")
     
     args = parser.parse_args()
     
+    if args.mega_benchmark:
+        from src.mega_benchmark import MegaBenchmarkRunner
+        MegaBenchmarkRunner.run_mega_benchmark(total_cases=args.cases, verbose=True)
+        return
+        
     captain = CaptainOrchestrator()
     
     if args.interactive:
