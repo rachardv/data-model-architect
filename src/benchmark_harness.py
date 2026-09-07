@@ -128,7 +128,7 @@ class ModelBenchmarkHarness:
                     (semantic_res["overall_status"] == "PASS")
                 )
             else:
-                all_passed = deterministic_pass
+                all_passed = deterministic_pass and (scorecard["dbt_project_evaluator"]["status"] in ["PASS", "SKIPPED"])
 
             scorecard["overall_score"] = float(total_score)
             scorecard["overall_status"] = "PASS" if all_passed else "FAIL"

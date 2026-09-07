@@ -17,7 +17,8 @@ from src.mega_benchmark import MegaBenchmarkRunner
 
 def main():
     parser = argparse.ArgumentParser(description="Option C: Academic & Enterprise Mega-Evaluation Runner")
-    parser.add_argument("--cases", type=int, default=500, help="Total parameterized test cases to evaluate (default: 500)")
+    parser.add_argument("--cases", type=int, default=25, help="Total model cases to evaluate (default: 25)")
+    parser.add_argument("--fast-nlp", action="store_true", help="Run fast NLP classification instead of full end-to-end model generation")
     parser.add_argument("--export-json", type=str, default=None, help="File path to export full JSON benchmark scorecard")
     parser.add_argument("--quiet", action="store_true", help="Suppress verbose live progress output")
     
@@ -25,7 +26,8 @@ def main():
     report = MegaBenchmarkRunner.run_mega_benchmark(
         total_cases=args.cases,
         export_path=args.export_json,
-        verbose=not args.quiet
+        verbose=not args.quiet,
+        end_to_end=not args.fast_nlp
     )
     
     sys.exit(0 if report["overall_status"] == "PASS" else 1)

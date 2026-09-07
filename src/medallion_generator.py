@@ -258,7 +258,7 @@ class MedallionPipelineGenerator:
             cols = t.get("columns", [])
             pk = t.get("primary_key", "id")
             
-            stg_source = f"stg_{domain}_customers" if "customer" in tname else f"stg_{domain}_orders"
+            stg_source = f"stg_{domain}_customers" if (ttype in ["DIMENSION", "DIM"] and "customer" in tname) else f"stg_{domain}_orders"
             
             col_names = [c["name"] for c in cols]
             

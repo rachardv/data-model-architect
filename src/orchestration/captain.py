@@ -381,11 +381,13 @@ ON CONFLICT (order_id) DO NOTHING;
         )
         
         # 8. Deterministic Model Benchmark Verification Suite
+        run_industry_suites = user_request.get("run_industry_suites", False)
         benchmark_scorecard = ModelBenchmarkHarness.run_full_benchmark(
             domain=domain,
             target_schema=schema_spec,
             medallion_pipeline=medallion_pipeline,
-            dbt_project=dbt_project
+            dbt_project=dbt_project,
+            run_industry_suites=run_industry_suites
         )
         
         final_status = "CERTIFIED_PRODUCTION_READY"

@@ -72,14 +72,19 @@ def main():
     parser.add_argument("--duckdb", action="store_true", help="Execute and verify generated SQL in an in-memory DuckDB instance")
     parser.add_argument("--benchmark", action="store_true", help="Display 4-pillar deterministic benchmark scorecard")
     parser.add_argument("--interactive", action="store_true", help="Run interactive plain-English business intake interview")
-    parser.add_argument("--mega-benchmark", action="store_true", help="Execute Option C: Academic & Enterprise Mega-Evaluation Suite")
-    parser.add_argument("--cases", type=int, default=500, help="Number of parameterized test cases for mega-benchmark (default: 500)")
+    parser.add_argument("--mega-benchmark", action="store_true", help="Execute Academic & Enterprise Mega-Evaluation Suite")
+    parser.add_argument("--cases", type=int, default=25, help="Number of model cases for mega-benchmark (default: 25)")
+    parser.add_argument("--fast-nlp", action="store_true", help="Run fast NLP classification instead of full end-to-end model generation")
     
     args = parser.parse_args()
     
     if args.mega_benchmark:
         from src.mega_benchmark import MegaBenchmarkRunner
-        MegaBenchmarkRunner.run_mega_benchmark(total_cases=args.cases, verbose=True)
+        MegaBenchmarkRunner.run_mega_benchmark(
+            total_cases=args.cases,
+            verbose=True,
+            end_to_end=not args.fast_nlp
+        )
         return
         
     captain = CaptainOrchestrator()
