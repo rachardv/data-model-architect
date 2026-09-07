@@ -24,12 +24,16 @@ This directory tracks bugs, architectural improvements, and planned enhancements
 
 ---
 
-## 🎯 Current High-Priority Focus: Validation Strategy & Risk Architecture
-See [04_testing_and_benchmarking.md](04_testing_and_benchmarking.md):
-- **Comprehensive Model Validation Strategy & Risk Profiling Matrix**:
-  - Architecting 6 key failure modes (Semantic Inversion, Chasm Traps, Temporal Leakage, FK Orphans, Cartesian Traps, Silent Contract Drift).
-  - 5-stage validation defense (Vector Gates, AST Linters, In-Memory DuckDB Parity, Chaos Ingestion, dbt Evaluation).
-  - Formal deliverable: `docs/VALIDATION_STRATEGY.md` with integrated scorecard.
+## 🎯 Current High-Priority Architectural Focus
+1. **Ambiguous Business Truth (Multi-Stakeholder Semantic Conflicts)** — See [01_intake_and_interview_engine.md](01_intake_and_interview_engine.md)
+   - Handling conflicting definitions from sales, finance, and product (e.g., *"account active"*).
+   - Multi-perspective semantic tagging (`is_active_sales`, `is_active_finance`) and contradiction reconciliation flow.
+2. **The Grain Trap (Atomic Enforcement & User Pushback)** — See [01_intake_and_interview_engine.md](01_intake_and_interview_engine.md)
+   - Proactive pushback against users requesting premature aggregated fact tables (e.g. *"monthly store revenue"*).
+   - Automated 2-tier architecture (lowest atomic fact + materialized gold aggregate mart).
+3. **Comprehensive Model Validation Strategy & Risk Matrix** — See [04_testing_and_benchmarking.md](04_testing_and_benchmarking.md)
+   - Profiling 6 key failure modes (Semantic Inversion, Chasm Traps, Temporal Leakage, FK Orphans, Cartesian Traps, Contract Drift).
+   - Formal deliverable: `docs/VALIDATION_STRATEGY.md` with integrated DuckDB risk scorecard.
 
 ---
 
