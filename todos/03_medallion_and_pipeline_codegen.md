@@ -27,6 +27,26 @@ Focus: Bronze Layer (Raw Storage), Silver Layer (Deduplication & Quarantine), Go
   - **Proposed Solution:** Add `export_open_data_contract_yaml()` to `DataContractCompiler`.
   - **Priority:** Low
 
+- [ ] **[Architecture] Target Warehouse Dialects & Physical Storage Layout (Partitioning, Clustering & Z-Ordering)**
+  - **Problem:** Generated DDL currently emits generic ANSI/DuckDB SQL without physical layout optimizations. In cloud data warehouses (Snowflake, BigQuery, Databricks Delta Lake), multi-million/billion row fact tables without partition pruning and clustering spend excessive compute budget performing full table scans.
+  - **Proposed Architectural Solution:**
+    1. **Dialect Engine Profile:** Support target dialect profiles (`snowflake`, `bigquery`, `databricks_delta`, `postgres`, `duckdb`).
+    2. **Automated Partition & Cluster Inference:**
+       - Infer `PARTITION BY DATE(event_timestamp)` or `PARTITION BY RANGE(date_key)` based on the table's primary time grain.
+       - Infer `CLUSTER BY (tenant_id, customer_sk)` or Delta/Iceberg `OPTIMIZE ZORDER BY` based on high-frequency dimension foreign keys.
+    3. **dbt Config Block Generation:** Auto-inject `{{ config(materialized='incremental', partition_by={...}, cluster_by=[...]) }}` headers into all generated dbt fact models.
+  - **Priority:** High / Critical
+
+- [ ] **Automated Data Governance & Dynamic PII Masking Policies**
+  - **Problem:** Customer attributes containing sensitive PII (SSN, credit card, phone, email, date of birth) are defined as plain unmasked text without governance tags.
+  - **Proposed Architectural Solution:**
+    1. **PII Semantic Classifier:** Pattern-match common sensitive attributes during column generation and assign governance tags (`pii_type: email|ssn|phone|financial`).
+    2. **Dynamic Masking DDL Generation:** Generate dialect-specific security policies:
+       - Snowflake: `CREATE MASKING POLICY pii_email_mask AS (val string) -> CASE WHEN current_role() IN ('ANALYST_PII') THEN val ELSE regexp_replace(val, '.+@', '****@') END`.
+       - BigQuery: Auto-attach policy tag taxonomy URIs (`data_governance_tags: taxonomy/pii_restricted`).
+    3. **OpenLineage & Catalog Integration:** Export column-level lineage and classification tags to OpenLineage JSON for ingestion into DataHub, Collibra, or Alation.
+  - **Priority:** High
+
 ---
 
 ## Add New Items Below

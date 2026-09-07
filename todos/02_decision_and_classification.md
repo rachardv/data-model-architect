@@ -36,6 +36,16 @@ Focus: Kimball Dimensional Models, 3NF OLTP Relational Schemas, Bi-Temporal Engi
   - **Proposed Solution:** Add explicit classification for marketing coverage matrices and school/event attendance.
   - **Priority:** Medium
 
+- [ ] **64-Bit Integer Surrogate Keys & Numeric Hashing (`xxHash64`, `Murmur3`, `FARM_FINGERPRINT`)**
+  - **Problem:** Dimension and fact models currently rely on 32-character hexadecimal MD5 strings (e.g., `MD5(natural_key)`). In large-scale analytical warehouses, 32-byte string keys waste substantial memory in join hash tables, degrade CPU cache efficiency, and slow down join performance by $2\times - 4\times$ compared to 64-bit integers.
+  - **Proposed Architectural Solution:**
+    1. **Configurable Hashing Provider:** Add a surrogate key strategy abstraction (`SurrogateKeyStrategy`) supporting:
+       - 64-bit integer hashing (e.g. `FARM_FINGERPRINT` for BigQuery, `xxHash64` / `MurmurHash3` for DuckDB/Spark/Snowflake).
+       - Monotonically increasing BIGINT identity sequences for warehouse bulk-load pipelines.
+       - Fallback to MD5/SHA256 strings only when explicit string compatibility is demanded.
+    2. **Hash Collision Auditing:** Include an automated audit check verifying zero key collisions when hashing 64-bit integers across enterprise entity scales ($10^7 - 10^9$ rows).
+  - **Priority:** High
+
 ---
 
 ## Add New Items Below

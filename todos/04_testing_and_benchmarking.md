@@ -40,10 +40,15 @@ Focus: Mega-Benchmark Suite, In-Memory DuckDB Validation, Metric Conservation (Z
     - **Deliverable:** Document complete strategy in `docs/VALIDATION_STRATEGY.md` and wire automated risk scorecard into Captain Orchestrator.
   - **Priority:** High / Critical
 
-- [ ] **Automated Stress Testing with Synthetic Skew Data**
-  - **Problem:** Mega-benchmark uses clean synthetic rows. Real-world data has high-cardinality nulls, extreme key skew, and out-of-order event timestamps.
-  - **Proposed Solution:** Add an adversarial synthetic data generator that injects out-of-order records, late-arriving data, and null foreign keys to test pipeline self-healing.
-  - **Priority:** Medium
+- [ ] **[Architecture] Adversarial Chaos & Data Skew Stress Testing Engine**
+  - **Problem:** Current benchmark harnesses execute against clean synthetic rows at low scale (`sf=0.01`). Real-world enterprise pipelines fail because of extreme key skew (Zipfian distributions where 20% of orders belong to a single guest checkout key), out-of-order clock drift across distributed nodes, corrupted UTF-8 byte sequences, and high-cardinality null foreign keys. Low-scale tests suffer from an in-memory bias where hash joins fit in CPU cache, masking spill-to-disk crashes that occur at 100M+ rows.
+  - **Proposed Architectural Solution:**
+    1. **Chaos Ingestion Generator (`AdversarialChaosGenerator`):**
+       - *Zipfian Key Skew:* Inject heavily skewed join keys (80/20 power-law distribution) to verify hash-join memory resilience and absence of thread execution bottlenecks.
+       - *Clock Drift & Race Conditions:* Randomly jitter event timestamps by $\pm 48$ hours to test SCD2 point-in-time timeline robustness.
+       - *Corrupted Payloads:* Inject malformed JSON, invalid UTF-8 sequences, and negative quantities to verify Silver quarantine isolation.
+    2. **Spill-to-Disk Memory Cap Harness:** Run DuckDB stress tests with restricted buffer manager memory (`PRAGMA max_memory='16MB'`) to physically prove that generated SQL plans complete external sort/spill-to-disk without throwing out-of-memory errors.
+  - **Priority:** High / Critical
 
 - [ ] **Continuous Regression CI Action**
   - **Problem:** Running tests manually via `py -3.14 -m pytest` is fast, but should be enforced via GitHub Actions on every pull request.
