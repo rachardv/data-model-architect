@@ -10,5 +10,22 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.5.0",
+    "duckdb>=1.0.0",
+    "pytz>=2024.1",
+    "anyio>=4.0.0",
     "pytest>=8.0.0"
 ]
+
+[project.scripts]
+data-model-architect = "src.cli:main"
+dma = "src.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4.0",
+    "mypy>=1.10.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

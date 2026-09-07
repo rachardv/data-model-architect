@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  data-model-architect:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-model-architect
+    environment:
+      - DATA_MODEL_OUTPUT_DIR=/app/docs
+      - DATA_MODEL_LOG_LEVEL=INFO
+      - DATA_MODEL_LOG_JSON=true
+      - DATA_MODEL_DIALECT=ansi
+    volumes:
+      - ./docs:/app/docs
+    command: ["--story", "A customer orders products in retail store.", "--domain", "retail_docker", "--dbt"]
