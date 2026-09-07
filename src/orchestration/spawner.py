@@ -1,3 +1,5 @@
+from src.logger import get_logger
+logger = get_logger('spawner')
 from typing import Dict, Any, List, Optional
 import dataclasses
 

@@ -1,3 +1,5 @@
+from src.logger import get_logger
+logger = get_logger('reviewer_council')
 from typing import Dict, Any, List
 
 class ReviewFinding:

@@ -10,6 +10,9 @@ from src.contract_compiler import DataContractCompiler
 from src.medallion_generator import MedallionPipelineGenerator
 from src.sttm_generator import STTMGenerator
 from src.dbt_generator import DBTProjectGenerator
+from src.logger import get_logger, set_trace_id, get_trace_id
+
+logger = get_logger('captain')
 
 class CaptainOrchestrator:
     """
@@ -28,7 +31,9 @@ class CaptainOrchestrator:
         return IntakeEngine.process_intake(narrative, business_answers)
         
     def execute_workflow(self, user_request: Dict[str, Any]) -> Dict[str, Any]:
+        trace_id = set_trace_id(user_request.get("trace_id"))
         domain = user_request.get("domain", "ecommerce")
+        logger.info(f"Initiating autonomous data model workflow for domain='{domain}' [trace_id={trace_id}]")
         narrative = user_request.get("narrative", "")
         business_answers = user_request.get("business_answers", [])
         explicit_params = user_request.get("usage_params")
