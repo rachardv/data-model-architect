@@ -78,9 +78,23 @@ def main():
     parser.add_argument("--dialect", type=str, default=None, choices=["duckdb", "snowflake", "bigquery", "postgres", "databricks", "all"], help="Transpile Medallion SQL models to target warehouse dialect")
     parser.add_argument("--benchmark-gate", action="store_true", help="Execute Predefined Benchmark Validation Gate 1-by-1 across all cases")
     parser.add_argument("--benchmark-case", type=str, default=None, help="Execute single Predefined Benchmark Case by ID (e.g. CASE-01)")
+    parser.add_argument("--forge", action="store_true", help="Execute 🛠️ Forge Workflow engine certification battery (Predefined Gate + Industry Standards)")
+    parser.add_argument("--industry-benchmark", action="store_true", help="Execute Industry Standards Benchmark Suite (TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider)")
     
     args = parser.parse_args()
     
+    if args.forge:
+        from src.forge import ForgeEngineRunner
+        sc = ForgeEngineRunner.run_forge_certification()
+        ForgeEngineRunner.print_forge_scorecard(sc)
+        return
+
+    if args.industry_benchmark:
+        from src.forge import ForgeEngineRunner
+        sc = ForgeEngineRunner.run_forge_certification(include_predefined_gate=False)
+        ForgeEngineRunner.print_forge_scorecard(sc)
+        return
+
     if args.benchmark_gate or args.benchmark_case:
         from src.predefined_benchmark_gate import PredefinedBenchmarkGate
         from src.benchmark_catalog import get_predefined_benchmark_catalog

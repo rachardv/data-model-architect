@@ -9,7 +9,7 @@
 2. [Phase 0 Intake Squad & Strict 100% Information Gate](#2-phase-0-intake-squad--strict-100-information-gate)
 3. [The Unified Mandatory Audit Funnel with Human-in-the-Loop (HITL) Gates](#3-the-unified-mandatory-audit-funnel-with-human-in-the-loop-hitl-gates)
 4. [Standardized 5-Section Source-to-Target Mapping (STTM) Specification](#4-standardized-5-section-source-to-target-mapping-sttm-specification)
-5. [Industry Benchmark Verification Scores (117/117 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
+5. [Industry Benchmark Verification Scores (118/118 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
 
 ---
 
@@ -91,6 +91,38 @@ flowchart LR
 
 
 ---
+
+
+---
+
+## 2. Operating Workflows: 🎨 Studio Flow vs. 🛠️ Forge Flow
+
+To guarantee zero documentation drift and zero execution bloat, the architecture is divided into two decoupled operating planes:
+
+### 1. 🎨 Studio Workflow (Domain Data Modeling)
+- **Scope:** Crafting, evolving, or debugging a specific business domain model (e.g. Retail, Claims, Logistics).
+- **Active Validation:**
+  - **Layer 1:** Pre-Flight Intake Gate (Gate 0: 5 Vectors & Contradiction Guardrail).
+  - **Layer 2:** Model Dual-Gate (4 Reviewers + DuckDB Metric & Causality Proofs).
+- **Deliverables:** `docs/pipelines/<domain>/`, `docs/dbt/<domain>/`, `docs/data_contracts/<domain>/`.
+- **Invariants:** 
+  - 🚫 **Never touches master architecture documentation.**
+  - 🚫 **Never runs third-party industry benchmark suites** (keeps domain modeling fast and lightweight).
+
+### 2. 🛠️ Forge Workflow (Engine Evolution & Industry Certification)
+- **Scope:** Modifying, refactoring, or certifying the modeling engine itself (`src/`).
+- **Active Validation:**
+  - **The 118-Test Regression Suite** (`py -3.14 -m pytest`).
+  - **Layer 3:** Predefined Benchmark Gate (`--benchmark-gate` 1-by-1 isolated DuckDB execution).
+  - **🏛️ The Industry Standards Benchmark Gate (Moved here from Studio):**
+    - **TPC-DI:** Full 3-batch sequential lifecycle (initial load, SCD2 history update, dirty data quarantine).
+    - **TPC-H:** Line-item vs order decision support & fanout stress testing (22 queries).
+    - **SSB (Star Schema Benchmark):** Pure Kimball star join verification (13 queries).
+    - **TPC-DS:** Multi-channel retail decision support (99 queries).
+    - **Academic Semantics:** BIRD-SQL and Spider cross-domain NL-to-SQL evaluations (25 scenarios).
+- **Deliverables:** Engine code in `src/`, unit tests in `tests/`, decision traces in `docs/benchmarks/traces/`.
+- **Invariants:**
+  - ✅ **Mandatory synchronization of master architecture documentation (`README.md`, `docs/ARCHITECTURE_AND_RUBRICS.md`, `docs/VALIDATION_STRATEGY.md`).**
 
 ## 3. The 3-Layer Defense-in-Depth Validation Hierarchy
 

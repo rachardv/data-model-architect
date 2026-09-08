@@ -31,7 +31,7 @@ source .venv/bin/activate  # Or: .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-### 2. Run 1-Click Verification Suite (117/117 Passing Tests)
+### 2. Run 1-Click Verification Suite (118/118 Passing Tests)
 ```bash
 # Windows
 .\verify.ps1
@@ -45,26 +45,60 @@ python -m pytest tests/ -v
 
 ---
 
-## 🧭 How to Use the Studio
+## 🧭 Two Distinct Operating Workflows: 🎨 Studio vs. 🛠️ Forge
 
-The Studio operates on a clean **Dual-Workflow Architecture**:
+The repository enforces a strict, enterprise-grade separation between **domain modeling** and **engine development**:
 
 ```mermaid
-flowchart LR
-    W1["🟢 <b>Workflow 1: Create New Model</b><br/><i>(Day 0: Business Story)</i>"]
-    W2["🔵 <b>Workflow 2: Add Business Rules</b><br/><i>(Day 2+: Existing Schema + Rules)</i>"]
+flowchart TD
+    UserReq["Incoming Task"] --> Choice{"What are you working on?"}
+
+    %% ------------------------------------------------------------------------
+    %% WORKFLOW 1: STUDIO FLOW
+    %% ------------------------------------------------------------------------
+    Choice -->|Building a Domain Model| Studio["🎨 <b>STUDIO WORKFLOW (Domain Modeling)</b>"]
     
-    subgraph VALIDATION["🛡️ <b>3-Layer Defense-in-Depth Validation Hierarchy</b>"]
-        L1["<b>Layer 1: Pre-Flight Gate</b><br>5 Vectors & Contradictions"]
-        L2["<b>Layer 2: Model Dual-Gate</b><br>4 Reviewers + DuckDB Proofs"]
-        L3["<b>Layer 3: Predefined Gate</b><br>1-by-1 Battery & Overwrite Traces"]
-        L1 --> L2 --> L3
+    subgraph StudioFlow["Studio Workflow Scope"]
+        direction TB
+        S1["1. Input Narrative & Rules (e.g. retail, healthcare, fintech)"]
+        S2["2. Layer 1: Pre-Flight Gate 0 (5 Vectors & Contradictions)"]
+        S3["3. Autonomous Schema Synthesis (Kimball Star / 3NF / Bridges)"]
+        S4["4. Layer 2: Model Dual-Gate (4 Reviewers + DuckDB Math Verification)"]
+        S5["5. Export Deliverables (STTM, DDL, dbt, Transpiled SQL)"]
+        S1 --> S2 --> S3 --> S4 --> S5
     end
+
+    Studio --> StudioFlow
+    S5 --> StudioOut["📦 Outputs: docs/pipelines/<domain>/<br>🚫 Master docs untouched! Zero industry suites!"]
+
+    %% ------------------------------------------------------------------------
+    %% WORKFLOW 2: FORGE FLOW
+    %% ------------------------------------------------------------------------
+    Choice -->|Upgrading the Modeler Engine| Forge["🛠️ <b>FORGE WORKFLOW (Engine Evolution & Certification)</b>"]
     
-    OUT["📦 <b>Production Deliverables</b><br>(STTM + DDL + Contract + Medallion SQL + dbt + Transpiled Dialects)"]
-    
-    W1 & W2 --> VALIDATION --> OUT
+    subgraph ForgeFlow["Forge Workflow Scope"]
+        direction TB
+        F1["1. Modify Engine Logic in src/ (transpiler, risk tiers, etc.)"]
+        F2["2. Run 118-Test Regression Suite (py -3.14 -m pytest)"]
+        F3["3. Layer 3: Predefined Benchmark Gate (--benchmark-gate)"]
+        F4["4. 🏛️ <b>Industry Standards Benchmark Gate</b><br>(TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider)"]
+        F5["5. Synchronize Master Architecture Docs (README, ARCHITECTURE)"]
+        F1 --> F2 --> F3 --> F4 --> F5
+    end
+
+    Forge --> ForgeFlow
+    F5 --> ForgeOut["🚀 Outputs: src/, tests/, docs/ARCHITECTURE_AND_RUBRICS.md<br>✅ Master docs updated!"]
 ```
+
+| Dimension | 🎨 **Studio Workflow** *(Data Modeling)* | 🛠️ **Forge Workflow** *(Engine Evolution)* |
+| :--- | :--- | :--- |
+| **Who uses it** | Data Engineers, Analytics Engineers, Business Architects | Core Platform Engineers, AI Developers |
+| **Objective** | Build a specific domain data model (e.g. Retail, Healthcare, Lending). | Modify or extend the modeling engine itself in `src/`. |
+| **Validation Gates** | **Layer 1** (Intake Gate) & **Layer 2** (Model Dual-Gate). | **Layer 3** (Predefined Gate 1-by-1) + **Industry Standards Gate** (TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider) + 118-Test Suite. |
+| **Industry Benchmarks?** | 🚫 **NEVER** (Isolated to Forge; keeps domain modeling fast & lean). | ✅ **MANDATORY** (Runs 200+ physical checks before engine release). |
+| **Master Docs Touched?** | 🚫 **NEVER** (Only writes to `docs/pipelines/<domain>/`). | ✅ **MANDATORY** (`README.md`, `ARCHITECTURE_AND_RUBRICS.md` updated). |
+| **Primary CLI Command** | `py src/cli.py --story "..." --domain <name>` | `py src/cli.py --forge` |
+
 
 ---
 
@@ -222,30 +256,30 @@ Every certified run automatically generates **5 enterprise-grade production deli
 ## 💻 Command-Line Interface (CLI)
 
 ```bash
-# 1. Run the Predefined Benchmark Validation Gate (1-by-1 Sequential Battery)
+# 1. Execute the full Forge Engine Certification Battery (Predefined Gate + Industry Standards)
+py src/cli.py --forge
+
+# 2. Run the Predefined Benchmark Validation Gate alone (1-by-1 Sequential Battery)
 py src/cli.py --benchmark-gate
 
-# 2. Run a specific benchmark test case by ID with live query execution output
-py src/cli.py --benchmark-case CASE-01
+# 3. Run the Industry Standards Benchmark Suite alone (TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider)
+py src/cli.py --industry-benchmark
 
-# 3. Transpile generated SQL pipelines to all target warehouse dialects
+# 4. Run Studio Workflow: Generate a domain data model
 py src/cli.py --story "Customers buy products" --domain retail --medallion --dialect all
-
-# 4. Transpile specifically to Snowflake, BigQuery, Postgres, or Databricks
-py src/cli.py --domain retail --medallion --dialect snowflake
 ```
 
 ---
 
 ## 🧪 Automated Testing & In-Memory DuckDB Verification
 
-The entire repository includes a comprehensive 117-test automated verification suite:
+The entire repository includes a comprehensive 118-test automated verification suite:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-### Test Coverage Highlights (117 Passing Tests across 5 Domains):
+### Test Coverage Highlights (118 Passing Tests across 5 Domains):
 * 🧪 **Layer 1 Intake & Guardrails (21 tests):** Tests 5 Information Vectors, low-entropy gibberish rejection (`"asdf"`), and vector conflict / contradiction traps.
 * 🧪 **Layer 2A Static Reviewers & dbt-evaluator (17 tests):** Tests 4-tier risk profiling, DFS cycle detection, chasm trap static linter, and staging bypass.
 * 🧪 **Layer 2B Physical In-Memory Proofs (9 tests):** Asserts the 4 physical laws in DuckDB (Metric Conservation to $0.0000, SCD2 temporal causality, referential integrity, and EXPLAIN hash joins).
