@@ -339,7 +339,8 @@ ON CONFLICT (order_id) DO NOTHING;
                 medallion_pipeline=medallion_pipeline,
                 dbt_project=dbt_project,
                 duckdb_conn=benchmark_con,
-                inferred_usage_params=inferred_params
+                inferred_usage_params=inferred_params,
+                benchmark_scorecard=benchmark_scorecard
             )
             validation_scorecard = ValidationStrategyEngine.evaluate(validation_ctx)
         finally:
