@@ -31,7 +31,7 @@ source .venv/bin/activate  # Or: .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-### 2. Run 1-Click Verification Suite (37/37 Passing Tests)
+### 2. Run 1-Click Verification Suite (117/117 Passing Tests)
 ```bash
 # Windows
 .\verify.ps1
@@ -51,14 +51,19 @@ The Studio operates on a clean **Dual-Workflow Architecture**:
 
 ```mermaid
 flowchart LR
-    W1["🟢 <b>Workflow 1: Create New Model</b><br/><i>(Day 0: Blank canvas, PRD, or Business Story)</i>"]
-    W2["🔵 <b>Workflow 2: Evolve & Add Business Rules</b><br/><i>(Day 2+: Existing schema + new rules & entities)</i>"]
+    W1["🟢 <b>Workflow 1: Create New Model</b><br/><i>(Day 0: Business Story)</i>"]
+    W2["🔵 <b>Workflow 2: Add Business Rules</b><br/><i>(Day 2+: Existing Schema + Rules)</i>"]
     
-    AUDIT["🛡️ <b>Mandatory Unified Audit Block</b><br/>• Core 4 Risk Council (ISO/IEC 25012)<br/>• DuckDB In-Memory Execution Proof"]
+    subgraph VALIDATION["🛡️ <b>3-Layer Defense-in-Depth Validation Hierarchy</b>"]
+        L1["<b>Layer 1: Pre-Flight Gate</b><br>5 Vectors & Contradictions"]
+        L2["<b>Layer 2: Model Dual-Gate</b><br>4 Reviewers + DuckDB Proofs"]
+        L3["<b>Layer 3: Predefined Gate</b><br>1-by-1 Battery & Overwrite Traces"]
+        L1 --> L2 --> L3
+    end
     
-    OUT["📦 <b>Production Deliverables</b><br/>(STTM + DDL + ODCS Contract + Medallion SQL + ERD)"]
+    OUT["📦 <b>Production Deliverables</b><br>(STTM + DDL + Contract + Medallion SQL + dbt + Transpiled Dialects)"]
     
-    W1 & W2 --> AUDIT --> OUT
+    W1 & W2 --> VALIDATION --> OUT
 ```
 
 ---
@@ -205,22 +210,48 @@ Every certified run automatically generates **5 enterprise-grade production deli
 ### 5. 🎨 Interactive Visual Mermaid ERD ([`docs/data_models/erd.md`](docs/data_models/erd.md))
 * Rich, embedded Mermaid entity-relationship diagrams rendered directly in Markdown.
 
+### 6. 🌐 Multi-Dialect SQL Transpilation ([`src/transpiler.py`](src/transpiler.py))
+* Compiles Medallion models across **DuckDB, Snowflake, BigQuery, Postgres, and Databricks** via SQLGlot AST transpilation.
+
+### 7. 🎯 Predefined Benchmark Gate & Traceability ([`docs/benchmarks/traces/`](docs/benchmarks/traces/))
+* Evaluates enterprise test cases **1-by-1** sequentially in isolated DuckDB databases.
+* Generates auditable `<case_id>_trace.json` and human-readable `<case_id>_trace.md` reports with clean overwrite semantics upon redeployment.
+
+---
+
+## 💻 Command-Line Interface (CLI)
+
+```bash
+# 1. Run the Predefined Benchmark Validation Gate (1-by-1 Sequential Battery)
+py src/cli.py --benchmark-gate
+
+# 2. Run a specific benchmark test case by ID with live query execution output
+py src/cli.py --benchmark-case CASE-01
+
+# 3. Transpile generated SQL pipelines to all target warehouse dialects
+py src/cli.py --story "Customers buy products" --domain retail --medallion --dialect all
+
+# 4. Transpile specifically to Snowflake, BigQuery, Postgres, or Databricks
+py src/cli.py --domain retail --medallion --dialect snowflake
+```
+
 ---
 
 ## 🧪 Automated Testing & In-Memory DuckDB Verification
 
-The entire repository includes a comprehensive 37-test automated verification suite:
+The entire repository includes a comprehensive 117-test automated verification suite:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-### Test Coverage Highlights:
-* 🧪 **`test_intake_engine.py`:** Tests low-entropy gibberish rejection (`"asdf"`), contradiction detection, and the Strict 100% Hard Gate circuit breaker.
-* 🧪 **`test_spawner.py`:** Tests micro-agent registration and Intake Squad dispatch logs.
-* 🧪 **`test_sttm_generator.py`:** Validates exact 5-section STTM document compliance.
-* 🧪 **`test_duckdb_execution.py`:** Spawns an in-memory DuckDB database (`:memory:`) to execute Bronze DDL, Silver quarantine isolation, and Gold SCD2 merges in RAM.
-* 🧪 **`test_benchmark_10_scenarios.py`:** Validates 10 ground-truth industry benchmarks (TPC-DS, Healthcare EHR, Commercial Lending, SaaS Churn, SOX HR).
+### Test Coverage Highlights (117 Passing Tests across 5 Domains):
+* 🧪 **Layer 1 Intake & Guardrails (21 tests):** Tests 5 Information Vectors, low-entropy gibberish rejection (`"asdf"`), and vector conflict / contradiction traps.
+* 🧪 **Layer 2A Static Reviewers & dbt-evaluator (17 tests):** Tests 4-tier risk profiling, DFS cycle detection, chasm trap static linter, and staging bypass.
+* 🧪 **Layer 2B Physical In-Memory Proofs (9 tests):** Asserts the 4 physical laws in DuckDB (Metric Conservation to $0.0000, SCD2 temporal causality, referential integrity, and EXPLAIN hash joins).
+* 🧪 **Layer 3 Predefined Benchmark Gate (5 tests):** Validates 1-by-1 isolated DuckDB execution, intentional trap defense verification, and DecisionTracer overwrite mechanics.
+* 🧪 **Multi-Dialect Transpiler (7 tests):** Transpiles Medallion models across DuckDB, Snowflake, BigQuery, Postgres, and Databricks.
+* 🧪 **Industry Standards (34 tests):** Executes full 3-batch TPC-DI data integration, TPC-H fanout benchmarks, Star Schema Benchmark (SSB), and BIRD-SQL/Spider semantic evaluations.
 
 ---
 

@@ -21,7 +21,27 @@ In mature data engineering, a data model cannot simply be generated and trusted 
 
 ---
 
-## 2. The 4-Tier Defense-in-Depth Pipeline
+## 2. The 3-Layer Defense-in-Depth Validation Hierarchy
+
+The validation architecture operates across **3 distinct, non-redundant layers**:
+
+1. **Layer 1: Pre-Flight Intake Gate (Gate 0)**
+   - Audits the unstructured business narrative before any code is generated.
+   - Evaluates the 5 Information Vectors (Workload Intent, Entity Grain, Temporal Policy, Lifecycle Funnel, Multiplicity).
+   - Traps self-contradictory requirements (e.g. sub-millisecond ACID OLTP write throughput vs 10B cold columnar parquet scans).
+
+2. **Layer 2: Model Dual-Gate (Static Blueprints & Physical Execution)**
+   - **2A. Static Reviewer Gates:** Audits schema AST, foreign key dependency graphs (DFS cycle detection), chasm trap fanout risks, and PII masking.
+   - **2B. Physical In-Memory Proofs:** Boots DuckDB, seeds test data, and mathematically proves metric conservation ($0.0000 variance), SCD2 point-in-time joins, and hash-join execution plans.
+
+3. **Layer 3: System-Level Predefined Benchmark Gate (The Certification Battery)**
+   - Evaluates curated enterprise cases **1-by-1 sequentially** in isolated DuckDB databases.
+   - Specifically tests that **intentional traps** (cyclic graphs, contradiction prompts) trigger defense halts.
+   - Executes domain-specific physical SQL verification queries against generated tables.
+   - Audits all decisions into `docs/benchmarks/traces/<case_id>_trace.json` and `.md`, with clean overwrite semantics upon redeployment.
+
+---
+## 3. The 4-Tier Defense-in-Depth Pipeline
 
 ```
 [User Request / Narrative]

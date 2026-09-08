@@ -9,7 +9,7 @@
 2. [Phase 0 Intake Squad & Strict 100% Information Gate](#2-phase-0-intake-squad--strict-100-information-gate)
 3. [The Unified Mandatory Audit Funnel with Human-in-the-Loop (HITL) Gates](#3-the-unified-mandatory-audit-funnel-with-human-in-the-loop-hitl-gates)
 4. [Standardized 5-Section Source-to-Target Mapping (STTM) Specification](#4-standardized-5-section-source-to-target-mapping-sttm-specification)
-5. [Industry Benchmark Verification Scores (37/37 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
+5. [Industry Benchmark Verification Scores (117/117 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
 
 ---
 
@@ -38,12 +38,14 @@ flowchart TD
         R4["🏗️ <code>refactor_risk_reviewer</code><br/><i>(Table Width & Outriggers)</i>"]
     end
 
-    subgraph PHASE6["4️⃣ Phase 6: Compilation & Handover"]
+    subgraph PHASE6["4️⃣ Phase 6: Compilation, Transpilation & Predefined Gate"]
         C1["🗺️ <code>STTMGenerator</code> (5-Section Mapping)"]
         C2["🏗️ <code>ANSISQLGenerator</code> (ANSI DDL)"]
         C3["📜 <code>DataContractCompiler</code> (ODCS v3.0.0)"]
         C4["🌊 <code>MedallionPipelineGenerator</code> (Bronze/Silver/Gold)"]
         C5["🦆 <code>DuckDBPipelineRunner</code> (In-Memory Verification)"]
+        C6["🔄 <code>SQLDialectTranspiler</code> (Snowflake, BigQuery, Databricks)"]
+        C7["🎯 <code>PredefinedBenchmarkGate</code> (1-by-1 Battery & Overwrite Traces)"]
     end
 
     CAPTAIN --> PHASE0
@@ -87,7 +89,42 @@ flowchart LR
 
 ---
 
-## 3. The Unified Mandatory Audit Funnel with Human-in-the-Loop (HITL) Gates
+
+---
+
+## 3. The 3-Layer Defense-in-Depth Validation Hierarchy
+
+The modeling engine enforces a strict **3-Layer Defense-in-Depth Hierarchy** that validates requirements before modeling, audits blueprints and data flows during modeling, and certifies the engine before deployment:
+
+```mermaid
+flowchart TD
+    Prompt["Business Narrative & Question"] --> L1
+
+    subgraph L1["Layer 1: Pre-Flight Intake Gate (Gate 0)"]
+        G0["<b>Inputs & Requirements Validation</b><br>• Phase 0 Squad (Scribe, Auditor, Interviewer)<br>• 5 Information Vectors (Completeness = 100%)<br>• Pre-Flight Contradiction Guardrail (Stops OLTP/OLAP and grain conflicts)"]
+    end
+
+    subgraph L2["Layer 2: Model Dual-Gate (During Model Generation)"]
+        direction LR
+        L2A["<b>2A. Static Reviewer Gates (Blueprints)</b><br>• Structural Integrity (PKs, types)<br>• Semantic Integrity (Chasm traps, DFS cycles)<br>• Performance (Cartesian hazards, skew)<br>• Governance (PII masking, SCD2 sentinels)"]
+        L2B["<b>2B. Physical Benchmark Harness (Pipes)</b><br>• Metric Conservation ($0.00 drift)<br>• SCD2 Point-in-Time Causality<br>• Referential Integrity & Quarantine<br>• EXPLAIN Single-Pass Hash Joins (< 100ms)"]
+        L2A --- L2B
+    end
+
+    subgraph L3["Layer 3: Predefined Benchmark Gate (Engine Certification / CI/CD)"]
+        Catalog["Predefined Catalog (PredefinedBenchmarkCase)"]
+        Runner["Sequential 1-by-1 DuckDB Evaluator"]
+        Tracer["DecisionTracer (Logs All Choices with Clean Overwrite)"]
+        Queries["Custom Domain-Specific SQL Verification Queries"]
+        Catalog --> Runner --> Queries --> Tracer
+    end
+
+    L1 -->|Valid Requirements| L2
+    L2 -->|Certified Model| L3
+    L3 --> Prod["🚀 CERTIFIED PRODUCTION READY"]
+```
+
+## 4. The Unified Mandatory Audit Funnel with Human-in-the-Loop (HITL) Gates
 
 Regardless of the entry branch (`NEW_MODEL`, `ADD_BUSINESS_RULES`, or `BUG_REMEDIATION`), **every change converges into the exact same Mandatory Audit & Verification Funnel with explicit Human Validation Gates**:
 
