@@ -518,7 +518,8 @@ class MedallionPipelineGenerator:
         cls,
         output_base_dir: str,
         domain: str,
-        pipeline: Dict[str, Any]
+        pipeline: Dict[str, Any],
+        target_dialects: Optional[List[str]] = None
     ) -> Dict[str, List[str]]:
         base_path = os.path.join(output_base_dir, "pipelines", domain)
         bronze_dir = os.path.join(base_path, "01_bronze")
@@ -528,6 +529,15 @@ class MedallionPipelineGenerator:
         os.makedirs(bronze_dir, exist_ok=True)
         os.makedirs(silver_dir, exist_ok=True)
         os.makedirs(gold_dir, exist_ok=True)
+        
+        if target_dialects:
+            from src.transpiler import SQLDialectTranspiler
+            SQLDialectTranspiler.export_dialects(
+                domain=domain,
+                pipeline=pipeline,
+                base_dir=os.path.join(output_base_dir, "pipelines"),
+                target_dialects=target_dialects
+            )
         
         exported_files = {"bronze": [], "silver": [], "gold": []}
         

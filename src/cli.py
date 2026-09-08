@@ -75,6 +75,7 @@ def main():
     parser.add_argument("--mega-benchmark", action="store_true", help="Execute Academic & Enterprise Mega-Evaluation Suite")
     parser.add_argument("--cases", type=int, default=25, help="Number of model cases for mega-benchmark (default: 25)")
     parser.add_argument("--fast-nlp", action="store_true", help="Run fast NLP classification instead of full end-to-end model generation")
+    parser.add_argument("--dialect", type=str, default=None, choices=["duckdb", "snowflake", "bigquery", "postgres", "databricks", "all"], help="Transpile Medallion SQL models to target warehouse dialect")
     
     args = parser.parse_args()
     
@@ -157,6 +158,19 @@ def main():
         print(f"Quality Index:      {result['quality_index']}%")
         print(f"Medallion Artifacts: {result['medallion_pipeline']['total_sql_artifacts']} SQL files generated")
         print(f"Exported Pipelines: docs/pipelines/{args.domain}/ (01_bronze, 02_silver, 03_gold)")
+        
+        if args.dialect and "medallion_pipeline" in result:
+            from src.transpiler import SQLDialectTranspiler
+            target_ds = ["snowflake", "bigquery", "postgres", "databricks"] if args.dialect == "all" else [args.dialect]
+            counts = SQLDialectTranspiler.export_dialects(
+                domain=args.domain,
+                pipeline=result["medallion_pipeline"],
+                base_dir="docs/pipelines",
+                target_dialects=target_ds
+            )
+            for d_name, cnt in counts.items():
+                print(f"Transpiled Dialect: docs/pipelines/{args.domain}/dialects/{d_name}/ ({cnt} SQL files)")
+
         if "dbt_project" in result:
             print(f"dbt Core Models:    {result['dbt_project']['total_models']} models compiled")
             print(f"Exported dbt Repo:  docs/dbt/{args.domain}/")

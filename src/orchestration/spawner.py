@@ -1,6 +1,6 @@
 from src.logger import get_logger
 logger = get_logger('spawner')
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Callable
 import dataclasses
 
 @dataclasses.dataclass
@@ -9,11 +9,13 @@ class AgentMessage:
     recipient: str
     content: Dict[str, Any]
     message_type: str = "INSTRUCTION"
+    result: Optional[Any] = None
 
 class SubagentSpawner:
     """
-    Autonomous agent spawner and inter-agent communication bus.
-    Spawns and coordinates specialized micro-agents in the fleet with explicit system directives.
+    Autonomous agent spawner and executable inter-agent task dispatch bus.
+    Coordinates specialized micro-agents in the fleet with explicit system directives
+    and executes registered domain handler callables.
     """
     
     REGISTERED_AGENTS = {
@@ -81,7 +83,45 @@ class SubagentSpawner:
     
     def __init__(self):
         self.message_log: List[AgentMessage] = []
-        
+        self._handlers: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
+        self._register_default_handlers()
+
+    def register_handler(self, agent_name: str, handler: Callable[[Dict[str, Any]], Any]) -> None:
+        """Registers an executable task callable for a given agent in the fleet."""
+        if agent_name not in self.REGISTERED_AGENTS:
+            raise ValueError(f"Unknown agent: {agent_name}. Must be in REGISTERED_AGENTS.")
+        self._handlers[agent_name] = handler
+
+    def _register_default_handlers(self) -> None:
+        """Wires core factory modules as executable agent task handlers."""
+        def _handle_semantic_scribe(payload: Dict[str, Any]) -> Dict[str, Any]:
+            from src.noun_verb_parser import NounVerbSemanticParser
+            narrative = payload.get("narrative", "")
+            return NounVerbSemanticParser.parse_narrative(narrative)
+            
+        def _handle_completeness(payload: Dict[str, Any]) -> Dict[str, Any]:
+            from src.intake_engine import IntakeEngine
+            narrative = payload.get("narrative", "")
+            answers = payload.get("business_answers", [])
+            return IntakeEngine.evaluate_intake(narrative, answers)
+            
+        def _handle_interviewer(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+            from src.intake_engine import IntakeEngine
+            narrative = payload.get("narrative", "")
+            return IntakeEngine.generate_dynamic_questions(narrative)
+            
+        def _handle_financial_reviewer(payload: Dict[str, Any]) -> Dict[str, Any]:
+            from src.orchestration.reviewer_council import ReviewerCouncil
+            return ReviewerCouncil.audit_model(payload.get("schema", payload))
+
+        self._handlers["semantic_scribe_agent"] = _handle_semantic_scribe
+        self._handlers["completeness_auditor_agent"] = _handle_completeness
+        self._handlers["business_interviewer_agent"] = _handle_interviewer
+        self._handlers["financial_risk_reviewer"] = _handle_financial_reviewer
+        self._handlers["temporal_risk_reviewer"] = _handle_financial_reviewer
+        self._handlers["relational_risk_reviewer"] = _handle_financial_reviewer
+        self._handlers["refactor_risk_reviewer"] = _handle_financial_reviewer
+
     def spawn_agent(self, agent_name: str, initial_prompt: Dict[str, Any], sender: str = "captain_orchestrator") -> Dict[str, Any]:
         if agent_name not in self.REGISTERED_AGENTS:
             raise ValueError(f"Unknown agent: {agent_name}. Must be one of {list(self.REGISTERED_AGENTS.keys())}")
@@ -92,18 +132,30 @@ class SubagentSpawner:
             "payload": initial_prompt
         }
         
+        execution_result = None
+        if agent_name in self._handlers:
+            try:
+                execution_result = self._handlers[agent_name](initial_prompt)
+                enriched_content["result"] = execution_result
+            except Exception as e:
+                logger.debug("Handler execution failed for %s: %s", agent_name, e)
+                execution_result = {"error": str(e)}
+                enriched_content["result"] = execution_result
+        
         msg = AgentMessage(
             sender=sender,
             recipient=agent_name,
             content=enriched_content,
-            message_type="SPAWN"
+            message_type="SPAWN",
+            result=execution_result
         )
         self.message_log.append(msg)
         return {
             "status": "SPAWNED",
             "agent": agent_name,
             "role": self.REGISTERED_AGENTS[agent_name],
-            "directive_preview": directive[:80] + "..."
+            "directive_preview": directive[:80] + "...",
+            "result": execution_result
         }
         
     def dispatch_intake_squad(self, narrative: str, business_answers: Optional[List[str]] = None) -> List[str]:
