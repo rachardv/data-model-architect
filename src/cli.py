@@ -76,9 +76,47 @@ def main():
     parser.add_argument("--cases", type=int, default=25, help="Number of model cases for mega-benchmark (default: 25)")
     parser.add_argument("--fast-nlp", action="store_true", help="Run fast NLP classification instead of full end-to-end model generation")
     parser.add_argument("--dialect", type=str, default=None, choices=["duckdb", "snowflake", "bigquery", "postgres", "databricks", "all"], help="Transpile Medallion SQL models to target warehouse dialect")
+    parser.add_argument("--benchmark-gate", action="store_true", help="Execute Predefined Benchmark Validation Gate 1-by-1 across all cases")
+    parser.add_argument("--benchmark-case", type=str, default=None, help="Execute single Predefined Benchmark Case by ID (e.g. CASE-01)")
     
     args = parser.parse_args()
     
+    if args.benchmark_gate or args.benchmark_case:
+        from src.predefined_benchmark_gate import PredefinedBenchmarkGate
+        from src.benchmark_catalog import get_predefined_benchmark_catalog
+        
+        gate = PredefinedBenchmarkGate()
+        catalog = get_predefined_benchmark_catalog()
+        
+        if args.benchmark_case:
+            target_case = next((c for c in catalog if c.case_id.upper() == args.benchmark_case.upper()), None)
+            if not target_case:
+                print(f"Error: Benchmark case '{args.benchmark_case}' not found in catalog ({len(catalog)} case(s) available).")
+                return
+            res = gate.run_case(target_case)
+            print(f"\n=== 🎯 PREDEFINED BENCHMARK CASE [{res['case_id']}] ===")
+            print(f"Name:          {res['name']}")
+            print(f"Domain:        {res['domain']}")
+            print(f"Verdict:       {res['verdict']} in {res['execution_time_ms']}ms")
+            print(f"Status:        {res['final_status']} (Expected: {res['expected_status']})")
+            print(f"Queries:       {res['queries_passed']}/{res['queries_executed']} passed")
+            print(f"Trace JSON:    {res['trace_files']['json_path']}")
+            print(f"Trace Report:  {res['trace_files']['md_path']}")
+            return
+
+        scorecard = gate.run_all_cases()
+        print(f"\n=== 🎯 PREDEFINED BENCHMARK GATE SCORECARD ===")
+        print(f"Status:            {scorecard['status']} ({scorecard['passed_cases']}/{scorecard['total_cases']} cases passed, {scorecard['pass_rate_pct']}%)")
+        print(f"Execution Time:    {scorecard['execution_time_ms']}ms")
+        if scorecard['status'] == "EMPTY_CATALOG":
+            print(f"Notice:            {scorecard['message']}")
+        else:
+            print(f"Trap Defenses:     {scorecard['trap_defenses_passed']}/{scorecard['trap_defenses_tested']} verified")
+            for c_res in scorecard['cases']:
+                badge = "PASS" if c_res['verdict'] == "PASS" else "FAIL"
+                print(f"  • [{badge}] {c_res['case_id']}: {c_res['name']} ({c_res['execution_time_ms']}ms)")
+        return
+
     if args.mega_benchmark:
         from src.mega_benchmark import MegaBenchmarkRunner
         MegaBenchmarkRunner.run_mega_benchmark(

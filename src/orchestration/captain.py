@@ -269,10 +269,10 @@ ON CONFLICT (order_id) DO NOTHING;
             )
             
         # 3. Data Contract Spec
-        rules = user_request.get("rules", [
+        rules = user_request.get("rules") or [
             {"description": "Total amount must be non-negative", "enforcement": "Hard Database CHECK", "definition": "total_amount_usd >= 0.00"},
             {"description": "Estimated delivery days must be positive", "enforcement": "Hard Database CHECK", "definition": "estimated_delivery_days > 0"}
-        ])
+        ]
         contract_markdown = DataContractCompiler.compile_contract(domain, rules)
         
         # 4. Standardized 5-Section STTM Document
@@ -364,6 +364,8 @@ ON CONFLICT (order_id) DO NOTHING;
             "quality_index": final_quality_index,
             "disposition_matrix": self.disposition_matrix,
             "erd_markdown": erd_markdown,
+            "schema_spec": schema_spec,
+            "target_schema": schema_spec,
             "generated_sql": generated_sql,
             "contract_markdown": contract_markdown,
             "sttm_markdown": sttm_markdown,

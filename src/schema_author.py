@@ -27,7 +27,7 @@ class DynamicSchemaAuthor:
         inferred_params = inferred_params or {}
 
         # 1. If explicit schema is provided by user, validate and return it directly
-        if "schema_spec" in user_request:
+        if user_request.get("schema_spec") is not None:
             return user_request["schema_spec"]
 
         clean_domain = domain.lower().replace(" ", "_").replace("-", "_")
