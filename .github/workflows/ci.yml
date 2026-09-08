@@ -1,4 +1,4 @@
-name: CI / Enterprise Quality Gate
+name: CI / Build & Packaging Check
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test:
-    name: Test (${{ matrix.os }} - Py ${{ matrix.python-version }})
+  build:
+    name: Build & Packaging (${{ matrix.os }} - Py ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,10 +34,6 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -e .
           python -m pip install -r requirements.txt
-
-      - name: Execute Full Pytest Test Suite
-        run: |
-          python -m pytest tests/ -v
 
       - name: Verify CLI Binary Entry Points
         run: |

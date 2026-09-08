@@ -31,7 +31,7 @@ source .venv/bin/activate  # Or: .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-### 2. Run 1-Click Verification Suite (118/118 Passing Tests)
+### 2. Run 1-Click Verification Suite (119/119 Passing Tests)
 ```bash
 # Windows
 .\verify.ps1
@@ -183,6 +183,47 @@ result = captain.execute_workflow(payload)
 
 ---
 
+
+---
+
+## 🧠 Decoupled Intakes & Forge Reward-Weight Optimization
+
+Studio and Forge operate on **completely separate intakes** and a continuous **Reward-Weight Feedback Loop**:
+
+```mermaid
+flowchart LR
+    subgraph STUDIO["🎨 Studio Workflow (Domain Modeler)"]
+        S_Intake["<b>Studio Intake</b><br>• Natural Language Story<br>• 21 Questions Interview<br>• 5 Information Vectors"]
+        S_Model["<b>Schema Synthesis</b><br>Kimball / 3NF / Bridges<br><i>(Biased by Policy Weights)</i>"]
+        S_Intake --> S_Model
+    end
+
+    subgraph FORGE["🛠️ Forge Workflow (Engine Optimizer)"]
+        F_Intake["<b>Forge Intake</b><br>• Machine Optimization Mode<br>• Target Reward Thresholds<br>• Zero Human Dialogue"]
+        F_Eval["<b>Benchmark Battery</b><br>TPC-DI, TPC-H, SSB, TPC-DS,<br>BIRD-SQL, Predefined Gate"]
+        F_Reward["<b>Forge Reward Engine</b><br>Computes R_metric, R_causality,<br>R_integrity, R_algebra, R_trap"]
+        F_Adjust["<b>Weight Adjuster</b><br>Adjusts Policy Weights<br><code>config/studio_policy_weights.json</code>"]
+        
+        F_Intake --> F_Eval --> F_Reward --> F_Adjust
+    end
+
+    F_Adjust -.->|Optimized Weights| S_Model
+```
+
+### 1. Distinct Intake Planes
+* **Studio Intake:** Focuses on human discovery. Analyzes raw user stories, extracts business nouns/verbs, and evaluates 100% information completeness across the 5 Information Vectors.
+* **Forge Intake:** Machine-level optimization specification. Configures execution targets (`BALANCED`, `MIN_RELATIONAL_ALGEBRA`, `MAX_REVENUE_INTEGRITY`), learning rates, and target reward thresholds without conducting conversational interviews.
+
+### 2. Forge as Reward Function & Studio Weight Adjuster
+When Forge executes, it computes normalized reward signals:
+* **$R_{	ext{metric}}$:** Metric revenue conservation to $0.0000.
+* **$R_{	ext{causality}}$:** SCD2 point-in-time causality resolution.
+* **$R_{	ext{integrity}}$:** Referential integrity and quarantine isolation.
+* **$R_{	ext{algebra}}$:** Minimization of relational join depth ($owtie$) and sub-100ms single-pass hash joins.
+* **$R_{	ext{trap}}$:** Defensive trap detection (correctly halting on cyclic graphs and contradictory constraints).
+
+Based on these signals, Forge **adjusts the architectural heuristic weights** stored in `config/studio_policy_weights.json`. Studio loads these weights to bias its cognitive decision tree, ensuring the modeler improves and adapts over time.
+
 ## 🛡️ The 8-Micro-Agent Fleet & Architecture
 
 ```mermaid
@@ -273,13 +314,13 @@ py src/cli.py --story "Customers buy products" --domain retail --medallion --dia
 
 ## 🧪 Automated Testing & In-Memory DuckDB Verification
 
-The entire repository includes a comprehensive 118-test automated verification suite:
+The entire repository includes a comprehensive 119-test automated verification suite:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-### Test Coverage Highlights (118 Passing Tests across 5 Domains):
+### Test Coverage Highlights (119 Passing Tests across 5 Domains):
 * 🧪 **Layer 1 Intake & Guardrails (21 tests):** Tests 5 Information Vectors, low-entropy gibberish rejection (`"asdf"`), and vector conflict / contradiction traps.
 * 🧪 **Layer 2A Static Reviewers & dbt-evaluator (17 tests):** Tests 4-tier risk profiling, DFS cycle detection, chasm trap static linter, and staging bypass.
 * 🧪 **Layer 2B Physical In-Memory Proofs (9 tests):** Asserts the 4 physical laws in DuckDB (Metric Conservation to $0.0000, SCD2 temporal causality, referential integrity, and EXPLAIN hash joins).

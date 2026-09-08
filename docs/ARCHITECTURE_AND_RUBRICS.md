@@ -9,7 +9,7 @@
 2. [Phase 0 Intake Squad & Strict 100% Information Gate](#2-phase-0-intake-squad--strict-100-information-gate)
 3. [The Unified Mandatory Audit Funnel with Human-in-the-Loop (HITL) Gates](#3-the-unified-mandatory-audit-funnel-with-human-in-the-loop-hitl-gates)
 4. [Standardized 5-Section Source-to-Target Mapping (STTM) Specification](#4-standardized-5-section-source-to-target-mapping-sttm-specification)
-5. [Industry Benchmark Verification Scores (118/118 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
+5. [Industry Benchmark Verification Scores (119/119 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
 
 ---
 
@@ -124,7 +124,30 @@ To guarantee zero documentation drift and zero execution bloat, the architecture
 - **Invariants:**
   - ✅ **Mandatory synchronization of master architecture documentation (`README.md`, `docs/ARCHITECTURE_AND_RUBRICS.md`, `docs/VALIDATION_STRATEGY.md`).**
 
-## 3. The 3-Layer Defense-in-Depth Validation Hierarchy
+
+---
+
+## 3. Decoupled Intakes & The Forge Closed-Loop Reward Engine
+
+Studio and Forge maintain strict functional decoupling at both the input and output boundaries:
+
+### A. Studio Intake vs. Forge Intake
+* **Studio Intake (`IntakeEngine`):** Conversational, human-centric discovery. Evaluates unstructured text, checks the 5 Information Vectors (Workload Intent, Grain, Temporal Policy, Lifecycle Funnel, Multiplicity), and conducts plain-English 21-Question interviews.
+* **Forge Intake (`ForgeIntakeEngine`):** Machine-level optimization contract. Ingests optimization profiles (`MIN_RELATIONAL_ALGEBRA`, `MAX_REVENUE_INTEGRITY`), benchmark target suites, learning rates, and target reward thresholds. Zero human dialogue.
+
+### B. Forge as an Objective Reward Function & Studio Weight Adjuster
+Forge evaluates physical benchmark execution and computes a multi-dimensional reward vector:
+$$R_{	ext{total}} = 0.25 R_{	ext{metric}} + 0.25 R_{	ext{temporal}} + 0.20 R_{	ext{integrity}} + 0.15 R_{	ext{algebra}} + 0.15 R_{	ext{trap}}$$
+
+The **Forge Weight Adjuster** (`ForgeWeightAdjuster`) iteratively tunes Studio's architectural decision weights:
+* **`relational_join_depth_penalty`:** Raised when queries incur multi-hop snowflake latency, biasing Studio toward single-hop star schemas.
+* **`bridge_mitigation_bias`:** Tuned based on co-ownership and chasm trap resolution efficiency.
+* **`scd2_outrigger_bias`:** Biases Studio toward lightweight historical outriggers over wide dimension updates.
+* **`quarantine_strictness`:** Modulates the sensitivity of Silver quarantine views.
+
+Adjusted weights are persisted to `config/studio_policy_weights.json` and consumed directly by Studio's cognitive decision tree.
+
+## 4. The 3-Layer Defense-in-Depth Validation Hierarchy
 
 The modeling engine enforces a strict **3-Layer Defense-in-Depth Hierarchy** that validates requirements before modeling, audits blueprints and data flows during modeling, and certifies the engine before deployment:
 

@@ -1,0 +1,9 @@
+{
+  "version": 4,
+  "last_adjusted_utc": "2026-09-08T02:42:16.750877+00:00",
+  "atomic_grain_bias": 1.0,
+  "bridge_mitigation_bias": 1.0,
+  "scd2_outrigger_bias": 1.0,
+  "relational_join_depth_penalty": 1.0,
+  "quarantine_strictness": 1.0
+}
