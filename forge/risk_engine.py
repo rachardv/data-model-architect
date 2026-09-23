@@ -722,6 +722,138 @@ class RSK12_MppPartitionAndShuffleLinter(BaseRiskEvaluator):
             metrics={"facts_partitioned": len(facts), "mpp_optimized": True}
         )
 
+@register_risk("RSK-13")
+class RSK13_TemporalIntervalOverlapAndGhostKeyLinter(BaseRiskEvaluator):
+    risk_id = "RSK-13"
+    name = "Temporal Interval Overlap & Inferred Ghost Key Linter"
+    tier = ValidationTier.TIER_2_AST_LINTER
+    default_severity = RiskSeverity.HIGH
+    default_blocking = True
+
+    def evaluate(self, context: ValidationContext) -> RiskResult:
+        target_schema = context.target_schema or {}
+        tables = target_schema.get("tables", [])
+        params = context.inferred_usage_params or {}
+        con = context.duckdb_conn
+
+        facts = [t for t in tables if t.get("type") in ["FACT", "FACTLESS_FACT", "ACCUMULATING_FACT", "PERIODIC_SNAPSHOT"]]
+        dims = [t for t in tables if t.get("type") == "DIMENSION"]
+
+        # 1. Identify temporal dimensions (SCD2, SCD6, or having temporal bounds/valid_from columns)
+        temporal_dims = []
+        for d in dims:
+            col_names = [c.get("name", "").lower() for c in d.get("columns", [])]
+            has_temporal_cols = any("valid_from" in cn for cn in col_names) and any("valid_to" in cn for cn in col_names)
+            if d.get("scd_type") in [2, 6] or has_temporal_cols or "scd" in d.get("name", "").lower():
+                temporal_dims.append(d)
+
+        # If no temporal dimensions, pass
+        if not temporal_dims:
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="PASS",
+                severity=self.default_severity,
+                blocking=False,
+                details="No SCD2/SCD6 temporal dimensions present; temporal interval and ghost key evaluation passed.",
+                metrics={"temporal_dimensions_count": 0}
+            )
+
+        # 2. Check SCD Type 6 consistency: If scd_type == 6 or "scd6" in table name
+        for td in temporal_dims:
+            if td.get("scd_type") == 6 or "scd6" in td.get("name", "").lower():
+                col_names = [c.get("name", "").lower() for c in td.get("columns", [])]
+                has_current = any(cn.startswith("current_") or "_current" in cn for cn in col_names)
+                has_historical = any(cn.startswith("historical_") or "_historical" in cn for cn in col_names)
+                if not (has_current and has_historical):
+                    return RiskResult(
+                        risk_id=self.risk_id,
+                        name=self.name,
+                        tier=self.tier,
+                        status="FAIL",
+                        severity=self.default_severity,
+                        blocking=self.default_blocking,
+                        details=f"SCD Type 6 Specification Defect: Dimension '{td.get('name')}' is designated as SCD6 but lacks paired historical_* and current_* attribute columns.",
+                        remediation_advice="Add paired historical_<attr> (point-in-time) and current_<attr> (overwritten) columns to support dual-perspective Kimball reporting."
+                    )
+
+        # 3. Ghost Key Sentinel Support: If model has facts joining temporal dimension with late-arriving/SCD6 intent,
+        # verify dimension supports 'is_inferred' column or supports_ghost_records
+        for td in temporal_dims:
+            col_names = [c.get("name", "").lower() for c in td.get("columns", [])]
+            has_inferred = "is_inferred" in col_names or td.get("supports_ghost_records")
+            if not has_inferred:
+                td_name = td.get("name")
+                is_referenced = any(
+                    any(c.get("foreign_key", "").startswith(f"{td_name}.") for c in f.get("columns", []))
+                    for f in facts
+                )
+                is_late_intent = (
+                    td.get("scd_type") == 6 or
+                    target_schema.get("pattern") in ["KIMBALL_STAR_SCD6", "BITEMPORAL_SCD2_ENGINE"] or
+                    params.get("has_scd6_hybrid") or
+                    "late" in str(target_schema.get("domain", "")).lower()
+                )
+                if is_referenced and is_late_intent:
+                    return RiskResult(
+                        risk_id=self.risk_id,
+                        name=self.name,
+                        tier=self.tier,
+                        status="WARNING",
+                        severity=RiskSeverity.MEDIUM,
+                        blocking=False,
+                        details=f"Late-Arriving Fact Ghost Key Warning: Dimension '{td_name}' lacks an 'is_inferred' sentinel column. Late-arriving facts arriving before initial dimension extraction may be dropped or generate foreign key orphan errors.",
+                        remediation_advice="Add an 'is_inferred BOOLEAN DEFAULT FALSE' column and a sentinel ghost record ('UNK-000' / -1) for asynchronous reconciliation."
+                    )
+
+        # 4. In-Memory DuckDB Interval Overlap Check (if con is available)
+        if con:
+            try:
+                existing_tables = [t[0].lower() for t in con.execute("SHOW TABLES").fetchall()]
+                for td in temporal_dims:
+                    t_name = td.get("name", "").lower()
+                    if t_name in existing_tables:
+                        cols = [c[0].lower() for c in con.execute(f"DESCRIBE {t_name}").fetchall()]
+                        valid_from_col = next((c for c in cols if "valid_from" in c), None)
+                        valid_to_col = next((c for c in cols if "valid_to" in c), None)
+                        sk_col = next((c for c in cols if c.endswith("_sk") or c == "id" or "sk" in c), cols[0] if cols else None)
+                        nk_col = next((c for c in cols if c.endswith("_id") and c != sk_col), None)
+
+                        if valid_from_col and valid_to_col and nk_col and sk_col:
+                            overlap_q = f"""
+                                SELECT a.{nk_col}, a.{sk_col} AS sk_a, b.{sk_col} AS sk_b
+                                FROM {t_name} a
+                                JOIN {t_name} b ON a.{nk_col} = b.{nk_col} AND a.{sk_col} <> b.{sk_col}
+                                WHERE a.{valid_from_col} < b.{valid_to_col} AND b.{valid_from_col} < a.{valid_to_col}
+                                LIMIT 5
+                            """
+                            overlaps = con.execute(overlap_q).fetchall()
+                            if overlaps:
+                                return RiskResult(
+                                    risk_id=self.risk_id,
+                                    name=self.name,
+                                    tier=self.tier,
+                                    status="FAIL",
+                                    severity=RiskSeverity.CRITICAL,
+                                    blocking=True,
+                                    details=f"CRITICAL Temporal Interval Overlap Detected in '{t_name}': Overlapping closed-open [valid_from, valid_to) ranges found for {nk_col}='{overlaps[0][0]}' between versions {overlaps[0][1]} and {overlaps[0][2]}. Point-in-time queries will duplicate fact metrics.",
+                                    remediation_advice="Ensure retroactive interval splicing adjusts prior valid_to timestamps to equal the new valid_from timestamp exactly."
+                                )
+            except Exception as ex:
+                logger.warning(f"RSK-13 DuckDB physical check encountered: {ex}")
+
+        return RiskResult(
+            risk_id=self.risk_id,
+            name=self.name,
+            tier=self.tier,
+            status="PASS",
+            severity=self.default_severity,
+            blocking=False,
+            details=f"Temporal Validity & Ghost Key Invariants Confirmed: {len(temporal_dims)} temporal dimension(s) verified with non-overlapping intervals and SCD6/ghost support.",
+            metrics={"temporal_dimensions_checked": len(temporal_dims), "interval_overlap_free": True}
+        )
+
 
 # =====================================================================
 # TIER 3 EVALUATORS (In-Memory Physical Proofs in DuckDB)

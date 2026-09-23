@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise B2B SaaS platform tracking recurring software subscriptions. For real-time executive dashboarding and cohort churn analysis, our BI teams require sub-second query response times without multi-table join latency. We require a single denormalized One Big Table (OBT) mart capturing subscription renewals, monthly recurring revenue (MRR), customer attributes, plan tiers, and churn indicators in one flat table.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 14: \"Accounting\", pp. 385-412 (\"Subscription Billing, Recurring Revenue, and Denormalized Reporting Marts\").\n",
-  "timestamp_utc": "2026-09-23T18:43:59.814782+00:00",
+  "timestamp_utc": "2026-09-23T19:03:51.067436+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -26,7 +26,8 @@
       "has_high_churn_ml_scores": false,
       "is_denormalized_obt": true,
       "is_nested_columnar": false,
-      "has_multi_fact_bus_matrix": false
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false
     },
     "resolution_applied": null,
     "disposition_matrix": []
@@ -63,7 +64,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.3,
+      "latency_ms": 0.25,
       "error": null
     },
     {
@@ -73,7 +74,7 @@
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.27,
+      "latency_ms": 0.23,
       "error": null
     },
     {
@@ -83,12 +84,12 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 0.57,
+      "latency_ms": 0.75,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 3149.94
+  "execution_time_ms": 3137.92
 }

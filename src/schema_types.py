@@ -30,6 +30,8 @@ class TableSpec(BaseModel):
     description: Optional[str] = None
     partition_by: Optional[str] = None
     cluster_by: Optional[List[str]] = Field(default_factory=list)
+    temporal_bounds: Optional[Dict[str, str]] = None
+    supports_ghost_records: bool = False
     columns: List[ColumnSpec] = Field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:

@@ -1,0 +1,168 @@
+case_id: CASE-09
+domain: insurance_policy
+name: Bitemporal Insurance Policy & SCD6 Splicing Lifecycle
+description: Enterprise property & casualty insurance policy lifecycle tracking retroactive endorsements, SCD Type 6 dual-perspective reporting (as-was vs as-is), closed-open interval splicing, and late-arriving claims with ghost policy surrogate keys.
+citation: >
+  Ralph Kimball & Margy Ross (2013), "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling" (3rd Edition),
+  Chapter 5 ("Slowly Changing Dimension Techniques: Type 6 Hybrid Dimensions & Late-Arriving Data"), pp. 153-188,
+  and Martin Fowler (2005), "Bitemporal History".
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - insurance
+  - temporal
+  - scd6
+  - bitemporal
+  - late_arriving_facts
+  - ghost_keys
+  - interval_splicing
+
+prompt: >
+  We operate an enterprise commercial property and casualty insurance carrier managing complex policy endorsements and claims lifecycles.
+  Underwriting endorsements frequently occur retroactively, requiring historical policy timelines to be spliced into strict closed-open intervals without overlapping validity dates.
+  Claims often arrive out-of-order weeks after an incident occurs, referencing policies that have not yet completed ETL ingestion; these must resolve to inferred ghost dimension records with sentinel surrogate keys to prevent catastrophic claim drop-outs.
+  To support executive management and actuarial audits simultaneously, the policy dimension must implement Kimball SCD Type 6 hybrid attributes:
+  preserving historical point-in-time risk tiers and sales territories (as-was) while maintaining current overwritten attributes (as-is) across all version slices.
+
+business_answers:
+  - "Core business processes: Insurance policy lifecycle management and claims processing"
+  - "Grain: Individual claim transaction per insurance policy"
+  - "Workload intent: Bitemporal SCD Type 6 hybrid dimensional reporting with as-was and as-is perspectives"
+  - "Dimensions: Conformed insurance policies with SCD6 hybrid attributes and late-arriving ghost keys"
+  - "Temporal policy: Preserve historical policy attributes using SCD Type 6 effective dates and dual-perspective current attributes"
+  - "Lifecycle funnel: Discrete single event transaction claim events recorded per policy"
+  - "Metrics: claim_amount, settlement_amount"
+
+seed_data:
+  dim_insurance_policy_scd6:
+    - policy_sk: "POL-001-V1"
+      policy_id: "POL-1001"
+      policyholder_name: "Acme Logistics"
+      historical_risk_tier: "LOW"
+      current_risk_tier: "HIGH"
+      historical_agent_region: "WEST"
+      current_agent_region: "CENTRAL"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "2025-07-01 00:00:00+00"
+      is_current: false
+      version_number: 1
+      is_inferred: false
+
+    - policy_sk: "POL-001-V2"
+      policy_id: "POL-1001"
+      policyholder_name: "Acme Logistics"
+      historical_risk_tier: "MEDIUM"
+      current_risk_tier: "HIGH"
+      historical_agent_region: "WEST"
+      current_agent_region: "CENTRAL"
+      scd_valid_from: "2025-07-01 00:00:00+00"
+      scd_valid_to: "2026-01-01 00:00:00+00"
+      is_current: false
+      version_number: 2
+      is_inferred: false
+
+    - policy_sk: "POL-001-V3"
+      policy_id: "POL-1001"
+      policyholder_name: "Acme Logistics"
+      historical_risk_tier: "HIGH"
+      current_risk_tier: "HIGH"
+      historical_agent_region: "CENTRAL"
+      current_agent_region: "CENTRAL"
+      scd_valid_from: "2026-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+      version_number: 3
+      is_inferred: false
+
+    - policy_sk: "POL-INF-999"
+      policy_id: "POL-9999"
+      policyholder_name: "PENDING_ENRICHMENT"
+      historical_risk_tier: "UNKNOWN"
+      current_risk_tier: "UNKNOWN"
+      historical_agent_region: "UNKNOWN"
+      current_agent_region: "UNKNOWN"
+      scd_valid_from: "1970-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+      version_number: 0
+      is_inferred: true
+
+  fact_insurance_policy_claims:
+    - claim_id: 80001
+      policy_sk: "POL-001-V1"
+      claim_date_key: 20250315
+      claim_amount: 12500.00
+      claim_status: "SETTLED"
+
+    - claim_id: 80002
+      policy_sk: "POL-001-V2"
+      claim_date_key: 20250920
+      claim_amount: 45000.00
+      claim_status: "SETTLED"
+
+    - claim_id: 80003
+      policy_sk: "POL-001-V3"
+      claim_date_key: 20260210
+      claim_amount: 8000.00
+      claim_status: "OPEN"
+
+    - claim_id: 80004
+      policy_sk: "POL-INF-999"
+      claim_date_key: 20260301
+      claim_amount: 19200.00
+      claim_status: "OPEN"
+
+verification_queries:
+  - name: Zero Interval Overlap in Policy Dimension
+    query: >
+      SELECT COUNT(*) FROM (
+        SELECT a.policy_id, a.policy_sk AS sk_a, b.policy_sk AS sk_b
+        FROM dim_insurance_policy_scd6 a
+        JOIN dim_insurance_policy_scd6 b ON a.policy_id = b.policy_id AND a.policy_sk <> b.policy_sk
+        WHERE a.scd_valid_from < b.scd_valid_to AND b.scd_valid_from < a.scd_valid_to
+      );
+    assertion_type: scalar_eq
+    expected_value: 0
+    failure_message: Expected zero interval overlap across dimension versions
+
+  - name: Late Arriving Ghost Policy Exists
+    query: "SELECT COUNT(*) FROM dim_insurance_policy_scd6 WHERE is_inferred = true;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected inferred ghost policy record for late-arriving claims
+
+  - name: Zero Dropped Claims With Ghost Key Joins
+    query: "SELECT COUNT(*) FROM fact_insurance_policy_claims f JOIN dim_insurance_policy_scd6 d ON f.policy_sk = d.policy_sk WHERE f.claim_id >= 80001;"
+    assertion_type: scalar_eq
+    expected_value: 4
+    failure_message: Expected 100% claim retention with zero dropped facts using ghost keys
+
+  - name: Historical Point In Time Risk Tier Aggregation
+    query: >
+      WITH hist_summary AS (
+        SELECT d.historical_risk_tier, SUM(f.claim_amount) AS total_claims
+        FROM fact_insurance_policy_claims f
+        JOIN dim_insurance_policy_scd6 d ON f.policy_sk = d.policy_sk
+        WHERE f.claim_id >= 80001 AND d.historical_risk_tier = 'LOW'
+        GROUP BY d.historical_risk_tier
+      )
+      SELECT COUNT(*) FROM hist_summary WHERE total_claims = 12500.00;
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected historical as-was aggregation to reflect point-in-time risk tier
+
+  - name: Current Perspective Risk Tier Aggregation
+    query: >
+      WITH curr_summary AS (
+        SELECT d.current_risk_tier, SUM(f.claim_amount) AS total_claims
+        FROM fact_insurance_policy_claims f
+        JOIN dim_insurance_policy_scd6 d ON f.policy_sk = d.policy_sk
+        WHERE f.claim_id >= 80001 AND d.current_risk_tier = 'HIGH'
+        GROUP BY d.current_risk_tier
+      )
+      SELECT COUNT(*) FROM curr_summary WHERE total_claims = 65500.00;
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected current as-is Type 1 aggregation to reflect overwritten risk tier across all versions

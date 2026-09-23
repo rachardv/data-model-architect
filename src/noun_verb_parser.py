@@ -63,7 +63,8 @@ class NounVerbSemanticParser:
             "user", "users", "client", "clients", "employee", "employees", "borrower", "borrowers",
             "passenger", "passengers", "applicant", "applicants", "doctor", "doctors", "examiner", "examiners",
             "member", "members", "shopper", "shoppers", "guest", "guests", "citizen", "citizens", "clerk", "clerks",
-            "carrier", "teacher", "teachers", "physician", "physicians", "nurse", "nurses", "agent", "agents"
+            "carrier", "teacher", "teachers", "physician", "physicians", "nurse", "nurses", "agent", "agents",
+            "policyholder", "policyholders", "insured", "policy", "policies"
         }
         
         event_seeds = {
@@ -272,6 +273,13 @@ class NounVerbSemanticParser:
             "across orders and", "orders and shipments", "shipments and payments",
             "orders, shipments", "conformed dimensions across facts", "shared conformed dimensions"
         ])
+
+        # 11. SCD Type 6 Hybrid Dimensions & Bitemporal Splicing
+        has_scd6_hybrid = any(k in text for k in [
+            "scd6", "scd 6", "type 6", "type-6", "hybrid dimension",
+            "as-was and as-is", "as was and as is", "historical and current",
+            "dual-perspective", "dual perspective", "bitemporal scd"
+        ])
         
         return {
             "is_live_app": is_live_app,
@@ -283,5 +291,6 @@ class NounVerbSemanticParser:
             "has_high_churn_ml_scores": has_high_churn_ml_scores,
             "is_denormalized_obt": is_denormalized_obt,
             "is_nested_columnar": is_nested_columnar,
-            "has_multi_fact_bus_matrix": has_multi_fact_bus_matrix
+            "has_multi_fact_bus_matrix": has_multi_fact_bus_matrix,
+            "has_scd6_hybrid": has_scd6_hybrid
         }

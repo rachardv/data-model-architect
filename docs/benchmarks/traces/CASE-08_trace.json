@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise fleet IoT telematics platform capturing 500 million pings daily across commercial vehicles. The model must capture timeseries telemetry pings linked to vehicle assets and operators. To avoid multi-node shuffle bottlenecks and catastrophic full-table scan costs in BigQuery and Snowflake, fact tables must be physically partitioned by ping date keys and clustered by vehicle surrogate key. Analytical queries must demonstrate partition pruning and zero-shuffle co-located joins with the vehicle dimension.\n",
   "citation": "Google Cloud BigQuery Architecture Guide (2024), \"Partitioning & Clustering Best Practices for High-Volume Timeseries & Conformed Analytical Joins\", and Snowflake Engineering Architecture (2024), \"Micro-partitioning, Pruning & Clustering Keys\".\n",
-  "timestamp_utc": "2026-09-23T18:44:06.278654+00:00",
+  "timestamp_utc": "2026-09-23T19:03:57.437607+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -26,7 +26,8 @@
       "has_high_churn_ml_scores": false,
       "is_denormalized_obt": false,
       "is_nested_columnar": false,
-      "has_multi_fact_bus_matrix": false
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false
     },
     "resolution_applied": null,
     "disposition_matrix": []
@@ -71,7 +72,7 @@
       "expected_value": 0,
       "actual_value": 4,
       "passed": true,
-      "latency_ms": 0.32,
+      "latency_ms": 0.27,
       "error": null
     },
     {
@@ -81,7 +82,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.41,
+      "latency_ms": 0.31,
       "error": null
     },
     {
@@ -91,7 +92,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.4,
+      "latency_ms": 0.38,
       "error": null
     },
     {
@@ -101,12 +102,12 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 1.32,
+      "latency_ms": 1.39,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 81.49
+  "execution_time_ms": 91.1
 }

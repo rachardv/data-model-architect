@@ -427,6 +427,100 @@ class TestAllTiersEvaluation:
         sf_ddl = SQLDialectTranspiler.transpile_mpp_table_ddl(valid_mpp_schema["tables"][1], dialect="snowflake")
         assert "CLUSTER BY (vehicle_sk)" in sf_ddl
 
+    def test_rsk13_temporal_interval_and_ghost_key_linter(self):
+        # 1. Valid SCD Type 6 schema with paired columns, is_inferred, and non-overlapping data passes RSK-13
+        valid_scd6_schema = {
+            "pattern": "KIMBALL_STAR_SCD6",
+            "tables": [
+                {
+                    "name": "dim_insurance_policy_scd6",
+                    "type": "DIMENSION",
+                    "scd_type": 6,
+                    "primary_key": "policy_sk",
+                    "temporal_bounds": {"valid_from": "scd_valid_from", "valid_to": "scd_valid_to"},
+                    "supports_ghost_records": True,
+                    "columns": [
+                        {"name": "policy_sk", "type": "VARCHAR(64)", "primary_key": True},
+                        {"name": "policy_id", "type": "VARCHAR(64)"},
+                        {"name": "historical_risk_tier", "type": "VARCHAR(32)"},
+                        {"name": "current_risk_tier", "type": "VARCHAR(32)"},
+                        {"name": "scd_valid_from", "type": "TIMESTAMPTZ"},
+                        {"name": "scd_valid_to", "type": "TIMESTAMPTZ"},
+                        {"name": "is_inferred", "type": "BOOLEAN"}
+                    ]
+                },
+                {
+                    "name": "fact_insurance_claims",
+                    "type": "FACT",
+                    "primary_key": "claim_id",
+                    "partition_by": "claim_date_key",
+                    "columns": [
+                        {"name": "claim_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "policy_sk", "type": "VARCHAR(64)", "foreign_key": "dim_insurance_policy_scd6.policy_sk"},
+                        {"name": "claim_date_key", "type": "INT"}
+                    ]
+                }
+            ]
+        }
+        
+        # Test physical DuckDB interval check without overlaps
+        con = duckdb.connect(":memory:")
+        con.execute("""
+            CREATE TABLE dim_insurance_policy_scd6 (
+                policy_sk VARCHAR, policy_id VARCHAR, historical_risk_tier VARCHAR,
+                current_risk_tier VARCHAR, scd_valid_from TIMESTAMP, scd_valid_to TIMESTAMP, is_inferred BOOLEAN
+            );
+            INSERT INTO dim_insurance_policy_scd6 VALUES
+            ('POL-V1', 'POL-1', 'LOW', 'HIGH', '2025-01-01', '2025-07-01', false),
+            ('POL-V2', 'POL-1', 'HIGH', 'HIGH', '2025-07-01', '9999-12-31', false);
+        """)
+        ctx_valid = ValidationContext(domain="scd6_valid", target_schema=valid_scd6_schema, duckdb_conn=con)
+        sc_valid = ValidationStrategyEngine.evaluate(ctx_valid)
+        rsk13_valid = next(r for r in sc_valid["results"] if r["risk_id"] == "RSK-13")
+        assert rsk13_valid["status"] == "PASS"
+
+        # 2. SCD Type 6 dimension missing paired current/historical columns fails RSK-13
+        invalid_scd6_schema = {
+            "tables": [
+                {
+                    "name": "dim_policy_scd6",
+                    "type": "DIMENSION",
+                    "scd_type": 6,
+                    "primary_key": "policy_sk",
+                    "columns": [
+                        {"name": "policy_sk", "type": "VARCHAR(64)", "primary_key": True},
+                        {"name": "policy_id", "type": "VARCHAR(64)"},
+                        {"name": "risk_tier", "type": "VARCHAR(32)"},
+                        {"name": "scd_valid_from", "type": "TIMESTAMPTZ"},
+                        {"name": "scd_valid_to", "type": "TIMESTAMPTZ"},
+                        {"name": "is_inferred", "type": "BOOLEAN"}
+                    ]
+                }
+            ]
+        }
+        ctx_invalid = ValidationContext(domain="scd6_invalid", target_schema=invalid_scd6_schema)
+        sc_invalid = ValidationStrategyEngine.evaluate(ctx_invalid)
+        rsk13_invalid = next(r for r in sc_invalid["results"] if r["risk_id"] == "RSK-13")
+        assert rsk13_invalid["status"] == "FAIL"
+        assert "lacks paired historical_* and current_* attribute columns" in rsk13_invalid["details"]
+
+        # 3. DuckDB table with overlapping intervals triggers critical halt
+        con_overlap = duckdb.connect(":memory:")
+        con_overlap.execute("""
+            CREATE TABLE dim_insurance_policy_scd6 (
+                policy_sk VARCHAR, policy_id VARCHAR, historical_risk_tier VARCHAR,
+                current_risk_tier VARCHAR, scd_valid_from TIMESTAMP, scd_valid_to TIMESTAMP, is_inferred BOOLEAN
+            );
+            INSERT INTO dim_insurance_policy_scd6 VALUES
+            ('POL-V1', 'POL-1', 'LOW', 'HIGH', '2025-01-01', '2025-08-01', false),
+            ('POL-V2', 'POL-1', 'HIGH', 'HIGH', '2025-07-01', '9999-12-31', false);
+        """)
+        ctx_overlap = ValidationContext(domain="scd6_overlap", target_schema=valid_scd6_schema, duckdb_conn=con_overlap)
+        sc_overlap = ValidationStrategyEngine.evaluate(ctx_overlap)
+        rsk13_overlap = next(r for r in sc_overlap["results"] if r["risk_id"] == "RSK-13")
+        assert rsk13_overlap["status"] == "FAIL"
+        assert "CRITICAL Temporal Interval Overlap Detected" in rsk13_overlap["details"]
+
 
 class TestChaosEngineStandalone:
     def test_zipfian_skew_generator_determinism(self):

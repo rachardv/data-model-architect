@@ -178,6 +178,17 @@ class RiskToTestDispatcher:
                     "details": mpp_layout_risk.get("details", "MPP physical layout, partition pruning keys, and co-located clusters verified.")
                 })
 
+            # Battery K: Bi-Temporal Splicing & Ghost Key Reconciliation (RSK-13)
+            temporal_scd_risk = next((r for r in risk_scorecard.get("results", []) if r.get("risk_id") == "RSK-13"), None)
+            if temporal_scd_risk:
+                battery_k_status = "FAIL" if temporal_scd_risk.get("status") in ["FAIL", "HALT"] else "PASS"
+                executed_batteries.append({
+                    "battery": "BITEMPORAL_SPLICING_AND_GHOST_KEY_BATTERY",
+                    "triggered_by_risk": "RSK-13",
+                    "status": battery_k_status,
+                    "details": temporal_scd_risk.get("details", "Bi-temporal interval non-overlap, ghost key sentinels, and SCD6 consistency verified.")
+                })
+
             # 5. Check Custom Case Verification Queries (if provided)
             custom_queries_passed = True
             if custom_verification_results is not None:

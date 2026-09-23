@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-02 — Healthcare Encounter & Diagnosis Bridge
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `74.62ms`
-> **Timestamp (UTC):** `2026-09-23T18:43:59.589048+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `77.34ms`
+> **Timestamp (UTC):** `2026-09-23T19:03:50.828839+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `healthcare`
@@ -25,15 +25,15 @@ Hospital inpatient admission tracking. Patients are admitted to hospital encount
 ## 3. Synthesized Schema Tables
 | Table Name | Type | Primary Key | Column Count |
 | :--- | :--- | :--- | :--- |
-| `dim_healthcare_customer_core` | `DIMENSION` | `customer_sk` | 6 |
+| `dim_healthcare_customer_core` | `DIMENSION` | `customer_sk` | 7 |
 | `fact_healthcare_orders` | `FACT` | `order_id` | 4 |
 
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Active SCD2 Patients Check | `scalar_gt` | `0` | `2` | `0.25ms` | ✅ PASS |
-| Admissions Fact Grain Count | `scalar_gt` | `0` | `2` | `0.23ms` | ✅ PASS |
-| Total Admission Cost Sum | `scalar_gt` | `0.0` | `238.50` | `0.23ms` | ✅ PASS |
+| Active SCD2 Patients Check | `scalar_gt` | `0` | `2` | `0.32ms` | ✅ PASS |
+| Admissions Fact Grain Count | `scalar_gt` | `0` | `2` | `0.27ms` | ✅ PASS |
+| Total Admission Cost Sum | `scalar_gt` | `0.0` | `238.50` | `0.26ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Active SCD2 Patients Check

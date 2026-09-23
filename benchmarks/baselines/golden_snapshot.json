@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "generated_at": "2026-09-23T18:43:31.016562+00:00",
-  "total_cases": 12,
+  "generated_at": "2026-09-23T19:01:20.958038+00:00",
+  "total_cases": 13,
   "cases": {
     "CASE-01": {
       "case_id": "CASE-01",
@@ -12,7 +12,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 149.61,
+      "execution_time_ms": 142.53,
       "tables": {
         "dim_retail_customer_core": {
           "table_name": "dim_retail_customer_core",
@@ -24,7 +24,8 @@
             "customer_name",
             "scd_valid_from",
             "scd_valid_to",
-            "is_current"
+            "is_current",
+            "is_inferred"
           ]
         },
         "fact_retail_orders": {
@@ -46,7 +47,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.36
+          "latency_ms": 0.33
         },
         {
           "name": "Orders Fact Grain Row Count",
@@ -54,7 +55,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.34
+          "latency_ms": 0.26
         },
         {
           "name": "Positive Metric Revenue Total",
@@ -62,7 +63,7 @@
           "expected_value": 0.0,
           "actual_value": 238.5,
           "passed": true,
-          "latency_ms": 0.35
+          "latency_ms": 0.29
         }
       ]
     },
@@ -75,7 +76,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 75.6,
+      "execution_time_ms": 79.52,
       "tables": {
         "dim_healthcare_customer_core": {
           "table_name": "dim_healthcare_customer_core",
@@ -87,7 +88,8 @@
             "customer_name",
             "scd_valid_from",
             "scd_valid_to",
-            "is_current"
+            "is_current",
+            "is_inferred"
           ]
         },
         "fact_healthcare_orders": {
@@ -109,7 +111,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.28
+          "latency_ms": 0.25
         },
         {
           "name": "Admissions Fact Grain Count",
@@ -117,7 +119,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.23
+          "latency_ms": 0.24
         },
         {
           "name": "Total Admission Cost Sum",
@@ -125,7 +127,7 @@
           "expected_value": 0.0,
           "actual_value": 238.5,
           "passed": true,
-          "latency_ms": 0.24
+          "latency_ms": 0.27
         }
       ]
     },
@@ -138,7 +140,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 75.69,
+      "execution_time_ms": 75.99,
       "tables": {
         "dim_banking_customer_core": {
           "table_name": "dim_banking_customer_core",
@@ -150,7 +152,8 @@
             "customer_name",
             "scd_valid_from",
             "scd_valid_to",
-            "is_current"
+            "is_current",
+            "is_inferred"
           ]
         },
         "fact_banking_orders": {
@@ -172,7 +175,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.32
+          "latency_ms": 0.26
         },
         {
           "name": "Transactions Fact Count",
@@ -180,7 +183,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.23
+          "latency_ms": 0.25
         },
         {
           "name": "Total Transaction Amount Sum",
@@ -188,7 +191,7 @@
           "expected_value": 0.0,
           "actual_value": 238.5,
           "passed": true,
-          "latency_ms": 0.24
+          "latency_ms": 0.25
         }
       ]
     },
@@ -201,7 +204,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 72.41,
+      "execution_time_ms": 75.65,
       "tables": {
         "dim_inventory_customer_core": {
           "table_name": "dim_inventory_customer_core",
@@ -213,7 +216,8 @@
             "customer_name",
             "scd_valid_from",
             "scd_valid_to",
-            "is_current"
+            "is_current",
+            "is_inferred"
           ]
         },
         "fact_inventory_orders": {
@@ -235,7 +239,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.36
+          "latency_ms": 0.35
         },
         {
           "name": "Periodic Snapshot Fact Grain Count",
@@ -243,7 +247,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.31
+          "latency_ms": 0.29
         },
         {
           "name": "Total Inventory Valuation Sum",
@@ -251,7 +255,7 @@
           "expected_value": 0.0,
           "actual_value": 238.5,
           "passed": true,
-          "latency_ms": 0.23
+          "latency_ms": 0.29
         }
       ]
     },
@@ -264,7 +268,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 3106.11,
+      "execution_time_ms": 3060.25,
       "tables": {
         "obt_saas_subscriptions": {
           "table_name": "obt_saas_subscriptions",
@@ -288,7 +292,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.24
+          "latency_ms": 0.27
         },
         {
           "name": "Total Recurring Revenue MRR Sum",
@@ -296,7 +300,7 @@
           "expected_value": 0.0,
           "actual_value": 238.5,
           "passed": true,
-          "latency_ms": 0.27
+          "latency_ms": 0.25
         },
         {
           "name": "Zero Join Flat Cohort Aggregation",
@@ -304,7 +308,7 @@
           "expected_value": 0,
           "actual_value": 1,
           "passed": true,
-          "latency_ms": 0.6
+          "latency_ms": 0.89
         }
       ]
     },
@@ -317,7 +321,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 3099.88,
+      "execution_time_ms": 3115.34,
       "tables": {
         "dim_ecommerce_customer_core": {
           "table_name": "dim_ecommerce_customer_core",
@@ -352,7 +356,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.38
+          "latency_ms": 0.28
         },
         {
           "name": "Nested Mart Orders Count",
@@ -360,7 +364,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.37
+          "latency_ms": 0.26
         },
         {
           "name": "Unnested Line Items Projection Count",
@@ -368,7 +372,7 @@
           "expected_value": 0,
           "actual_value": 4,
           "passed": true,
-          "latency_ms": 0.47
+          "latency_ms": 0.41
         },
         {
           "name": "Total Revenue from Unnested Line Items",
@@ -376,7 +380,7 @@
           "expected_value": 0.0,
           "actual_value": 299,
           "passed": true,
-          "latency_ms": 0.52
+          "latency_ms": 0.49
         }
       ]
     },
@@ -389,7 +393,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 134.79,
+      "execution_time_ms": 138.75,
       "tables": {
         "dim_order_to_cash_customer_core": {
           "table_name": "dim_order_to_cash_customer_core",
@@ -478,7 +482,7 @@
           "expected_value": 0,
           "actual_value": 4,
           "passed": true,
-          "latency_ms": 0.32
+          "latency_ms": 0.6
         },
         {
           "name": "Shipments Distinct Carriers Count",
@@ -486,7 +490,7 @@
           "expected_value": 0,
           "actual_value": 3,
           "passed": true,
-          "latency_ms": 0.51
+          "latency_ms": 0.61
         },
         {
           "name": "Settled Payment Revenue Total",
@@ -494,7 +498,7 @@
           "expected_value": 0.0,
           "actual_value": 2038.5,
           "passed": true,
-          "latency_ms": 0.41
+          "latency_ms": 0.3
         },
         {
           "name": "Cross-Process Drill-Across Revenue Reconciliation",
@@ -502,7 +506,7 @@
           "expected_value": 0,
           "actual_value": 4,
           "passed": true,
-          "latency_ms": 2.13
+          "latency_ms": 1.9
         }
       ]
     },
@@ -515,7 +519,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 81.53,
+      "execution_time_ms": 89.29,
       "tables": {
         "dim_telematics_mpp_customer_core": {
           "table_name": "dim_telematics_mpp_customer_core",
@@ -554,7 +558,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.28
+          "latency_ms": 0.27
         },
         {
           "name": "Partition Pruning Single Date Filter",
@@ -562,7 +566,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.25
+          "latency_ms": 0.27
         },
         {
           "name": "Co-located Cluster Join Vehicle Telemetry",
@@ -570,7 +574,93 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.99
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "CASE-09": {
+      "case_id": "CASE-09",
+      "name": "Bitemporal Insurance Policy & SCD6 Splicing Lifecycle",
+      "domain": "insurance_policy",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 202.79,
+      "tables": {
+        "dim_insurance_policy_scd6": {
+          "table_name": "dim_insurance_policy_scd6",
+          "type": "DIMENSION",
+          "primary_key": "policy_sk",
+          "columns": [
+            "policy_sk",
+            "policy_id",
+            "policyholder_name",
+            "historical_risk_tier",
+            "current_risk_tier",
+            "historical_agent_region",
+            "current_agent_region",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "version_number",
+            "is_inferred"
+          ]
+        },
+        "fact_insurance_policy_claims": {
+          "table_name": "fact_insurance_policy_claims",
+          "type": "FACT",
+          "primary_key": "claim_id",
+          "columns": [
+            "claim_id",
+            "policy_sk",
+            "claim_date_key",
+            "claim_amount",
+            "claim_status"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Zero Interval Overlap in Policy Dimension",
+          "assertion_type": "scalar_eq",
+          "expected_value": 0,
+          "actual_value": 0,
+          "passed": true,
+          "latency_ms": 0.82
+        },
+        {
+          "name": "Late Arriving Ghost Policy Exists",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 1,
+          "passed": true,
+          "latency_ms": 0.28
+        },
+        {
+          "name": "Zero Dropped Claims With Ghost Key Joins",
+          "assertion_type": "scalar_eq",
+          "expected_value": 4,
+          "actual_value": 4,
+          "passed": true,
+          "latency_ms": 0.58
+        },
+        {
+          "name": "Historical Point In Time Risk Tier Aggregation",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 1,
+          "passed": true,
+          "latency_ms": 1.3
+        },
+        {
+          "name": "Current Perspective Risk Tier Aggregation",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 1,
+          "passed": true,
+          "latency_ms": 1.26
         }
       ]
     },
@@ -583,7 +673,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 9.12,
+      "execution_time_ms": 9.08,
       "tables": {},
       "queries": []
     },
@@ -596,7 +686,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 8.95,
+      "execution_time_ms": 8.28,
       "tables": {},
       "queries": []
     },
@@ -609,7 +699,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 7.4,
+      "execution_time_ms": 8.31,
       "tables": {},
       "queries": []
     },
@@ -622,7 +712,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 8.71,
+      "execution_time_ms": 7.75,
       "tables": {},
       "queries": []
     }

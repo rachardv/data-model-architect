@@ -288,7 +288,7 @@ class MedallionPipelineGenerator:
             
             if ttype in ["DIMENSION", "DIM"]:
                 has_scd2 = any("scd" in c["name"] or "valid" in c["name"] for c in cols)
-                if has_scd2:
+                if has_scd2 and "customer" in tname:
                     lines = [
                         f"-- ============================================================================",
                         f"-- GOLD LAYER: SCD Type 2 Merge Pipeline for `{tname}`",
@@ -322,6 +322,8 @@ class MedallionPipelineGenerator:
                             val_mappings.append(f"'9999-12-31 23:59:59 UTC'")
                         elif cn == "is_current":
                             val_mappings.append(f"TRUE")
+                        elif cn == "is_inferred":
+                            val_mappings.append(f"FALSE")
                         elif cn.endswith("_id"):
                             val_mappings.append(f"source.customer_id")
                         elif "name" in cn.lower() or "title" in cn.lower():
@@ -368,15 +370,30 @@ class MedallionPipelineGenerator:
                     ]
                     gold_sql[tname] = "\n".join(lines)
                 else:
-                    # Non-customer dimension seed (e.g. conference attendees/events)
+                    # Non-customer dimension seed (e.g. policies, vehicles, conference attendees/events)
                     val_row1 = []
                     val_row2 = []
                     for c in cols:
                         cn = c["name"].lower()
                         ct = c.get("type", "").upper()
                         if "sk" in cn or cn == pk:
-                            val_row1.append("20260115" if "date" in cn else "'1'")
-                            val_row2.append("20260116" if "date" in cn else "'2'")
+                            val_row1.append("20260115" if "date" in cn else f"'{cn.upper()}-001'")
+                            val_row2.append("20260116" if "date" in cn else f"'{cn.upper()}-002'")
+                        elif "valid_from" in cn:
+                            val_row1.append("TIMESTAMPTZ '2025-01-01 00:00:00 UTC'")
+                            val_row2.append("TIMESTAMPTZ '2025-07-01 00:00:00 UTC'")
+                        elif "valid_to" in cn:
+                            val_row1.append("TIMESTAMPTZ '2025-07-01 00:00:00 UTC'")
+                            val_row2.append("TIMESTAMPTZ '9999-12-31 23:59:59 UTC'")
+                        elif cn == "is_current":
+                            val_row1.append("FALSE")
+                            val_row2.append("TRUE")
+                        elif cn == "is_inferred":
+                            val_row1.append("FALSE")
+                            val_row2.append("FALSE")
+                        elif cn == "version_number":
+                            val_row1.append("1")
+                            val_row2.append("2")
                         elif "date" in cn:
                             val_row1.append("DATE '2026-01-15'")
                             val_row2.append("DATE '2026-01-16'")
@@ -545,13 +562,15 @@ class MedallionPipelineGenerator:
                         sel_items.append("    COALESCE(c.customer_sk, 'UNKNOWN_SK') AS customer_sk")
                     elif cn == "product_sk":
                         sel_items.append("    'PROD-SK-001' AS product_sk")
+                    elif cn.endswith("_sk") or "sk" in cn:
+                        sel_items.append(f"    'POL-001-V1' AS {cn}" if "policy" in cn else f"    '{cn.upper()}-001' AS {cn}")
                     elif "date" in cn.lower():
                         sel_items.append("    20260115 AS " + cn)
                     elif cn == "estimated_delivery_days":
                         sel_items.append("    CAST(3 AS INT) AS estimated_delivery_days -- [AI-GENERATED FALLBACK]")
                     elif cn in ["total_amount_usd", "order_total_usd"]:
                         sel_items.append(f"    COALESCE(o.total_amount, 0.0) AS {cn}")
-                    elif cn in ["payment_amount_usd", "amount_usd"]:
+                    elif cn in ["claim_amount", "settlement_amount", "payment_amount_usd", "amount_usd"]:
                         sel_items.append(f"    COALESCE(o.total_amount, 100.00) AS {cn}")
                     elif "shipping" in cn.lower() or "cost" in cn.lower():
                         sel_items.append(f"    CAST(15.00 AS DECIMAL(14,2)) AS {cn}")

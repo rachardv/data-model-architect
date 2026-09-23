@@ -1,0 +1,133 @@
+{
+  "case_id": "CASE-09",
+  "domain": "insurance_policy",
+  "name": "Bitemporal Insurance Policy & SCD6 Splicing Lifecycle",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "We operate an enterprise commercial property and casualty insurance carrier managing complex policy endorsements and claims lifecycles. Underwriting endorsements frequently occur retroactively, requiring historical policy timelines to be spliced into strict closed-open intervals without overlapping validity dates. Claims often arrive out-of-order weeks after an incident occurs, referencing policies that have not yet completed ETL ingestion; these must resolve to inferred ghost dimension records with sentinel surrogate keys to prevent catastrophic claim drop-outs. To support executive management and actuarial audits simultaneously, the policy dimension must implement Kimball SCD Type 6 hybrid attributes: preserving historical point-in-time risk tiers and sales territories (as-was) while maintaining current overwritten attributes (as-is) across all version slices.\n",
+  "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 5 (\"Slowly Changing Dimension Techniques: Type 6 Hybrid Dimensions & Late-Arriving Data\"), pp. 153-188, and Martin Fowler (2005), \"Bitemporal History\".\n",
+  "timestamp_utc": "2026-09-23T19:03:57.533280+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "KIMBALL_STAR_SCD6",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": true,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": true
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_insurance_policy_scd6",
+      "type": "DIMENSION",
+      "primary_key": "policy_sk",
+      "column_count": 12,
+      "columns": [
+        "policy_sk",
+        "policy_id",
+        "policyholder_name",
+        "historical_risk_tier",
+        "current_risk_tier",
+        "historical_agent_region",
+        "current_agent_region",
+        "scd_valid_from",
+        "scd_valid_to",
+        "is_current",
+        "version_number",
+        "is_inferred"
+      ]
+    },
+    {
+      "table_name": "fact_insurance_policy_claims",
+      "type": "FACT",
+      "primary_key": "claim_id",
+      "column_count": 5,
+      "columns": [
+        "claim_id",
+        "policy_sk",
+        "claim_date_key",
+        "claim_amount",
+        "claim_status"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Zero Interval Overlap in Policy Dimension",
+      "query": "SELECT COUNT(*) FROM (\n  SELECT a.policy_id, a.policy_sk AS sk_a, b.policy_sk AS sk_b\n  FROM dim_insurance_policy_scd6 a\n  JOIN dim_insurance_policy_scd6 b ON a.policy_id = b.policy_id AND a.policy_sk <> b.policy_sk\n  WHERE a.scd_valid_from < b.scd_valid_to AND b.scd_valid_from < a.scd_valid_to\n);\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 0,
+      "actual_value": 0,
+      "passed": true,
+      "latency_ms": 0.77,
+      "error": null
+    },
+    {
+      "name": "Late Arriving Ghost Policy Exists",
+      "query": "SELECT COUNT(*) FROM dim_insurance_policy_scd6 WHERE is_inferred = true;",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 1,
+      "passed": true,
+      "latency_ms": 0.29,
+      "error": null
+    },
+    {
+      "name": "Zero Dropped Claims With Ghost Key Joins",
+      "query": "SELECT COUNT(*) FROM fact_insurance_policy_claims f JOIN dim_insurance_policy_scd6 d ON f.policy_sk = d.policy_sk WHERE f.claim_id >= 80001;",
+      "assertion_type": "scalar_eq",
+      "expected_value": 4,
+      "actual_value": 4,
+      "passed": true,
+      "latency_ms": 0.61,
+      "error": null
+    },
+    {
+      "name": "Historical Point In Time Risk Tier Aggregation",
+      "query": "WITH hist_summary AS (\n  SELECT d.historical_risk_tier, SUM(f.claim_amount) AS total_claims\n  FROM fact_insurance_policy_claims f\n  JOIN dim_insurance_policy_scd6 d ON f.policy_sk = d.policy_sk\n  WHERE f.claim_id >= 80001 AND d.historical_risk_tier = 'LOW'\n  GROUP BY d.historical_risk_tier\n) SELECT COUNT(*) FROM hist_summary WHERE total_claims = 12500.00;\n",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 1,
+      "passed": true,
+      "latency_ms": 1.0,
+      "error": null
+    },
+    {
+      "name": "Current Perspective Risk Tier Aggregation",
+      "query": "WITH curr_summary AS (\n  SELECT d.current_risk_tier, SUM(f.claim_amount) AS total_claims\n  FROM fact_insurance_policy_claims f\n  JOIN dim_insurance_policy_scd6 d ON f.policy_sk = d.policy_sk\n  WHERE f.claim_id >= 80001 AND d.current_risk_tier = 'HIGH'\n  GROUP BY d.current_risk_tier\n) SELECT COUNT(*) FROM curr_summary WHERE total_claims = 65500.00;\n",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 1,
+      "passed": true,
+      "latency_ms": 1.21,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 201.12
+}

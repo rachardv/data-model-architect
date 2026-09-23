@@ -6,7 +6,7 @@
   "is_intentional_trap": true,
   "prompt": "Financial trading desk requiring sub-millisecond row locks for live OLTP transactions.\n",
   "citation": "E.F. Codd & Christopher Adamson, Star Schema: The Complete Reference, Chapter 1: \"Analytical vs Transactional Processing Conflicts (OLTP vs OLAP)\".\n",
-  "timestamp_utc": "2026-09-23T18:44:06.363254+00:00",
+  "timestamp_utc": "2026-09-23T19:03:57.739468+00:00",
   "intake_decisions": {
     "status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
     "completeness_score": null,
@@ -26,5 +26,5 @@
   "final_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
   "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
   "verdict": "PASS",
-  "execution_time_ms": 9.14
+  "execution_time_ms": 8.67
 }

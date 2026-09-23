@@ -21,7 +21,8 @@ class DataModelDecisionEngine:
         is_factless_event: bool = False,
         is_denormalized_obt: bool = False,
         is_nested_columnar: bool = False,
-        has_multi_fact_bus_matrix: bool = False
+        has_multi_fact_bus_matrix: bool = False,
+        has_scd6_hybrid: bool = False
     ) -> Dict[str, Any]:
         # 0. Factless Fact Table (Event Attendance / Coverage Matrix)
         if is_factless_event:
@@ -57,6 +58,15 @@ class DataModelDecisionEngine:
                 "storage": "Kimball Enterprise Bus Matrix",
                 "schema_type": "Multi-Fact Dimensional Model with Conformed Dimensions",
                 "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+            }
+
+        # 0e. SCD Type 6 Hybrid Dimension (Type 2 + Type 3 + Type 1 Dual Perspective)
+        if has_scd6_hybrid:
+            return {
+                "pattern": "KIMBALL_STAR_SCD6",
+                "storage": "Kimball Star Schema (Type 6 Hybrid)",
+                "schema_type": "Transaction Fact + SCD Type 6 Hybrid Dimension",
+                "temporal": "SCD6_HYBRID"
             }
             
         # 1. High-Frequency Streaming Telemetry / Market Data

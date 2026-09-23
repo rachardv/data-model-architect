@@ -294,6 +294,75 @@ class DynamicSchemaAuthor:
                 "tables": bus_tables
             }
 
+        # 3e. Check for SCD Type 6 Hybrid Dimension (Type 2 + Type 3 + Type 1 Dual Perspective)
+        if pattern == "KIMBALL_STAR_SCD6" or temporal_strategy in ["SCD6", "SCD6_HYBRID"] or inferred_params.get("has_scd6_hybrid") or user_request.get("has_scd6_hybrid"):
+            dim_entity = "policy" if ("policy" in clean_domain or "insurance" in clean_domain) else actor
+            if clean_domain.endswith(f"_{dim_entity}") or clean_domain == dim_entity:
+                dim_table_name = f"dim_{clean_domain}_scd6"
+            elif "scd6" in dim_entity:
+                dim_table_name = f"dim_{clean_domain}_{dim_entity}"
+            else:
+                dim_table_name = f"dim_{clean_domain}_{dim_entity}_scd6"
+
+            fact_event = "claims" if ("claim" in clean_domain or "insurance" in clean_domain or "claim" in event) else event
+            fact_table_name = f"fact_{clean_domain}_{fact_event}"
+            
+            entity_sk = f"{dim_entity}_sk"
+            entity_id = f"{dim_entity}_id"
+            sing_event = fact_event[:-1] if fact_event.endswith("s") else fact_event
+            event_id = f"{sing_event}_id"
+            date_key_col = f"{sing_event}_date_key"
+
+            dim_columns = [
+                {"name": entity_sk, "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": entity_id, "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "policyholder_name" if dim_entity == "policy" else f"{dim_entity}_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                {"name": "historical_risk_tier", "type": "VARCHAR(32)", "nullable": False, "default": "'STANDARD'"},
+                {"name": "current_risk_tier", "type": "VARCHAR(32)", "nullable": False, "default": "'STANDARD'"},
+                {"name": "historical_agent_region", "type": "VARCHAR(64)", "nullable": True},
+                {"name": "current_agent_region", "type": "VARCHAR(64)", "nullable": True},
+                {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
+                {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"},
+                {"name": "is_current", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "TRUE"},
+                {"name": "version_number", "type": "INT", "nullable": False, "is_inferred": False, "default": "1"},
+                {"name": "is_inferred", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "FALSE"}
+            ]
+
+            fact_columns = [
+                {"name": event_id, "type": "BIGINT", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": entity_sk, "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_table_name}.{entity_sk}", "is_inferred": False},
+                {"name": date_key_col, "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "claim_amount" if "claim" in fact_event else "total_amount_usd", "type": "DECIMAL(14,2)", "nullable": False, "is_inferred": False},
+                {"name": "claim_status" if "claim" in fact_event else "status", "type": "VARCHAR(32)", "nullable": False, "default": "'OPEN'"}
+            ]
+
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "SCD6_HYBRID",
+                "pattern": "KIMBALL_STAR_SCD6",
+                "tables": [
+                    {
+                        "name": dim_table_name,
+                        "type": "DIMENSION",
+                        "scd_type": 6,
+                        "temporal_bounds": {"valid_from": "scd_valid_from", "valid_to": "scd_valid_to"},
+                        "supports_ghost_records": True,
+                        "is_conformed": True,
+                        "primary_key": entity_sk,
+                        "cluster_by": [entity_sk],
+                        "columns": dim_columns
+                    },
+                    {
+                        "name": fact_table_name,
+                        "type": "FACT",
+                        "primary_key": event_id,
+                        "partition_by": date_key_col,
+                        "cluster_by": [entity_sk],
+                        "columns": fact_columns
+                    }
+                ]
+            }
+
         # Table naming conventions
         # Preserve standard dim_{domain}_customer_core and fact_{domain}_orders for ecommerce / retail
         dim_table_name = f"dim_{clean_domain}_{actor}_core" if actor == "customer" else f"dim_{clean_domain}_{actor}"
@@ -314,7 +383,8 @@ class DynamicSchemaAuthor:
             dim_columns.extend([
                 {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
                 {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"},
-                {"name": "is_current", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "TRUE"}
+                {"name": "is_current", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "TRUE"},
+                {"name": "is_inferred", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "FALSE"}
             ])
 
         fact_columns = [
