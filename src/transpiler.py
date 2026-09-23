@@ -174,3 +174,78 @@ class SQLDialectTranspiler:
             counts[d] = dialect_count
             
         return counts
+
+    @classmethod
+    def transpile_mpp_table_ddl(
+        cls,
+        table_name_or_spec: Any,
+        columns: Optional[List[Dict[str, Any]]] = None,
+        primary_key: Optional[str] = None,
+        partition_by: Optional[str] = None,
+        cluster_by: Optional[List[str]] = None,
+        dialect: str = "snowflake"
+    ) -> str:
+        """
+        Emits dialect-specific physical DDL incorporating MPP partitioning and clustering.
+        Accepts either a Table dict/spec or individual parameters.
+        - BigQuery: PARTITION BY <expr> CLUSTER BY <cols>
+        - Snowflake: CLUSTER BY (<cols>)
+        - Databricks: PARTITIONED BY (<col>)
+        - DuckDB / Postgres: Clean ANSI DDL with physical layout comments
+        """
+        if isinstance(table_name_or_spec, dict):
+            table_name = table_name_or_spec.get("name", "table_name")
+            columns = table_name_or_spec.get("columns", [])
+            primary_key = table_name_or_spec.get("primary_key", "")
+            partition_by = table_name_or_spec.get("partition_by") or partition_by
+            cluster_by = table_name_or_spec.get("cluster_by") or cluster_by
+        elif hasattr(table_name_or_spec, "name"):
+            table_name = table_name_or_spec.name
+            columns = getattr(table_name_or_spec, "columns", [])
+            primary_key = getattr(table_name_or_spec, "primary_key", "")
+            partition_by = getattr(table_name_or_spec, "partition_by", None) or partition_by
+            cluster_by = getattr(table_name_or_spec, "cluster_by", None) or cluster_by
+        else:
+            table_name = str(table_name_or_spec)
+            columns = columns or []
+            primary_key = primary_key or ""
+
+        d = dialect.lower()
+        col_strs = []
+        for col in columns:
+            if isinstance(col, dict):
+                c_name = col["name"]
+                c_type = col["type"]
+                nullable = "" if col.get("nullable", True) else " NOT NULL"
+            else:
+                c_name = col.name
+                c_type = col.type
+                nullable = "" if getattr(col, "nullable", True) else " NOT NULL"
+            col_strs.append(f"    {c_name} {c_type}{nullable}")
+            
+        col_body = ",\n".join(col_strs)
+        
+        if d == "bigquery":
+            clauses = [f"CREATE TABLE `{table_name}` (\n{col_body}\n)"]
+            if partition_by:
+                clauses.append(f"PARTITION BY {partition_by}")
+            if cluster_by:
+                clauses.append(f"CLUSTER BY {', '.join(cluster_by)}")
+            return "\n".join(clauses) + ";"
+            
+        elif d == "snowflake":
+            cluster_clause = f"\nCLUSTER BY ({', '.join(cluster_by)})" if cluster_by else ""
+            return f"CREATE TABLE {table_name} (\n{col_body},\n    PRIMARY KEY ({primary_key})\n){cluster_clause};"
+            
+        elif d == "databricks":
+            part_clause = f"\nPARTITIONED BY ({partition_by})" if partition_by else ""
+            return f"CREATE TABLE {table_name} (\n{col_body}\n){part_clause};"
+            
+        else:
+            footer = []
+            if partition_by:
+                footer.append(f"-- [MPP-LAYOUT] PARTITION BY: {partition_by}")
+            if cluster_by:
+                footer.append(f"-- [MPP-LAYOUT] CLUSTER BY: {', '.join(cluster_by)}")
+            comment_block = ("\n" + "\n".join(footer)) if footer else ""
+            return f"CREATE TABLE {table_name} (\n{col_body},\n    PRIMARY KEY ({primary_key})\n);{comment_block}"

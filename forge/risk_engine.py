@@ -613,6 +613,114 @@ class RSK11_BusMatrixConformanceAndChasmEvaluator(BaseRiskEvaluator):
             metrics={"fact_count": len(facts), "conformed_dimensions": len(dims), "bus_matrix_aligned": True}
         )
 
+@register_risk("RSK-12")
+class RSK12_MppPartitionAndShuffleLinter(BaseRiskEvaluator):
+    risk_id = "RSK-12"
+    name = "Distributed MPP Shuffle & Partitioning Blindspot Linter"
+    tier = ValidationTier.TIER_2_AST_LINTER
+    default_severity = RiskSeverity.HIGH
+    default_blocking = True
+
+    def evaluate(self, context: ValidationContext) -> RiskResult:
+        target_schema = context.target_schema or {}
+        tables = target_schema.get("tables", [])
+        params = context.inferred_usage_params or {}
+
+        # Only evaluate dimensional/mpp warehousing models (facts present)
+        facts = [t for t in tables if t.get("type") in ["FACT", "FACTLESS_FACT", "ACCUMULATING_FACT", "PERIODIC_SNAPSHOT"]]
+        dims = [t for t in tables if t.get("type") == "DIMENSION"]
+        dim_map = {d.get("name"): d for d in dims}
+
+        if not facts:
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="PASS",
+                severity=self.default_severity,
+                blocking=False,
+                details="No fact tables present; MPP partitioning and shuffle evaluation skipped.",
+                metrics={"facts_checked": 0}
+            )
+
+        pattern = target_schema.get("pattern", "")
+        # OBT marts have zero joins by design; skip MPP shuffle/clustering check if zero foreign keys
+        all_fks = [c.get("foreign_key") for f in facts for c in f.get("columns", []) if c.get("foreign_key")]
+        if pattern == "DENORMALIZED_OBT_MART" or (not all_fks and len(facts) == 1):
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="PASS",
+                severity=self.default_severity,
+                blocking=False,
+                details="Denormalized OBT mart with zero multi-table joins: MPP network shuffle elimination satisfied by design.",
+                metrics={"is_obt": True, "facts_checked": len(facts)}
+            )
+
+        # Check 1: Fact tables must define a partition key (typically date/time/temporal key)
+        unpartitioned_facts = []
+        for f in facts:
+            partition_by = f.get("partition_by")
+            if not partition_by:
+                # Check columns to see if there is an explicit date/time column that serves as partition key
+                cols = f.get("columns", [])
+                date_col = next((c.get("name") for c in cols if any(k in c.get("name", "").lower() for k in ["date", "time", "timestamp", "dt", "day"])), None)
+                if not date_col:
+                    unpartitioned_facts.append(f.get("name"))
+
+        if unpartitioned_facts:
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="FAIL",
+                severity=self.default_severity,
+                blocking=self.default_blocking,
+                details=f"MPP Partitioning Blindspot: Fact table(s) {unpartitioned_facts} missing explicit 'partition_by' clause or identifiable temporal date key. In BigQuery/Snowflake/Databricks, unpartitioned facts cause full-table scan query costs.",
+                remediation_advice="Specify a temporal partition key (such as date_sk or timestamp column) in partition_by for all large fact tables."
+            )
+
+        # Check 2: Co-located Clustering / Shuffle Blindspot
+        # If fact joins a large entity/customer dimension, check if they share a cluster_by key to prevent network shuffle
+        shuffle_mismatches = []
+        for f in facts:
+            f_clusters = set(f.get("cluster_by") or [])
+            for c in f.get("columns", []):
+                fk = c.get("foreign_key", "")
+                if fk and "." in fk:
+                    target_table, target_col = fk.split(".", 1)
+                    # Ignore small reference calendar/date dimensions that are broadcastable
+                    if "date" in target_table.lower() or "calendar" in target_table.lower():
+                        continue
+                    if target_table in dim_map:
+                        dim_clusters = set(dim_map[target_table].get("cluster_by") or [])
+                        # If the dimension has cluster keys defined, verify at least one shared join key or co-location
+                        if dim_clusters and not (f_clusters & dim_clusters) and target_col not in f_clusters:
+                            shuffle_mismatches.append(f"{f.get('name')} -> {target_table} on {target_col}")
+
+        if shuffle_mismatches:
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="WARNING",
+                severity=RiskSeverity.MEDIUM,
+                blocking=False,
+                details=f"MPP Network Shuffle Warning: Fact and Dimension tables lack co-located clustering keys: {shuffle_mismatches}. This may trigger distributed broadcast/shuffle overhead during high-concurrency joins.",
+                remediation_advice="Align cluster_by keys between fact foreign keys and dimension primary surrogate keys."
+            )
+
+        return RiskResult(
+            risk_id=self.risk_id,
+            name=self.name,
+            tier=self.tier,
+            status="PASS",
+            severity=self.default_severity,
+            blocking=False,
+            details=f"MPP Partition & Shuffle Alignment Confirmed: {len(facts)} fact(s) properly partitioned with co-located clustering layouts.",
+            metrics={"facts_partitioned": len(facts), "mpp_optimized": True}
+        )
 
 
 # =====================================================================

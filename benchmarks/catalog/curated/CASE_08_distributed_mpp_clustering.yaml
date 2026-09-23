@@ -1,0 +1,115 @@
+case_id: CASE-08
+domain: telematics_mpp
+name: Distributed MPP Telematics Clustering & Partition Pruning
+description: High-velocity vehicle IoT telematics stream requiring temporal range partitioning on ping timestamps and co-located cluster keys on vehicle surrogate keys to prevent distributed MPP network shuffle joins.
+citation: >
+  Google Cloud BigQuery Architecture Guide (2024), "Partitioning & Clustering Best Practices for High-Volume Timeseries & Conformed Analytical Joins",
+  and Snowflake Engineering Architecture (2024), "Micro-partitioning, Pruning & Clustering Keys".
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - telematics
+  - mpp
+  - partitioning
+  - clustering
+  - shuffle_elimination
+
+prompt: >
+  We operate an enterprise fleet IoT telematics platform capturing 500 million pings daily across commercial vehicles.
+  The model must capture timeseries telemetry pings linked to vehicle assets and operators.
+  To avoid multi-node shuffle bottlenecks and catastrophic full-table scan costs in BigQuery and Snowflake,
+  fact tables must be physically partitioned by ping date keys and clustered by vehicle surrogate key.
+  Analytical queries must demonstrate partition pruning and zero-shuffle co-located joins with the vehicle dimension.
+
+business_answers:
+  - "Core business processes: Vehicle fleet telematics ingestion and diagnostic sensor monitoring"
+  - "Grain: Individual telematics sensor ping per vehicle per second"
+  - "Workload intent: High-volume MPP analytical warehouse with date partitioning and co-located clustering"
+  - "Dimensions: Conformed vehicle core assets with current operating metadata, tracking vehicle status with SCD2 historical tracking"
+  - "Temporal policy: Preserve historical vehicle profiles over time using scd type 2 effective dates"
+  - "Lifecycle funnel: Discrete single event transaction telemetry ping events recorded per second"
+  - "Metrics: speed_mph, engine_temp_c, fuel_level_pct, odometer_miles"
+
+seed_data:
+  dim_telematics_mpp_vehicle_core:
+    - vehicle_sk: "VEH-001"
+      vehicle_id: "VIN-1001"
+      vehicle_name: "Freightliner Cascadia #101"
+      fleet_type: "HEAVY_DUTY"
+      status: "ACTIVE"
+      scd_valid_from: "2026-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+    - vehicle_sk: "VEH-002"
+      vehicle_id: "VIN-1002"
+      vehicle_name: "Volvo VNL 860 #102"
+      fleet_type: "HEAVY_DUTY"
+      status: "ACTIVE"
+      scd_valid_from: "2026-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+  fact_telematics_mpp_pings:
+    - ping_id: 50001
+      vehicle_sk: "VEH-001"
+      ping_date_key: 20260115
+      speed_mph: 62.5
+      engine_temp_c: 88.0
+      fuel_level_pct: 74.5
+      odometer_miles: 142300.2
+    - ping_id: 50002
+      vehicle_sk: "VEH-001"
+      ping_date_key: 20260115
+      speed_mph: 64.0
+      engine_temp_c: 89.2
+      fuel_level_pct: 73.8
+      odometer_miles: 142315.8
+    - ping_id: 50003
+      vehicle_sk: "VEH-002"
+      ping_date_key: 20260116
+      speed_mph: 58.0
+      engine_temp_c: 85.5
+      fuel_level_pct: 82.0
+      odometer_miles: 89120.4
+    - ping_id: 50004
+      vehicle_sk: "VEH-002"
+      ping_date_key: 20260116
+      speed_mph: 59.5
+      engine_temp_c: 86.1
+      fuel_level_pct: 81.2
+      odometer_miles: 89138.1
+
+verification_queries:
+  - name: Fact Telematics Row Count
+    query: "SELECT COUNT(*) FROM fact_telematics_mpp_pings WHERE speed_mph > 0;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected positive telematics sensor ping events
+
+  - name: Fleet Vehicle Dimension Exists
+    query: "SELECT COUNT(*) FROM dim_telematics_mpp_vehicle_core WHERE status = 'ACTIVE';"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected active vehicles in vehicle dimension
+
+  - name: Partition Pruning Single Date Filter
+    query: "SELECT COUNT(*) FROM fact_telematics_mpp_pings WHERE ping_date_key = 20260115;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected valid row return on partition key filtered query
+
+  - name: Co-located Cluster Join Vehicle Telemetry
+    query: >
+      WITH grouped_telemetry AS (
+        SELECT v.vehicle_name, AVG(f.speed_mph) AS avg_speed
+        FROM fact_telematics_mpp_pings f
+        JOIN dim_telematics_mpp_vehicle_core v ON f.vehicle_sk = v.vehicle_sk
+        WHERE f.ping_date_key >= 20260115
+        GROUP BY v.vehicle_name
+      )
+      SELECT COUNT(*) FROM grouped_telemetry WHERE avg_speed > 50.0;
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected successful aggregation across partitioned and clustered join keys

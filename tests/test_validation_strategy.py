@@ -360,6 +360,73 @@ class TestAllTiersEvaluation:
         assert rsk11_chasm["status"] == "FAIL"
         assert "Chasm Trap" in rsk11_chasm["details"]
 
+    def test_rsk12_mpp_partition_and_shuffle_linter(self):
+        # 1. Valid partitioned and clustered fact passes RSK-12
+        valid_mpp_schema = {
+            "pattern": "DIMENSIONAL_STAR_KIMBALL",
+            "tables": [
+                {
+                    "name": "dim_vehicle",
+                    "type": "DIMENSION",
+                    "primary_key": "vehicle_sk",
+                    "cluster_by": ["vehicle_sk"],
+                    "columns": [{"name": "vehicle_sk", "type": "VARCHAR(64)", "primary_key": True}]
+                },
+                {
+                    "name": "fact_pings",
+                    "type": "FACT",
+                    "primary_key": "ping_id",
+                    "partition_by": "ping_date_key",
+                    "cluster_by": ["vehicle_sk"],
+                    "columns": [
+                        {"name": "ping_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "vehicle_sk", "type": "VARCHAR(64)", "foreign_key": "dim_vehicle.vehicle_sk"},
+                        {"name": "ping_date_key", "type": "INT"}
+                    ]
+                }
+            ]
+        }
+        ctx_valid = ValidationContext(domain="mpp_valid", target_schema=valid_mpp_schema)
+        sc_valid = ValidationStrategyEngine.evaluate(ctx_valid)
+        rsk12_valid = next(r for r in sc_valid["results"] if r["risk_id"] == "RSK-12")
+        assert rsk12_valid["status"] == "PASS"
+
+        # 2. Fact without partition_by fails RSK-12
+        unpartitioned_schema = {
+            "pattern": "DIMENSIONAL_STAR_KIMBALL",
+            "tables": [
+                {
+                    "name": "dim_vehicle",
+                    "type": "DIMENSION",
+                    "primary_key": "vehicle_sk",
+                    "columns": [{"name": "vehicle_sk", "type": "VARCHAR(64)", "primary_key": True}]
+                },
+                {
+                    "name": "fact_pings",
+                    "type": "FACT",
+                    "primary_key": "ping_id",
+                    "columns": [
+                        {"name": "ping_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "vehicle_sk", "type": "VARCHAR(64)", "foreign_key": "dim_vehicle.vehicle_sk"}
+                    ]
+                }
+            ]
+        }
+        ctx_unpart = ValidationContext(domain="mpp_unpart", target_schema=unpartitioned_schema)
+        sc_unpart = ValidationStrategyEngine.evaluate(ctx_unpart)
+        rsk12_unpart = next(r for r in sc_unpart["results"] if r["risk_id"] == "RSK-12")
+        assert rsk12_unpart["status"] == "FAIL"
+        assert "missing explicit 'partition_by'" in rsk12_unpart["details"]
+
+        # 3. Transpiler produces valid MPP DDL with physical layout directives
+        from src.transpiler import SQLDialectTranspiler
+        bq_ddl = SQLDialectTranspiler.transpile_mpp_table_ddl(valid_mpp_schema["tables"][1], dialect="bigquery")
+        assert "PARTITION BY ping_date_key" in bq_ddl
+        assert "CLUSTER BY vehicle_sk" in bq_ddl
+
+        sf_ddl = SQLDialectTranspiler.transpile_mpp_table_ddl(valid_mpp_schema["tables"][1], dialect="snowflake")
+        assert "CLUSTER BY (vehicle_sk)" in sf_ddl
+
 
 class TestChaosEngineStandalone:
     def test_zipfian_skew_generator_determinism(self):

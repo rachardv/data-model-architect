@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an omnichannel enterprise retail platform managing the full Order-to-Cash lifecycle. The value stream tracks order checkout, warehouse shipments, and customer payment settlement across separate lifecycle facts. All fact tables must share strictly conformed dimensions for customers, products, and calendar dates. Cross-process reporting across orders and payments must be executed via drill-across queries to compare booked revenue vs collected payments without join fan-out traps.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 3: \"Inventory & Value Chains\", pp. 79-116 (\"Enterprise Data Warehouse Bus Architecture & Cross-Process Drill-Across Reporting\").\n",
-  "timestamp_utc": "2026-09-23T18:27:16.596124+00:00",
+  "timestamp_utc": "2026-09-23T18:44:06.142379+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -156,7 +156,7 @@
       "expected_value": 0,
       "actual_value": 3,
       "passed": true,
-      "latency_ms": 0.46,
+      "latency_ms": 0.88,
       "error": null
     },
     {
@@ -166,7 +166,7 @@
       "expected_value": 0.0,
       "actual_value": "2038.50",
       "passed": true,
-      "latency_ms": 0.32,
+      "latency_ms": 0.4,
       "error": null
     },
     {
@@ -176,12 +176,12 @@
       "expected_value": 0,
       "actual_value": 4,
       "passed": true,
-      "latency_ms": 1.32,
+      "latency_ms": 1.96,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 129.8
+  "execution_time_ms": 130.18
 }

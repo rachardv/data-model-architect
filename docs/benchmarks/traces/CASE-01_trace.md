@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-01 — Enterprise Retail Kimball Star Mart
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `72.12ms`
-> **Timestamp (UTC):** `2026-09-23T18:27:09.936677+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `75.98ms`
+> **Timestamp (UTC):** `2026-09-23T18:43:59.508651+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `retail`
@@ -32,8 +32,8 @@ We operate an omnichannel retail business where customers place merchandise orde
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | Customer Dimension Active Records | `scalar_gt` | `0` | `2` | `0.33ms` | ✅ PASS |
-| Orders Fact Grain Row Count | `scalar_gt` | `0` | `2` | `0.28ms` | ✅ PASS |
-| Positive Metric Revenue Total | `scalar_gt` | `0.0` | `238.50` | `0.26ms` | ✅ PASS |
+| Orders Fact Grain Row Count | `scalar_gt` | `0` | `2` | `0.31ms` | ✅ PASS |
+| Positive Metric Revenue Total | `scalar_gt` | `0.0` | `238.50` | `0.29ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Customer Dimension Active Records

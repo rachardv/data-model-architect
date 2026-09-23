@@ -1,0 +1,112 @@
+{
+  "case_id": "CASE-08",
+  "domain": "telematics_mpp",
+  "name": "Distributed MPP Telematics Clustering & Partition Pruning",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "We operate an enterprise fleet IoT telematics platform capturing 500 million pings daily across commercial vehicles. The model must capture timeseries telemetry pings linked to vehicle assets and operators. To avoid multi-node shuffle bottlenecks and catastrophic full-table scan costs in BigQuery and Snowflake, fact tables must be physically partitioned by ping date keys and clustered by vehicle surrogate key. Analytical queries must demonstrate partition pruning and zero-shuffle co-located joins with the vehicle dimension.\n",
+  "citation": "Google Cloud BigQuery Architecture Guide (2024), \"Partitioning & Clustering Best Practices for High-Volume Timeseries & Conformed Analytical Joins\", and Snowflake Engineering Architecture (2024), \"Micro-partitioning, Pruning & Clustering Keys\".\n",
+  "timestamp_utc": "2026-09-23T18:44:06.278654+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "TIMESCALEDB_HYPERTABLE",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": true,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_telematics_mpp_customer_core",
+      "type": "DIMENSION",
+      "primary_key": "customer_sk",
+      "column_count": 3,
+      "columns": [
+        "customer_sk",
+        "customer_id",
+        "customer_name"
+      ]
+    },
+    {
+      "table_name": "fact_telematics_mpp_orders",
+      "type": "FACT",
+      "primary_key": "order_id",
+      "column_count": 4,
+      "columns": [
+        "order_id",
+        "customer_sk",
+        "total_amount_usd",
+        "estimated_delivery_days"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Fact Telematics Row Count",
+      "query": "SELECT COUNT(*) FROM fact_telematics_mpp_pings WHERE speed_mph > 0;",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 4,
+      "passed": true,
+      "latency_ms": 0.32,
+      "error": null
+    },
+    {
+      "name": "Fleet Vehicle Dimension Exists",
+      "query": "SELECT COUNT(*) FROM dim_telematics_mpp_vehicle_core WHERE status = 'ACTIVE';",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.41,
+      "error": null
+    },
+    {
+      "name": "Partition Pruning Single Date Filter",
+      "query": "SELECT COUNT(*) FROM fact_telematics_mpp_pings WHERE ping_date_key = 20260115;",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.4,
+      "error": null
+    },
+    {
+      "name": "Co-located Cluster Join Vehicle Telemetry",
+      "query": "WITH grouped_telemetry AS (\n  SELECT v.vehicle_name, AVG(f.speed_mph) AS avg_speed\n  FROM fact_telematics_mpp_pings f\n  JOIN dim_telematics_mpp_vehicle_core v ON f.vehicle_sk = v.vehicle_sk\n  WHERE f.ping_date_key >= 20260115\n  GROUP BY v.vehicle_name\n) SELECT COUNT(*) FROM grouped_telemetry WHERE avg_speed > 50.0;\n",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 1.32,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 81.49
+}

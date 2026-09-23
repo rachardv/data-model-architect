@@ -28,6 +28,8 @@ class TableSpec(BaseModel):
     scd_type: Optional[int] = None
     is_conformed: bool = True
     description: Optional[str] = None
+    partition_by: Optional[str] = None
+    cluster_by: Optional[List[str]] = Field(default_factory=list)
     columns: List[ColumnSpec] = Field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:

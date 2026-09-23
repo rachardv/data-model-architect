@@ -18,7 +18,9 @@ class ANSISQLGenerator:
         columns: List[Dict[str, Any]],
         primary_key: str,
         foreign_keys: List[Dict[str, str]] = None,
-        check_constraints: List[str] = None
+        check_constraints: List[str] = None,
+        partition_by: Optional[str] = None,
+        cluster_by: Optional[List[str]] = None
     ) -> str:
         lines = [f"CREATE TABLE {table_name} ("]
         col_defs = []
@@ -50,6 +52,16 @@ class ANSISQLGenerator:
                 lines.append(f"    CONSTRAINT chk_{table_name}_{i+1} CHECK ({chk}){comma}")
                 
         sql = "\n".join(lines) + "\n);"
+
+        footer = []
+        if partition_by:
+            footer.append(f"-- [MPP-LAYOUT] PARTITION BY: {partition_by}")
+        if cluster_by:
+            footer.append(f"-- [MPP-LAYOUT] CLUSTER BY: {', '.join(cluster_by)}")
+
+        if footer:
+            sql += "\n" + "\n".join(footer)
+
         return sql
 
     @staticmethod

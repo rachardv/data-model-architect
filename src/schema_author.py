@@ -161,6 +161,7 @@ class DynamicSchemaAuthor:
                         "type": "DIMENSION",
                         "is_conformed": True,
                         "primary_key": actor_sk,
+                        "cluster_by": [actor_sk],
                         "columns": dim_columns
                     },
                     {
@@ -168,6 +169,8 @@ class DynamicSchemaAuthor:
                         "type": "FACT",
                         "description": "Nested and repeated columnar mart eliminating join fan-out traps",
                         "primary_key": pk_col,
+                        "partition_by": "order_date_key",
+                        "cluster_by": [f"{actor}_id"],
                         "columns": mart_columns
                     }
                 ]
@@ -225,6 +228,7 @@ class DynamicSchemaAuthor:
                     "type": "DIMENSION",
                     "is_conformed": True,
                     "primary_key": actor_sk,
+                    "cluster_by": [actor_sk],
                     "columns": dim_customer_cols
                 },
                 {
@@ -232,6 +236,7 @@ class DynamicSchemaAuthor:
                     "type": "DIMENSION",
                     "is_conformed": True,
                     "primary_key": "product_sk",
+                    "cluster_by": ["product_sk"],
                     "columns": dim_product_cols
                 },
                 {
@@ -239,6 +244,7 @@ class DynamicSchemaAuthor:
                     "type": "DIMENSION",
                     "is_conformed": True,
                     "primary_key": "date_sk",
+                    "cluster_by": ["date_sk"],
                     "columns": dim_date_cols
                 }
             ]
@@ -266,11 +272,14 @@ class DynamicSchemaAuthor:
                     m_type = "INT" if "quantity" in m else "DECIMAL(14,2)"
                     cols.append({"name": m, "type": m_type, "nullable": False, "is_inferred": False})
 
+                fact_clusters = [k for k in [actor_sk, "product_sk"] if k in f.dimension_keys]
                 bus_tables.append({
                     "name": f.name,
                     "type": "FACT",
                     "description": f"Conformed Enterprise Bus Matrix Fact: {f.grain}",
                     "primary_key": pk_name,
+                    "partition_by": date_role,
+                    "cluster_by": fact_clusters,
                     "columns": cols
                 })
 
@@ -328,12 +337,15 @@ class DynamicSchemaAuthor:
                 "type": "DIMENSION",
                 "is_conformed": True,
                 "primary_key": actor_sk,
+                "cluster_by": [actor_sk],
                 "columns": dim_columns
             },
             {
                 "name": fact_table_name,
                 "type": "FACT",
                 "primary_key": event_id,
+                "partition_by": "order_date_key",
+                "cluster_by": [actor_sk],
                 "columns": fact_columns
             }
         ]

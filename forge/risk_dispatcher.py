@@ -168,6 +168,16 @@ class RiskToTestDispatcher:
                     "details": bus_matrix_risk.get("details", "Enterprise bus matrix conformed dimensions and chasm avoidance verified.")
                 })
 
+            # Battery J: MPP Shuffle & Partitioning Layout (RSK-12)
+            mpp_layout_risk = next((r for r in risk_scorecard.get("results", []) if r.get("risk_id") == "RSK-12"), None)
+            if mpp_layout_risk:
+                executed_batteries.append({
+                    "battery": "MPP_SHUFFLE_AND_PARTITION_BATTERY",
+                    "triggered_by_risk": "RSK-12",
+                    "status": mpp_layout_risk.get("status", "PASS"),
+                    "details": mpp_layout_risk.get("details", "MPP physical layout, partition pruning keys, and co-located clusters verified.")
+                })
+
             # 5. Check Custom Case Verification Queries (if provided)
             custom_queries_passed = True
             if custom_verification_results is not None:
