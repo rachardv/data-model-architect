@@ -1,0 +1,46 @@
+case_id: CASE-02
+domain: healthcare
+name: Healthcare Encounter & Diagnosis Bridge
+description: Inpatient hospital admissions with primary and secondary ICD-10 diagnoses linked via an encounter-diagnosis bridge table.
+citation: >
+  Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition),
+  Chapter 10: "Healthcare", pp. 267-294 ("Multi-Valued Diagnoses and Bridge Tables").
+hazard_category: BRIDGE_CO_OWNERSHIP
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - healthcare
+  - bridge
+  - kimball
+
+prompt: >
+  Hospital inpatient admission tracking. Patients are admitted to hospital encounters
+  with admission and discharge dates. Each encounter links to multiple primary and
+  secondary ICD-10 diagnoses via an encounter-diagnosis bridge table.
+  Patient demographic and insurance changes are tracked using SCD Type 2.
+
+business_answers:
+  - "Core business processes: inpatient admissions and diagnosis encounters"
+  - "Grain: One record per hospital admission encounter"
+  - "Dimensions: Patients with SCD2 tracking, and Physicians"
+  - "Metrics: total_admission_cost_usd, length_of_stay_days"
+
+verification_queries:
+  - name: Active SCD2 Patients Check
+    query: "SELECT COUNT(*) FROM dim_healthcare_customer_core WHERE is_current = true;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected active SCD2 patient records
+
+  - name: Admissions Fact Grain Count
+    query: "SELECT COUNT(*) FROM fact_healthcare_orders WHERE total_amount_usd >= 0;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected valid positive admission encounters
+
+  - name: Total Admission Cost Sum
+    query: "SELECT SUM(total_amount_usd) FROM fact_healthcare_orders;"
+    assertion_type: scalar_gt
+    expected_value: 0.0
+    failure_message: Expected positive non-null total admission cost

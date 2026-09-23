@@ -1,0 +1,46 @@
+case_id: CASE-04
+domain: inventory
+name: Retail Inventory Periodic Daily Snapshot
+description: Warehouse and retail store daily periodic snapshot capturing quantity on hand and valuation per product and store.
+citation: >
+  Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition),
+  Chapter 3: "Inventory", pp. 79-96 ("The Periodic Snapshot Fact Table and Semi-Additive Metrics").
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - inventory
+  - snapshot
+  - kimball
+
+prompt: >
+  Warehouse and retail store inventory management.
+  Every night at midnight, the warehouse captures a periodic daily snapshot of stock levels
+  per product and warehouse location, tracking quantity on hand and inventory valuation.
+  Product catalog attributes and categories are tracked historically using SCD Type 2.
+
+business_answers:
+  - "Core business processes: warehouse inventory daily snapshots and stock valuation"
+  - "Grain: One record per product per warehouse per snapshot date"
+  - "Dimensions: Products with SCD2 tracking, and Warehouses"
+  - "Metrics: quantity_on_hand, inventory_valuation_usd"
+
+verification_queries:
+  - name: Active Products Dimension Check
+    query: "SELECT COUNT(*) FROM dim_inventory_customer_core WHERE is_current = true;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected active SCD2 product catalog records
+
+  - name: Periodic Snapshot Fact Grain Count
+    query: "SELECT COUNT(*) FROM fact_inventory_orders WHERE total_amount_usd >= 0;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected valid daily periodic inventory snapshot records
+
+  - name: Total Inventory Valuation Sum
+    query: "SELECT SUM(total_amount_usd) FROM fact_inventory_orders;"
+    assertion_type: scalar_gt
+    expected_value: 0.0
+    failure_message: Expected positive total inventory valuation

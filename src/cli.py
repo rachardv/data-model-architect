@@ -107,12 +107,14 @@ def main():
         if not cases:
             print("  No benchmark cases found. Add .yaml or .json case definitions to benchmarks/catalog/")
             return
-        print(f"{'CASE ID':<12} {'NAME':<36} {'HAZARD CATEGORY':<24} {'TRAP?':<7} {'STATUS':<32}")
-        print("-" * 115)
+        print(f"{'CASE ID':<10} {'NAME':<34} {'HAZARD CATEGORY':<22} {'TRAP?':<6} {'STATUS':<28}")
+        print("-" * 105)
         for c in cases:
             is_trap = "YES" if c.is_intentional_trap else "NO"
-            print(f"{c.case_id:<12} {c.name[:34]:<36} {c.hazard_category[:22]:<24} {is_trap:<7} {c.expected_status[:30]:<32}")
-        print("-" * 115)
+            print(f"{c.case_id:<10} {c.name[:32]:<34} {c.hazard_category[:20]:<22} {is_trap:<6} {c.expected_status[:26]:<28}")
+            if c.citation:
+                print(f"  └─ 📚 Source: {c.citation.strip()}")
+        print("-" * 105)
         return
 
     if args.benchmark_gate or args.benchmark_case:
@@ -137,6 +139,8 @@ def main():
             print(f"\n=== 🎯 PREDEFINED BENCHMARK CASE [{res['case_id']}] ===")
             print(f"Name:          {res['name']}")
             print(f"Domain:        {res['domain']}")
+            if target_case.citation:
+                print(f"Citation:      {target_case.citation.strip()}")
             print(f"Verdict:       {res['verdict']} in {res['execution_time_ms']}ms")
             print(f"Status:        {res['final_status']} (Expected: {res['expected_status']})")
             print(f"Queries:       {res['queries_passed']}/{res['queries_executed']} passed")

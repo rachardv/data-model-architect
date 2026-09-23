@@ -1,12 +1,12 @@
 {
-  "case_id": "CASE-01",
-  "domain": "retail",
-  "name": "Enterprise Retail Kimball Star Mart",
-  "hazard_category": "CLEAN_BASELINE",
+  "case_id": "CASE-03",
+  "domain": "banking",
+  "name": "Banking Multi-Owner Joint Account Co-Ownership",
+  "hazard_category": "BRIDGE_CO_OWNERSHIP",
   "is_intentional_trap": false,
-  "prompt": "We operate an omnichannel retail business where customers place merchandise orders. Orders have order status, total sales amount, and estimated delivery dates. Customer address and status changes must be tracked historically using SCD Type 2.\n",
-  "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 2: \"Retail Sales\", pp. 37-78 (\"Kimball Star Schema & SCD Type 2 Customer Tracking\").\n",
-  "timestamp_utc": "2026-09-23T05:33:34.577354+00:00",
+  "prompt": "Consumer retail banking managing checking and savings accounts. Accounts can be jointly owned by multiple customers (primary and secondary account holders) using weighting factor splits. Transactions track deposits, withdrawals, and balances. Customer address and status changes are tracked historically using SCD Type 2.\n",
+  "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 11: \"Financial Services\", pp. 295-326 (\"Joint Accounts and Co-Owners with Weighting Factors\").\n",
+  "timestamp_utc": "2026-09-23T05:33:34.784022+00:00",
   "intake_decisions": {
     "status": "CERTIFIED_PRODUCTION_READY",
     "completeness_score": null,
@@ -15,13 +15,13 @@
     "parsed_semantics": {}
   },
   "architecture_decisions": {
-    "architecture_pattern": "KIMBALL_STAR_SCD2",
+    "architecture_pattern": "ACCUMULATING_SNAPSHOT_FACT",
     "inferred_usage_params": {
       "is_live_app": false,
       "is_high_frequency_stream": false,
       "needs_history": true,
       "has_retroactive_backdating": false,
-      "has_multi_stage_milestones": false,
+      "has_multi_stage_milestones": true,
       "is_periodic_state_rollup": false,
       "has_high_churn_ml_scores": false
     },
@@ -30,7 +30,7 @@
   },
   "schema_decisions": [
     {
-      "table_name": "dim_retail_customer_core",
+      "table_name": "dim_banking_customer_core",
       "type": "DIMENSION",
       "primary_key": "customer_sk",
       "column_count": 6,
@@ -44,7 +44,7 @@
       ]
     },
     {
-      "table_name": "fact_retail_orders",
+      "table_name": "fact_banking_orders",
       "type": "FACT",
       "primary_key": "order_id",
       "column_count": 4,
@@ -65,38 +65,38 @@
   },
   "verification_queries_trace": [
     {
-      "name": "Customer Dimension Active Records",
-      "query": "SELECT COUNT(*) FROM dim_retail_customer_core WHERE is_current = true;",
+      "name": "Active SCD2 Customers Check",
+      "query": "SELECT COUNT(*) FROM dim_banking_customer_core WHERE is_current = true;",
       "assertion_type": "scalar_gt",
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.35,
+      "latency_ms": 0.36,
       "error": null
     },
     {
-      "name": "Orders Fact Grain Row Count",
-      "query": "SELECT COUNT(*) FROM fact_retail_orders WHERE total_amount_usd >= 0;",
+      "name": "Transactions Fact Count",
+      "query": "SELECT COUNT(*) FROM fact_banking_orders WHERE total_amount_usd >= 0;",
       "assertion_type": "scalar_gt",
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.31,
+      "latency_ms": 0.27,
       "error": null
     },
     {
-      "name": "Positive Metric Revenue Total",
-      "query": "SELECT SUM(total_amount_usd) FROM fact_retail_orders;",
+      "name": "Total Transaction Amount Sum",
+      "query": "SELECT SUM(total_amount_usd) FROM fact_banking_orders;",
       "assertion_type": "scalar_gt",
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.24,
+      "latency_ms": 0.3,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 129.91
+  "execution_time_ms": 76.9
 }

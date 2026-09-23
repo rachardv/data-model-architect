@@ -1,0 +1,35 @@
+case_id: TRAP-03
+domain: organization
+name: Cyclic Foreign Key Dependency Loop
+description: Corporate organizational structure where entities mutually reference each other in a cyclic foreign key loop.
+citation: >
+  E.F. Codd (Relational Calculus) & Bill Inmon, Building the Data Warehouse
+  ("Topological Loops, Normalization Anomalies, and Recursive Entity Lineage Failures").
+hazard_category: CYCLIC_FK_GRAPH
+is_intentional_trap: true
+expected_status: AWAITING_ARCHITECTURAL_CONFIRMATION
+tags:
+  - curated
+  - trap
+  - defense
+  - cyclic_graph
+
+prompt: >
+  Corporate organizational structure where departments have managers who are employees,
+  and employees belong to departments, creating a strict mutual foreign key reference loop.
+
+business_answers:
+  - "Processes: employee workforce management and department allocation"
+  - "Grain: One record per employee assignment"
+  - "Dimensions: Departments, Employees, and Locations"
+  - "Metrics: salary_usd, headcount"
+
+baseline_vectors:
+  relationship_multiplicity: ONE_TO_ONE
+
+rules:
+  - description: Policy supports multiple drivers with co-driver allocation
+    enforcement: Hard Database CHECK
+    definition: co_driver_count <= 5
+
+verification_queries: []

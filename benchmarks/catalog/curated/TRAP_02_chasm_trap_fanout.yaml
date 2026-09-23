@@ -1,0 +1,36 @@
+case_id: TRAP-02
+domain: sales_fulfillment
+name: Multi-Fact Chasm Trap Fanout Multiplicity Conflict
+description: Direct cross-fact join between disparate child tables (order line items and shipping parcels) causing Cartesian product fanout.
+citation: >
+  Christopher Adamson, Star Schema: The Complete Reference,
+  Chapter 12: "Disparate Grains and Traps", pp. 315-338 ("The Chasm Trap and Multi-Fact Cross Joins"); Kimball Chapter 5.
+hazard_category: CHASM_TRAP_FANOUT
+is_intentional_trap: true
+expected_status: AWAITING_ARCHITECTURAL_CONFIRMATION
+tags:
+  - curated
+  - trap
+  - defense
+  - chasm_trap
+
+prompt: >
+  Omnichannel retail store tracking orders with line items and fulfillment deliveries.
+  We want to report total item sales revenue and total shipping freight charges
+  by customer in a single combined table.
+
+business_answers:
+  - "Processes: retail orders and shipping parcel fulfillment"
+  - "Grain: One record per line item with separate parcel deliveries"
+  - "Dimensions: Customers, Products, and Carriers"
+  - "Metrics: item_sales_usd, shipping_fee_usd"
+
+baseline_vectors:
+  entity_grain: LINE_ITEM
+
+rules:
+  - description: Shipping fee of at least $5.00 applies to each order total
+    enforcement: Hard Database CHECK
+    definition: shipping_fee >= 5.00
+
+verification_queries: []

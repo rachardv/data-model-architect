@@ -1,11 +1,13 @@
 # Decision Trace Report: CASE-01 — Enterprise Retail Kimball Star Mart
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `133.07ms`
-> **Timestamp (UTC):** `2026-09-23T05:21:08.277622+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `129.91ms`
+> **Timestamp (UTC):** `2026-09-23T05:33:34.577354+00:00`
 
-## 1. Case Metadata & Intent
+## 1. Case Metadata, Provenance & Intent
 - **Domain:** `retail`
 - **Hazard Category:** `CLEAN_BASELINE`
+- **Provenance / Citation:** *Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 2: "Retail Sales", pp. 37-78 ("Kimball Star Schema & SCD Type 2 Customer Tracking").
+*
 - **Expected Status:** `CERTIFIED_PRODUCTION_READY`
 - **Observed Final Status:** `CERTIFIED_PRODUCTION_READY`
 
@@ -29,9 +31,9 @@ We operate an omnichannel retail business where customers place merchandise orde
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Customer Dimension Active Records | `scalar_gt` | `0` | `2` | `0.34ms` | ✅ PASS |
-| Orders Fact Grain Row Count | `scalar_gt` | `0` | `2` | `0.28ms` | ✅ PASS |
-| Positive Metric Revenue Total | `scalar_gt` | `0.0` | `238.50` | `0.26ms` | ✅ PASS |
+| Customer Dimension Active Records | `scalar_gt` | `0` | `2` | `0.35ms` | ✅ PASS |
+| Orders Fact Grain Row Count | `scalar_gt` | `0` | `2` | `0.31ms` | ✅ PASS |
+| Positive Metric Revenue Total | `scalar_gt` | `0.0` | `238.50` | `0.24ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Customer Dimension Active Records

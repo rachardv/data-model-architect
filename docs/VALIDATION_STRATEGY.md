@@ -36,9 +36,22 @@ The validation architecture operates across **3 distinct, non-redundant layers**
 
 3. **Layer 3: System-Level Predefined Benchmark Gate (The Certification Battery)**
    - Evaluates curated enterprise cases **1-by-1 sequentially** in isolated DuckDB databases.
-   - Specifically tests that **intentional traps** (cyclic graphs, contradiction prompts) trigger defense halts.
+   - Declaratively loaded from `benchmarks/catalog/curated/` with explicit academic and textbook citations.
+   - Specifically tests that **intentional traps** (cyclic graphs, contradiction prompts, chasm traps) trigger defense halts.
    - Executes domain-specific physical SQL verification queries against generated tables.
    - Audits all decisions into `docs/benchmarks/traces/<case_id>_trace.json` and `.md`, with clean overwrite semantics upon redeployment.
+
+#### The 8 Curated Textbook Benchmark Cases:
+| Case ID | Domain | Name | Hazard Category | Trap? | Source & Provenance Citation |
+| :--- | :--- | :--- | :--- | :---: | :--- |
+| `CASE-01` | `retail` | Enterprise Retail Kimball Star Mart | `CLEAN_BASELINE` | No | Ralph Kimball, *Data Warehouse Toolkit* (3rd Ed), Ch 2: Retail Sales |
+| `CASE-02` | `healthcare` | Healthcare Encounter & Diagnosis Bridge | `BRIDGE_CO_OWNERSHIP` | No | Ralph Kimball, *Data Warehouse Toolkit* (3rd Ed), Ch 10: Healthcare Bridge |
+| `CASE-03` | `banking` | Banking Multi-Owner Joint Account Co-Ownership | `BRIDGE_CO_OWNERSHIP` | No | Ralph Kimball, *Data Warehouse Toolkit* (3rd Ed), Ch 11: Financial Services |
+| `CASE-04` | `inventory` | Retail Inventory Periodic Daily Snapshot | `CLEAN_BASELINE` | No | Ralph Kimball, *Data Warehouse Toolkit* (3rd Ed), Ch 3: Inventory Snapshot |
+| `TRAP-01` | `highfreq` | Contradiction Guardrail Trap | `CONTRADICTION_HALT` | Yes | E.F. Codd & Christopher Adamson, *Star Schema*, Ch 1: OLTP vs OLAP |
+| `TRAP-02` | `sales_fulfillment` | Multi-Fact Chasm Trap Fanout | `CHASM_TRAP_FANOUT` | Yes | Christopher Adamson, *Star Schema*, Ch 12: Disparate Grains & Chasm Traps |
+| `TRAP-03` | `organization` | Cyclic Foreign Key Dependency Loop | `CYCLIC_FK_GRAPH` | Yes | E.F. Codd & Bill Inmon, *Building the Data Warehouse*: Recursive Loops |
+| `TRAP-04` | `telecom` | SCD2 Historical Amnesia Point-in-Time Trap | `SCD2_HISTORICAL_AMNESIA` | Yes | Ralph Kimball, *Data Warehouse Toolkit* (3rd Ed), Ch 6: Late-Arriving Facts |
 
 ---
 ## 3. The 4-Tier Defense-in-Depth Pipeline

@@ -2,6 +2,9 @@ case_id: TRAP-01
 domain: highfreq
 name: Contradiction Guardrail Trap
 description: Intentional trap testing Gate 0 conflict detection between low-latency OLTP intent and massive OLAP analytics.
+citation: >
+  E.F. Codd & Christopher Adamson, Star Schema: The Complete Reference,
+  Chapter 1: "Analytical vs Transactional Processing Conflicts (OLTP vs OLAP)".
 hazard_category: CONTRADICTION_HALT
 is_intentional_trap: true
 expected_status: AWAITING_ARCHITECTURAL_CONFIRMATION

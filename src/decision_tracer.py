@@ -22,6 +22,7 @@ class DecisionTrace(BaseModel):
     hazard_category: str
     is_intentional_trap: bool
     prompt: str
+    citation: Optional[str] = None
     timestamp_utc: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     intake_decisions: Dict[str, Any] = Field(default_factory=dict)
     architecture_decisions: Dict[str, Any] = Field(default_factory=dict)
@@ -49,7 +50,8 @@ class DecisionTracer:
         hazard_category: str,
         is_intentional_trap: bool,
         prompt: str,
-        expected_status: str = "CERTIFIED_PRODUCTION_READY"
+        expected_status: str = "CERTIFIED_PRODUCTION_READY",
+        citation: Optional[str] = None
     ):
         self._start_time = time.perf_counter()
         self.trace = DecisionTrace(
@@ -59,7 +61,8 @@ class DecisionTracer:
             hazard_category=hazard_category,
             is_intentional_trap=is_intentional_trap,
             prompt=prompt,
-            expected_status=expected_status
+            expected_status=expected_status,
+            citation=citation
         )
 
     def record_intake(self, intake_result: Dict[str, Any]) -> None:
@@ -173,9 +176,10 @@ class DecisionTracer:
             f"> **Verdict:** {badge} | **Type:** `{trap_note}` | **Runtime:** `{t.execution_time_ms}ms`",
             f"> **Timestamp (UTC):** `{t.timestamp_utc}`",
             f"",
-            f"## 1. Case Metadata & Intent",
+            f"## 1. Case Metadata, Provenance & Intent",
             f"- **Domain:** `{t.domain}`",
             f"- **Hazard Category:** `{t.hazard_category}`",
+            f"- **Provenance / Citation:** *{t.citation or 'Internal Benchmark Reference Specification'}*",
             f"- **Expected Status:** `{t.expected_status}`",
             f"- **Observed Final Status:** `{t.final_status}`",
             f"",

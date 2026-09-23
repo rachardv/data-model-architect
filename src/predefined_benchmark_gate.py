@@ -36,7 +36,8 @@ class PredefinedBenchmarkGate:
             hazard_category=case.hazard_category,
             is_intentional_trap=case.is_intentional_trap,
             prompt=case.prompt,
-            expected_status=case.expected_status
+            expected_status=case.expected_status,
+            citation=case.citation
         )
 
         case_db = duckdb.connect(":memory:")

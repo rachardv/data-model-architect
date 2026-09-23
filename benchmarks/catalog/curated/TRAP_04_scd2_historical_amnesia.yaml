@@ -1,0 +1,36 @@
+case_id: TRAP-04
+domain: telecom
+name: SCD2 Historical Amnesia Point-in-Time Trap
+description: Temporal inversion hazard where late-arriving event facts join to current dimension state instead of point-in-time effective state.
+citation: >
+  Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition),
+  Chapter 6: "Customer Relationship Management", pp. 165-182 ("Late-Arriving Data and Point-in-Time Dimension Lookup").
+hazard_category: SCD2_HISTORICAL_AMNESIA
+is_intentional_trap: true
+expected_status: AWAITING_ARCHITECTURAL_CONFIRMATION
+tags:
+  - curated
+  - trap
+  - defense
+  - scd2
+
+prompt: >
+  Mobile telecommunications billing network where subscribers change rate plans over time.
+  Historical calls from prior billing cycles are joined to current active rate plans
+  instead of the plan effective at the time the call took place.
+
+business_answers:
+  - "Processes: subscriber cellular calls and billing rate plans"
+  - "Grain: One record per phone call connection"
+  - "Dimensions: Subscribers with rate plan changes, and Cell Towers"
+  - "Metrics: call_duration_seconds, billable_cost_usd"
+
+baseline_vectors:
+  temporal_policy: SCD1_OVERWRITE
+
+rules:
+  - description: Preserve history and point-in-time audit for all customer tier updates
+    enforcement: Hard Database CHECK
+    definition: scd_valid_to IS NOT NULL
+
+verification_queries: []

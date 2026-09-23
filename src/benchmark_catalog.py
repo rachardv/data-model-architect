@@ -25,6 +25,10 @@ class PredefinedBenchmarkCase(BaseModel):
     domain: str = Field(..., description="Business domain name")
     name: str = Field(..., description="Human-readable case title")
     description: str = Field(..., description="Brief description of what the test case evaluates")
+    citation: Optional[str] = Field(
+        default=None,
+        description="Academic, textbook, or industry incident citation detailing case provenance"
+    )
     hazard_category: str = Field(
         ...,
         description="Hazard or trap type: CLEAN_BASELINE, CHASM_TRAP_FANOUT, CYCLIC_FK_GRAPH, CONTRADICTION_HALT, SCD2_HISTORICAL_AMNESIA, BRIDGE_CO_OWNERSHIP, GRAIN_MISMATCH"

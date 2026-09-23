@@ -142,6 +142,7 @@ class BenchmarkCatalogLoader:
                 "is_intentional_trap": c.is_intentional_trap,
                 "expected_status": c.expected_status,
                 "query_count": len(c.verification_queries),
+                "citation": c.citation,
                 "tags": c.tags,
                 "source_file": c.source_file
             })
