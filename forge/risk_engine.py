@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional, Type, Set
 from pydantic import BaseModel, ConfigDict, Field
 import duckdb
 from src.logger import get_logger
-from src.chaos_engine import AdversarialChaosGenerator
+from forge.chaos_engine import AdversarialChaosGenerator
 
 logger = get_logger("data_model_architect.validation_strategy")
 

@@ -1,6 +1,6 @@
 import pytest
 from src.dbt_generator import DBTProjectGenerator
-from src.dbt_evaluator import DBTProjectEvaluator
+from forge.dbt_evaluator import DBTProjectEvaluator
 
 def test_dbt_project_evaluator_clean_project():
     # Build clean project

@@ -75,7 +75,7 @@ def test_captain_resolves_with_add_companion_mart():
         "architectural_choice": "ADD_COMPANION_MART"
     })
     
-    assert res["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert res["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert res["resolution_applied"] == "ENTERPRISE_BUS_ADDITIVE_EXPANSION"
     
     # Verify the companion table was added to generated_sql
@@ -100,7 +100,7 @@ def test_captain_resolves_with_full_refactor():
         "architectural_choice": "FULL_REFACTOR"
     })
     
-    assert res["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert res["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert res["resolution_applied"] == "FULL_MODEL_REFACTOR_MIGRATION"
     assert "migration_artifacts" in res
     assert os.path.exists(res["migration_artifacts"]["backfill_sql_path"])

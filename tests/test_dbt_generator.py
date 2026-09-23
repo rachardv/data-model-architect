@@ -149,7 +149,7 @@ def test_captain_orchestrator_exports_dbt():
         }
     }
     result = captain.execute_workflow(payload)
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert "dbt_project" in result
     assert result["dbt_project"]["total_models"] >= 3
     assert "exported_dbt_files" in result

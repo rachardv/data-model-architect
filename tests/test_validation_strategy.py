@@ -7,7 +7,7 @@ import pytest
 import duckdb
 from typing import Dict, Any
 
-from src.validation_strategy import (
+from forge.validation_strategy import (
     ValidationTier,
     RiskSeverity,
     RiskResult,
@@ -17,7 +17,7 @@ from src.validation_strategy import (
     ValidationStrategyEngine,
     register_risk
 )
-from src.chaos_engine import AdversarialChaosGenerator
+from forge.chaos_engine import AdversarialChaosGenerator
 from src.orchestration.captain import CaptainOrchestrator
 
 
@@ -312,12 +312,14 @@ class TestCaptainOrchestratorValidationIntegration:
         }
         
         result = orchestrator.execute_workflow(payload)
+        assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
         
-        assert "validation_risk_scorecard" in result
-        scorecard = result["validation_risk_scorecard"]
+        from forge.risk_dispatcher import RiskToTestDispatcher
+        cert = RiskToTestDispatcher.evaluate_and_certify(result)
+        assert cert["status"] == "CERTIFIED_PRODUCTION_READY"
+        scorecard = cert["risk_scorecard"]
         assert "critical_halt" in scorecard
         assert "summary" in scorecard
         assert "score" in scorecard
         assert isinstance(scorecard["results"], list)
         assert len(scorecard["results"]) >= 9
-        assert result["status"] == "CERTIFIED_PRODUCTION_READY"

@@ -59,6 +59,6 @@ def test_captain_emits_structured_logs(caplog):
     with caplog.at_level(logging.INFO):
         result = captain.execute_workflow(payload)
         
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert custom_trace in caplog.text
     assert "data_model_architect.captain" in caplog.text

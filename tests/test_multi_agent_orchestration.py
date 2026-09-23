@@ -23,7 +23,7 @@ def test_captain_orchestration_lifecycle():
     
     result = captain.execute_workflow(payload)
     
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert result["architecture_pattern"] == "KIMBALL_STAR_SCD2"
     assert result["quality_index"] >= 95.0
     assert result["spawner_log_count"] >= 5
@@ -73,7 +73,7 @@ def test_all_branches_funnel_through_unified_audit_block():
         result = captain.execute_workflow(payload)
         
         # Verify that all branches pass through the exact same audit council and state machine
-        assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+        assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
         assert result["state"] == "COMPLETE"
         assert result["quality_index"] >= 95.0
         assert result["spawner_log_count"] >= 5 # Dispatched requirements + architect + 4 reviewers

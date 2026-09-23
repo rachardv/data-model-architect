@@ -85,7 +85,7 @@ def test_captain_orchestrator_executes_only_when_100_percent():
         ]
     }
     result = captain.execute_workflow(payload)
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert result["architecture_pattern"] == "ACCUMULATING_SNAPSHOT_FACT"
     assert result["intake_completeness_score"] == 100.0
     assert result["quality_index"] >= 98.0

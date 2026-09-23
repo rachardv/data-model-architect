@@ -1,6 +1,6 @@
 import pytest
 import duckdb
-from src.benchmark_harness import ModelBenchmarkHarness
+from forge.benchmark_harness import ModelBenchmarkHarness
 from src.medallion_generator import MedallionPipelineGenerator
 from src.orchestration.captain import CaptainOrchestrator
 
@@ -119,10 +119,14 @@ def test_captain_attaches_benchmark_scorecard():
     }
     
     result = captain.execute_workflow(payload)
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
-    assert "benchmark_scorecard" in result
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     
-    sc = result["benchmark_scorecard"]
+    from forge.risk_dispatcher import RiskToTestDispatcher
+    cert = RiskToTestDispatcher.evaluate_and_certify(result)
+    assert cert["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert cert["verdict"] == "PASS"
+    
+    sc = cert["deterministic_scorecard"]
     assert sc["overall_score"] == 100.0
     assert sc["overall_status"] == "PASS"
     assert sc["metric_conservation"]["status"] == "PASS"

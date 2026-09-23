@@ -121,7 +121,7 @@ def test_factless_fact_coverage_generation():
         }
     }
     result = captain.execute_workflow(req)
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert result["architecture_pattern"] == "FACTLESS_FACT_COVERAGE"
     
     # Verify DDL contains factless fact coverage table

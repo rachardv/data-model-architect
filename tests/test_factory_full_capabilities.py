@@ -66,7 +66,7 @@ def test_captain_autonomous_factory_run():
         }
     }
     output = captain.execute_workflow(payload)
-    assert output["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert output["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert "erDiagram" in output["erd_markdown"]
     assert "Enterprise Data Contract" in output["contract_markdown"]
     assert len(output["generated_sql"]) >= 2

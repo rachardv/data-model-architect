@@ -97,8 +97,12 @@ class MegaBenchmarkRunner:
                 
                 model_output = captain.execute_workflow(workflow_req)
                 classified_pattern = model_output.get("architecture_pattern")
-                model_status = model_output.get("status")
-                bench_scorecard = model_output.get("benchmark_scorecard", {})
+                
+                from forge.risk_dispatcher import RiskToTestDispatcher
+                cert_result = RiskToTestDispatcher.evaluate_and_certify(model_output)
+
+                model_status = cert_result.get("status")
+                bench_scorecard = cert_result.get("deterministic_scorecard", {})
 
                 # Verify 5 Physical Post-Generation Pillars
                 metric_status = bench_scorecard.get("metric_conservation", {}).get("status", "FAIL")

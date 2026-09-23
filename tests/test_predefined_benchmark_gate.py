@@ -28,7 +28,7 @@ def test_catalog_empty_by_default():
 def test_run_all_cases_empty_catalog():
     """Validates graceful execution when the catalog contains zero cases."""
     gate = PredefinedBenchmarkGate()
-    scorecard = gate.run_all_cases()
+    scorecard = gate.run_all_cases(catalog=[])
     assert scorecard["status"] == "EMPTY_CATALOG"
     assert scorecard["total_cases"] == 0
     assert scorecard["passed_cases"] == 0

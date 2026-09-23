@@ -76,10 +76,7 @@ class PredefinedBenchmarkGate:
             if target_schema:
                 tracer.record_schema(target_schema)
                 
-            tracer.record_validation(
-                validation_risk_scorecard=workflow_res.get("validation_risk_scorecard", {}),
-                benchmark_scorecard=workflow_res.get("benchmark_scorecard")
-            )
+
 
             # 3. Physical Model Execution & Verification Queries
             medallion_pipeline = workflow_res.get("medallion_pipeline")
@@ -98,6 +95,7 @@ class PredefinedBenchmarkGate:
             self._inject_seed_data(case_db, case)
 
             # 5. Evaluate Custom Verification Queries against DuckDB
+            custom_query_results = []
             for vq in case.verification_queries:
                 q_start = time.perf_counter()
                 actual_val = None
@@ -142,6 +140,7 @@ class PredefinedBenchmarkGate:
                     err_msg = str(e)
                     passed = False
 
+                custom_query_results.append({"name": vq.name, "passed": passed})
                 tracer.record_query_verification(
                     name=vq.name,
                     query=vq.query,
@@ -151,6 +150,20 @@ class PredefinedBenchmarkGate:
                     passed=passed,
                     latency_ms=q_duration,
                     error=err_msg
+                )
+
+            # 6. Forge Risk-to-Test Translation & Certification Gate
+            if final_status == "SYNTHESIZED_SUCCESSFULLY":
+                from forge.risk_dispatcher import RiskToTestDispatcher
+                cert_result = RiskToTestDispatcher.evaluate_and_certify(
+                    workflow_res=workflow_res,
+                    conn=case_db,
+                    custom_verification_results=custom_query_results
+                )
+                final_status = cert_result["status"]
+                tracer.record_validation(
+                    validation_risk_scorecard=cert_result.get("risk_scorecard", {}),
+                    benchmark_scorecard=cert_result.get("deterministic_scorecard")
                 )
 
             tracer.finalize(final_status=final_status)
@@ -181,11 +194,14 @@ class PredefinedBenchmarkGate:
         Sequentially executes all predefined benchmark cases 1-by-1.
         Returns an aggregated scorecard.
         """
-        cases_to_run = catalog if catalog is not None else get_predefined_benchmark_catalog()
-        if not cases_to_run and os.path.exists("benchmarks/catalog"):
-            from forge.catalog_loader import BenchmarkCatalogLoader
-            BenchmarkCatalogLoader.load_from_directory("benchmarks/catalog", register=True)
+        if catalog is not None:
+            cases_to_run = catalog
+        else:
             cases_to_run = get_predefined_benchmark_catalog()
+            if not cases_to_run and os.path.exists("benchmarks/catalog"):
+                from forge.catalog_loader import BenchmarkCatalogLoader
+                BenchmarkCatalogLoader.load_from_directory("benchmarks/catalog", register=True)
+                cases_to_run = get_predefined_benchmark_catalog()
         
         if not cases_to_run:
             logger.info("Predefined benchmark catalog is currently empty. Zero cases executed.")

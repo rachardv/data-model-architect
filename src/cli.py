@@ -17,49 +17,7 @@ from src.decision_engine import DataModelDecisionEngine
 from src.noun_verb_parser import NounVerbSemanticParser
 from src.orchestration.captain import CaptainOrchestrator
 
-def _print_comprehensive_benchmark_scorecard(sc):
-    print(f"\n=== 🎯 COMPREHENSIVE MODEL BENCHMARK SCORECARD ===")
-    print(f"Overall Status:          {sc.get('overall_status')} ({sc.get('overall_score', 0):.0f}/100 pts in {sc.get('execution_time_ms', 0):.1f}ms)")
-    
-    # 1. Physical Deterministic Pillars
-    print("\n--- 1. Deterministic Physical Laws ---")
-    if "metric_conservation" in sc:
-        print(f"  • Metric Conservation:  [{sc['metric_conservation']['status']}] {sc['metric_conservation']['details']}")
-    if "temporal_causality" in sc:
-        print(f"  • Temporal Causality:   [{sc['temporal_causality']['status']}] {sc['temporal_causality']['details']}")
-    if "referential_integrity" in sc:
-        print(f"  • Referential & Grain:  [{sc['referential_integrity']['status']}] {sc['referential_integrity']['details']}")
-    if "query_execution" in sc:
-        print(f"  • Query Plan & Perf:    [{sc['query_execution']['status']}] {sc['query_execution']['details']}")
 
-    # 2. Gold Standard Industry Benchmarks (SSB, TPC-DS, TPC-DI, TPC-H)
-    if "industry_benchmarks" in sc:
-        ind = sc["industry_benchmarks"]
-        print(f"\n--- 2. TPC & Academic Industry Standards [{ind.get('overall_status')}] ({ind.get('total_test_cases_executed', 0)} physical queries & scenarios executed) ---")
-        if "ssb" in ind:
-            print(f"  • SSB (O'Neil):        [{ind['ssb']['status']}] {ind['ssb']['details']}")
-        if "tpcds" in ind:
-            print(f"  • TPC-DS Retail:       [{ind['tpcds']['status']}] {ind['tpcds']['details']}")
-        if "tpcdi" in ind:
-            print(f"  • TPC-DI ETL & Ingest: [{ind['tpcdi']['status']}] {ind['tpcdi']['details']}")
-        if "tpch" in ind:
-            print(f"  • TPC-H Fan-out:       [{ind['tpch']['status']}] {ind['tpch']['details']}")
-
-    # 3. dbt-project-evaluator Dimensional Modeling Audit
-    if "dbt_project_evaluator" in sc and sc["dbt_project_evaluator"].get("status") != "SKIPPED":
-        dbt_ev = sc["dbt_project_evaluator"]
-        print(f"\n--- 3. dbt-project-evaluator Audit [{dbt_ev.get('status')}] ({dbt_ev.get('rules_passed', 0)}/{dbt_ev.get('total_rules', 4)} rules passed) ---")
-        rules = dbt_ev.get("rule_results", {})
-        for r_name, r_val in rules.items():
-            st = "PASS" if r_val.get("passed") else "FAIL"
-            print(f"  • {r_name:<26}: [{st}] {r_val.get('details')}")
-
-    # 4. BIRD-SQL & Spider Academic AI Semantic Benchmarks
-    if "semantic_benchmarks" in sc:
-        sem = sc["semantic_benchmarks"]
-        print(f"\n--- 4. BIRD-SQL & Spider Semantic Benchmarks [{sem.get('overall_status')}] ({sem.get('scenarios_passed', 0)}/{sem.get('scenarios_evaluated', 0)} scenarios passed) ---")
-        for sc_item in sem.get("results", []):
-            print(f"  • {sc_item['scenario_id']} ({sc_item['benchmark']}): [{sc_item['status']}] {sc_item['domain']} -> {sc_item['classified_pattern']}")
 
 def main():
     parser = argparse.ArgumentParser(description="Data Model Architect CLI")
@@ -139,9 +97,6 @@ def main():
         if "dbt_project" in result:
             print(f"dbt Core Models:    {result['dbt_project']['total_models']} models compiled")
             print(f"Exported dbt Repo:  docs/dbt/{args.domain}/")
-            
-        if "benchmark_scorecard" in result:
-            _print_comprehensive_benchmark_scorecard(result["benchmark_scorecard"])
         return
         
     if args.story or args.medallion or args.duckdb or args.dbt or args.benchmark:
@@ -157,7 +112,7 @@ def main():
         print("=== 🏛️ DATA MODEL ARCHITECT DELIVERABLES ===")
         print(f"Status:             {result.get('status')}")
         
-        if result.get("status") != "CERTIFIED_PRODUCTION_READY":
+        if result.get("status") != "SYNTHESIZED_SUCCESSFULLY":
             print(f"Message:            {result.get('message', 'Workflow halted.')}")
             if "completeness_score" in result:
                 print(f"Completeness Score: {result.get('completeness_score', 0):.0f}%")
@@ -191,9 +146,6 @@ def main():
         if "dbt_project" in result:
             print(f"dbt Core Models:    {result['dbt_project']['total_models']} models compiled")
             print(f"Exported dbt Repo:  docs/dbt/{args.domain}/")
-            
-        if "benchmark_scorecard" in result:
-            _print_comprehensive_benchmark_scorecard(result["benchmark_scorecard"])
         
         if args.duckdb:
             from src.sql_runner import DuckDBPipelineRunner

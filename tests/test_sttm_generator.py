@@ -79,7 +79,7 @@ def test_captain_orchestrator_exports_sttm():
     }
     result = captain.execute_workflow(payload)
     
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert "sttm_markdown" in result
     assert "sttm_file_path" in result
     assert os.path.exists(result["sttm_file_path"])

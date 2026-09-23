@@ -1,6 +1,5 @@
 from typing import Dict, Any, List, Optional
 import os
-import duckdb
 from src.orchestration.spawner import SubagentSpawner
 from src.orchestration.reviewer_council import ReviewerCouncil
 from src.intake_engine import IntakeEngine, VectorConflictDetector
@@ -11,8 +10,6 @@ from src.contract_compiler import DataContractCompiler
 from src.medallion_generator import MedallionPipelineGenerator
 from src.sttm_generator import STTMGenerator
 from src.dbt_generator import DBTProjectGenerator
-from src.benchmark_harness import ModelBenchmarkHarness
-from src.validation_strategy import ValidationStrategyEngine, ValidationContext
 from src.schema_author import DynamicSchemaAuthor
 from src.logger import get_logger, set_trace_id, get_trace_id
 from src.config import settings
@@ -319,40 +316,9 @@ ON CONFLICT (order_id) DO NOTHING;
             project_data=dbt_project
         )
         
-        # 8. Deterministic Model Benchmark Verification Suite & Validation Strategy
-        run_industry_suites = user_request.get("run_industry_suites", False)
-        benchmark_con = duckdb.connect(":memory:")
-        try:
-            benchmark_scorecard = ModelBenchmarkHarness.run_full_benchmark(
-                domain=domain,
-                target_schema=schema_spec,
-                medallion_pipeline=medallion_pipeline,
-                dbt_project=dbt_project,
-                run_industry_suites=run_industry_suites,
-                conn=benchmark_con
-            )
-            
-            # 9. Pluggable 4-Tier Model Validation Strategy & Risk Evaluator
-            validation_ctx = ValidationContext(
-                domain=domain,
-                target_schema=schema_spec,
-                medallion_pipeline=medallion_pipeline,
-                dbt_project=dbt_project,
-                duckdb_conn=benchmark_con,
-                inferred_usage_params=inferred_params,
-                benchmark_scorecard=benchmark_scorecard
-            )
-            validation_scorecard = ValidationStrategyEngine.evaluate(validation_ctx)
-        finally:
-            benchmark_con.close()
-
-        final_status = "CERTIFIED_PRODUCTION_READY"
-        if benchmark_scorecard.get("overall_status") != "PASS":
-            final_status = "BENCHMARK_VERIFICATION_FAILED"
-            logger.warning(f"Benchmark verification failed with score={benchmark_scorecard.get('overall_score')}")
-        elif validation_scorecard.get("critical_halt"):
-            final_status = "CRITICAL_RISK_HALT"
-            logger.error(f"Validation strategy halted model certification due to critical risks: {validation_scorecard.get('summary')}")
+        # 8. Final Synthesis Delivery
+        final_status = "SYNTHESIZED_SUCCESSFULLY"
+        logger.info(f"Model successfully synthesized for domain='{domain}' [status={final_status}]")
         
         return {
             "status": final_status,
@@ -378,7 +344,5 @@ ON CONFLICT (order_id) DO NOTHING;
             "role_playing_views": role_playing_views,
             "dbt_project": dbt_project,
             "exported_dbt_files": exported_dbt_files,
-            "benchmark_scorecard": benchmark_scorecard,
-            "validation_risk_scorecard": validation_scorecard,
             "spawner_log_count": len(self.spawner.message_log)
         }

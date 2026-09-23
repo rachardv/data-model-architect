@@ -46,5 +46,5 @@ def test_captain_executes_intake_squad_end_to_end():
         ]
     }
     result = captain.execute_workflow(payload)
-    assert result["status"] == "CERTIFIED_PRODUCTION_READY"
+    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
     assert result["spawner_log_count"] >= 8  # Intake squad (3) + Requirements (1) + Architect (1) + 4 Reviewers (4)
