@@ -78,26 +78,28 @@ flowchart TD
     
     subgraph ForgeFlow["Forge Workflow Scope"]
         direction TB
-        F1["1. Modify Engine Logic in src/ (transpiler, risk tiers, etc.)"]
-        F2["2. Run 118-Test Regression Suite (py -3.14 -m pytest)"]
-        F3["3. Layer 3: Predefined Benchmark Gate (--benchmark-gate)"]
-        F4["4. 🏛️ <b>Industry Standards Benchmark Gate</b><br>(TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider)"]
-        F5["5. Synchronize Master Architecture Docs (README, ARCHITECTURE)"]
+        F1["1. Branch on staging: git checkout staging"]
+        F2["2. Iterate with Fast Mode (~10s): .\\forge.ps1 fast"]
+        F3["3. Full 219-Check Certification & Pytest Gate"]
+        F4["4. Atomic Dual-Remote Promotion: .\\forge.ps1 promote"]
+        F5["5. Synchronize Master Architecture Docs (README, PLAYBOOK)"]
         F1 --> F2 --> F3 --> F4 --> F5
     end
 
     Forge --> ForgeFlow
-    F5 --> ForgeOut["🚀 Outputs: src/, tests/, docs/ARCHITECTURE_AND_RUBRICS.md<br>✅ Master docs updated!"]
+    F5 --> ForgeOut["🚀 Outputs: src/, tests/, docs/FORGE_PLAYBOOK.md<br>✅ Master docs updated & promoted to main!"]
 ```
 
 | Dimension | 🎨 **Studio Workflow** *(Data Modeling)* | 🛠️ **Forge Workflow** *(Engine Evolution)* |
 | :--- | :--- | :--- |
 | **Who uses it** | Data Engineers, Analytics Engineers, Business Architects | Core Platform Engineers, AI Developers |
+| **Active Branch** | Feature / domain branch | `staging` (Fast Mode) $\rightarrow$ `main` (Promote) |
 | **Objective** | Build a specific domain data model (e.g. Retail, Healthcare, Lending). | Modify or extend the modeling engine itself in `src/`. |
-| **Validation Gates** | **Layer 1** (Intake Gate) & **Layer 2** (Model Dual-Gate). | **Layer 3** (Predefined Gate 1-by-1) + **Industry Standards Gate** (TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider) + 118-Test Suite. |
-| **Industry Benchmarks?** | 🚫 **NEVER** (Isolated to Forge; keeps domain modeling fast & lean). | ✅ **MANDATORY** (Runs 200+ physical checks before engine release). |
-| **Master Docs Touched?** | 🚫 **NEVER** (Only writes to `docs/pipelines/<domain>/`). | ✅ **MANDATORY** (`README.md`, `ARCHITECTURE_AND_RUBRICS.md` updated). |
-| **Primary CLI Command** | `py src/cli.py --story "..." --domain <name>` | `py src/cli.py --forge` |
+| **Validation Gates** | **Layer 1** (Intake Gate) & **Layer 2** (Model Dual-Gate). | **Layer 3** (14-Case Strict Diff) + **Industry Standards Gate** (TPC-DI, TPC-H, SSB, TPC-DS, Spider) + 144-Test Suite. |
+| **Industry Benchmarks?** | 🚫 **NEVER** (Isolated to Forge; keeps domain modeling fast & lean). | ✅ **MANDATORY ON PROMOTION** (Runs 219 physical checks before release to `main`). |
+| **Master Docs Touched?** | 🚫 **NEVER** (Only writes to `docs/pipelines/<domain>/`). | ✅ **MANDATORY** (`README.md`, `FORGE_PLAYBOOK.md`, `RISK_TAXONOMY.md`). |
+| **Primary CLI Command** | `py src/cli.py --story "..." --domain <name>` | `.\forge.ps1 fast` (staging) / `.\forge.ps1 promote` (release) |
+
 
 
 ---

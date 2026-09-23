@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "Warehouse and retail store inventory management. Every night at midnight, the warehouse captures a periodic daily snapshot of stock levels per product and warehouse location, tracking quantity on hand and inventory valuation. Product catalog attributes and categories are tracked historically using SCD Type 2.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 3: \"Inventory\", pp. 79-96 (\"The Periodic Snapshot Fact Table and Semi-Additive Metrics\").\n",
-  "timestamp_utc": "2026-09-23T19:34:08.856459+00:00",
+  "timestamp_utc": "2026-09-23T19:50:55.980321+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -78,7 +78,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.3,
+      "latency_ms": 0.31,
       "error": null
     },
     {
@@ -88,7 +88,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.24,
+      "latency_ms": 0.27,
       "error": null
     },
     {
@@ -98,12 +98,12 @@
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.21,
+      "latency_ms": 0.24,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 72.11
+  "execution_time_ms": 73.39
 }

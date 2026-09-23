@@ -148,14 +148,17 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 
 | Command | Action | When to Use |
 | :--- | :--- | :--- |
-| `.\forge.ps1 list` | Lists all registered cases with academic citations | To view the catalog of active benchmarks and traps. |
+| `.\forge.ps1 fast` | Runs core unit tests + 14-case regression diff (~10s) | **Recommended inner-loop command** while iterating on `staging`. |
+| `.\forge.ps1 promote` | Runs full 219 checks + 144 tests, merges `staging` $\rightarrow$ `main`, and pushes | To promote and release fully certified changes from `staging` to `main`. |
 | `.\forge.ps1 test <ID>` | Executes a single benchmark case in DuckDB | While authoring a new case or debugging an engine patch. |
 | `.\forge.ps1 diff` | Compares current execution against golden baseline | To check schema drift and latency differences. |
 | `.\forge.ps1 strict-diff` | Strict CI gate (exits 1 on unapproved drift) | Before committing code or in automated CI pipelines. |
-| `.\forge.ps1 certify` | Runs the full 213+ check industry battery | To certify production readiness against TPC/SSB/BIRD standards. |
-| `.\forge.ps1 tests` | Executes all 134+ pytest tests across repo | Universal test gate verifying zero regressions. |
+| `.\forge.ps1 certify` | Runs the full 219-check industry battery | To certify production readiness against TPC/SSB/BIRD standards. |
+| `.\forge.ps1 tests` | Executes all 144+ pytest tests across repo | Universal test gate verifying zero regressions. |
 | `.\forge.ps1 snapshot` | Promotes current results to golden baseline | After intentionally adding new cases or approving schema evolutions. |
 | `.\forge.ps1 all` | Runs `tests` $\rightarrow$ `strict-diff` $\rightarrow$ `certify` in sequence | Complete pre-push validation battery. |
+| `.\forge.ps1 list` | Lists all registered cases with academic citations | To view the catalog of active benchmarks and traps. |
+| `.\forge.ps1 -v` | Enables verbose stdout JSON streaming | When debugging intermediate pipeline steps. |
 
 ---
 
@@ -180,6 +183,48 @@ Whenever any Forge benchmark, test suite, or verification check (`.\forge.ps1 te
 | `2026-09-23T19:30:07Z` | `test_validation_strategy.py::test_rsk14_metric_additivity_and_rollup_linter` | `StopIteration` on `RSK-14` result | `RSK-01` halted early due to `Granularity Ambiguity in table 'fact_daily_account_balances'`: test fixture schema omitted `primary_key` and `grain` on mock fact table. | Added `primary_key: "snapshot_id"` and `grain: "daily account balance snapshot"` to test fixture table specifications. | **RESOLVED (100% Pass)** |
 | `2026-09-23T19:30:38Z` | `test_validation_strategy.py::test_rsk14_metric_additivity_and_rollup_linter` | `StopIteration` on `RSK-14` result | `RSK-12` halted early due to `MPP Partitioning Blindspot`: test fixture mock fact tables omitted `partition_by`. | Added `partition_by: "snapshot_date_key"` and `partition_by: "event_date_key"` to mock fact tables in test fixture. | **RESOLVED (100% Pass)** |
 | `2026-09-23T19:32:15Z` | `.\forge.ps1 certify` / `tests/test_semantic_benchmarks.py` | `SPIDER-BANKING-01` failed with classification mismatch (`PERIODIC_SNAPSHOT_BALANCES` != `PERIODIC_SNAPSHOT_FACT`) | `has_semi_additive_balances` parser regex in `src/noun_verb_parser.py` included overly broad keyword `"account balance"`, hijacking generic periodic snapshot banking scenarios. | Scoped `has_semi_additive_balances` to explicit semi-additive and rollup terms (`"semi-additive"`, `"ending balance"`, `"closing balance"`, `"aggregate rollup"`, etc.), leaving generic balance narratives to standard periodic snapshots. | **RESOLVED (100% Pass)** |
+
+---
+
+## 🌿 6. Two-Tier Branch Lifecycle & Verification Governance
+
+The repository operates a strict, two-tier branch governance policy designed to maximize development velocity while enforcing zero defect escape into `main`:
+
+```mermaid
+flowchart LR
+    subgraph STAGING["🌿 staging Branch (Inner Loop)"]
+        DEV["Active Coding & Refactoring"] --> FAST["⚡ .\\forge.ps1 fast (~10s)<br/>(Core Tests + 14-Case Strict Diff)"]
+        FAST -->|Iterate rapidly| DEV
+    end
+
+    subgraph PROMOTION["🚀 Atomic Promotion Gate"]
+        FAST -->|All checks green| PROMOTE["Run: .\\forge.ps1 promote"]
+        PROMOTE --> FULL_TEST["1. Full 144 Pytest Suite"]
+        FULL_TEST --> STRICT_DIFF["2. 14-Case Golden Strict Diff"]
+        STRICT_DIFF --> CERTIFY["3. Full 219 Industry Certification"]
+        CERTIFY --> MERGE["4. Fast-Forward Merge staging -> main"]
+        MERGE --> PUSH["5. Dual Push to origin & synology"]
+    end
+
+    subgraph MAIN["🛡️ main Branch (Certified Production Release)"]
+        PUSH --> PROD["100% Certified Baseline on main"]
+    end
+```
+
+### Invariant A: Branch Purpose & Isolation
+1. **`staging` (Development & Experimentation):** All new features, bug fixes, schema enhancements, and risk rules are committed on `staging`. Verification on `staging` relies on `.\forge.ps1 fast` (<12 seconds), avoiding redundant long-running industry suites.
+2. **`main` (Certified Production Baseline):** Code is **never committed directly to `main`**. Promotion to `main` strictly requires running `.\forge.ps1 promote`, which executes all 219 industry checks and 144 pytest unit tests before merging and synchronizing both remotes.
+
+### Invariant B: Quiet on Success, Loud on Failure (Automatic Error Burst)
+1. **Context Window Token Economy:** By default, `$env:DATA_MODEL_LOG_LEVEL = "WARNING"` suppresses intermediate JSON stdout streaming during successful test runs, keeping the AI assistant's context window clean and conserving API credits.
+2. **Loud on Failure:** On any exit code $\neq$ 0, Python and pytest automatically burst the complete failure stack trace and the exact failing SQL query directly to `stdout`.
+3. **Trace Persistence:** Full JSON and Markdown execution traces are **always written to disk** in `docs/benchmarks/traces/*.json` and `*.md` regardless of terminal verbosity.
+4. **Verbose Override:** Developers can pass `-v` or `-VerboseMode` to `.\forge.ps1` to re-enable verbose debug output.
+
+### Invariant C: Graph Architecture Policy (Strict YAGNI)
+1. **No Runtime Graph Frameworks:** The test runner is strictly linear, deterministic, and fail-fast. No dynamic DAG execution engines (e.g. LangGraph or Airflow test runners) are permitted in `forge/`.
+2. **Declarative Visuals:** Graph visualization is maintained strictly via declarative Mermaid diagrams in documentation and markdown traces, ensuring high human/LLM readability with zero runtime performance cost.
+
 
 
 

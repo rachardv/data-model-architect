@@ -179,3 +179,4 @@ Before submitting a Pull Request that adds anything to The Forge:
 3. [ ] **Anti-Duplication Verification:** If you are adding an invariant check, did you verify whether Process D's existing probes (Metric Conservation, SCD2 PIT, FK Quarantine, Hash-Join EXPLAIN) already test it?
 4. [ ] **Performance SLA:** Does your addition execute in under $<500\text{ms}$ in DuckDB in-memory?
 5. [ ] **Snapshot Promotion:** If adding a valid new benchmark case in Process A, did you run `.\forge.ps1 snapshot` to update the certified golden baseline?
+6. [ ] **Two-Tier Branch Lifecycle:** Are you working on the `staging` branch using `.\forge.ps1 fast` (<10s) before executing `.\forge.ps1 promote` to `main`? (See `docs/FORGE_PLAYBOOK.md` Section 6).

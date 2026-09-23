@@ -49,8 +49,13 @@ Examples:
     parser.add_argument("--mega-benchmark", action="store_true", help="Execute Academic & Enterprise Mega-Evaluation Suite")
     parser.add_argument("--cases", type=int, default=25, help="Number of model cases for mega-benchmark (default: 25)")
     parser.add_argument("--fast-nlp", action="store_true", help="Run fast NLP classification instead of full end-to-end model generation for mega-benchmark")
+    parser.add_argument("--log-level", type=str, default=None, choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Configure log verbosity level (default: from DATA_MODEL_LOG_LEVEL env var or INFO)")
 
     args = parser.parse_args()
+    
+    if args.log_level:
+        from src.logger import configure_logging
+        configure_logging(level=args.log_level.upper())
 
     # Default action if no arguments provided: print help
     if not any([args.forge, args.benchmark_gate, args.benchmark_case, args.list_cases, 
