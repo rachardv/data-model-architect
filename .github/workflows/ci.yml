@@ -35,6 +35,10 @@ jobs:
           python -m pip install -e .
           python -m pip install -r requirements.txt
 
+      - name: Verify Anti-Bloat Documentation Synchronization
+        run: |
+          python -m pytest tests/test_risk_taxonomy_sync.py -v
+
       - name: Execute Full Pytest Test Suite
         run: |
           python -m pytest tests/ -v
