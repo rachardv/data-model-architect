@@ -54,6 +54,7 @@ The validation architecture operates across **3 distinct, non-redundant layers**
 | `TRAP-04` | `telecom` | SCD2 Historical Amnesia Point-in-Time Trap | `SCD2_HISTORICAL_AMNESIA` | Yes | Ralph Kimball, *Data Warehouse Toolkit* (3rd Ed), Ch 6: Late-Arriving Facts |
 
 ---
+
 ## 3. The 4-Tier Defense-in-Depth Pipeline
 
 ```
@@ -98,41 +99,58 @@ The validation architecture operates across **3 distinct, non-redundant layers**
 
 ---
 
-## 3. The 9 Enterprise Risk Profiles
+## 4. The 9 Enterprise Risk Profiles & Process Ownership
+
+> [!NOTE]
+> For the comprehensive **Anti-Bloat Risk Taxonomy & Intake Decision Matrix**, see [`docs/RISK_TAXONOMY.md`](file:///C:/Coding/VSCode/data-model-architect/docs/RISK_TAXONOMY.md). Every risk profile is owned by a single primary Forge process (A, B, C, or D) to prevent duplicate test coverage and bloat.
 
 ### RSK-01: Semantic Inversion Trap
+* **Owning Process:** **Process A** (Curated Benchmarks / Intentional Traps) & **Process B** (Static Sensor)
+* **Risk Category:** Category 1 (Domain Coverage) & Category 2 (Structural Defect)
 * **Root Cause:** User requested low-latency transactional CRUD (OLTP), but the compiler generated an analytical Star Mart lakehouse (or vice versa).
 * **Impact:** Severe database locking, latency spikes, or broken application state.
-* **Mitigation:** **Tier 1 5-Vector Completeness Gate** halts execution if workload intent contradicts the chosen physical schema pattern.
+* **Mitigation:** **Tier 1 5-Vector Completeness Gate** halts execution if workload intent contradicts the chosen physical schema pattern (`TRAP-01`).
 
 ### RSK-02: Chasm & Fan-Out Trap (Metric Inflation)
+* **Owning Process:** **Process B** (Structural Detector) & **Process D** (Universal Invariant Probe)
+* **Risk Category:** Category 2 (Structural Defect) & Category 4 (Universal Invariant)
 * **Root Cause:** Joining multiple 1:N child tables (e.g. `order_items` and `order_payments`) to a shared parent (`orders`) causes Cartesian row multiplication.
-* **Impact:** Revenue and payment sums are multiplied by $2	imes - 10	imes$ on executive dashboards.
+* **Impact:** Revenue and payment sums are multiplied by $2\times - 10\times$ on executive dashboards.
 * **Mitigation:** 
-  1. **Strict Mart Separation (Tier 2):** Disallow direct cross-fact joins between tables of disparate grains in a single mart query.
-  2. **Metric Conservation Proof (Tier 3):** Physical DuckDB assertion proving $\sum 	ext{Raw} \equiv \sum 	ext{Mart}$ down to $0.0000$ drift.
+  1. **Strict Mart Separation (Process B):** Disallow direct cross-fact joins between tables of disparate grains in a single mart query.
+  2. **Metric Conservation Proof (Process D):** Universal physical DuckDB assertion proving $\sum \text{Raw} \equiv \sum \text{Mart}$ down to $0.0000$ drift.
 
 ### RSK-03: Temporal Causality Leakage (Timeline Bleed)
+* **Owning Process:** **Process D** (Universal Invariant Probe)
+* **Risk Category:** Category 4 (Universal Invariant)
 * **Root Cause:** Late-arriving events join to current active dimension rows (`is_current = TRUE`) rather than historical effective intervals.
 * **Impact:** Historical sales misattributed to current customer addresses or updated loyalty tiers.
-* **Mitigation:** **Tier 3 Physical Proof** verifying strictly closed SCD2 intervals (`EndDate == Next EffectiveDate`), `9999-12-31` high-water sentinels, and Point-in-Time join assertions.
+* **Mitigation:** **Process D Universal Proof** verifying strictly closed SCD2 intervals (`EndDate == Next EffectiveDate`), `9999-12-31` high-water sentinels, and Point-in-Time join assertions (`TRAP-04`).
 
 ### RSK-04: Referential Orphan & Deduplication Failure
+* **Owning Process:** **Process D** (Universal Invariant Probe)
+* **Risk Category:** Category 4 (Universal Invariant)
 * **Root Cause:** Unmatched foreign keys or duplicate natural keys slip through without quarantine routing.
 * **Impact:** Missing sales in inner joins, inflated row counts, and untraceable records.
-* **Mitigation:** **Tier 3 Silver Quarantine Proof** ensuring dirty rows route to `DImessages` / reject CTEs and zero foreign key orphans reach Gold marts.
+* **Mitigation:** **Process D Silver Quarantine Proof** ensuring dirty rows route to `DImessages` / reject CTEs and zero foreign key orphans reach Gold marts.
 
 ### RSK-05: Execution Plan Traps & Circular Loops
+* **Owning Process:** **Process B** (Structural Detector) & **Process D** (Universal Invariant Probe)
+* **Risk Category:** Category 2 (Structural Defect) & Category 4 (Universal Invariant)
 * **Root Cause:** Missing join predicates creating accidental Cartesian cross-products, or infinite loops in parent-child hierarchy trees.
 * **Impact:** Query timeouts, out-of-memory crashes on cloud warehouses, massive compute costs.
-* **Mitigation:** **Tier 2 AST Linter** verifying explicit join predicates + **Tier 3 DuckDB EXPLAIN** plan inspection ensuring sub-100ms hash joins.
+* **Mitigation:** **Process B AST Linter** verifying explicit join predicates and cycle detection (`TRAP-03`) + **Process D DuckDB EXPLAIN** plan inspection ensuring sub-100ms hash joins.
 
 ### RSK-06: Adversarial Skew & Memory Spill Failure
+* **Owning Process:** **Process C** (Computational Stress Battery)
+* **Risk Category:** Category 3 (Computational & Hardware Stress)
 * **Root Cause:** Extreme key skew (Zipfian 80/20 power-law) causes partition hot-spots and hash-join memory blowouts on distributed nodes.
 * **Impact:** Spark/Snowflake node OOM crashes on multi-million row loads.
-* **Mitigation:** **Tier 4 Adversarial Chaos Generator** executing Zipfian skewed keys under a restricted `16MB` DuckDB RAM cap. Passes for memory stability (no crash) and emits physical cluster key advice if disk spill occurs.
+* **Mitigation:** **Process C Adversarial Chaos Generator** executing Zipfian skewed keys under a restricted `16MB` DuckDB RAM cap. Passes for memory stability (no crash) and emits physical cluster key advice if disk spill occurs.
 
 ### RSK-07: Requirement Volatility & Refactoring Debt
+* **Owning Process:** **Process A** (Curated Benchmarks)
+* **Risk Category:** Category 1 (Domain Coverage)
 * **Root Cause:** Rapidly evolving business requirements break tightly coupled, prematurely aggregated models.
 * **Impact:** Costly petabyte-scale backfills, broken dashboards, and slow engineering velocity.
 * **Mitigation:**
@@ -142,20 +160,24 @@ The validation architecture operates across **3 distinct, non-redundant layers**
   - **Role-Playing Views:** Reusing conformed dimensions (e.g. `dim_date`) via views (`v_shipped_date`, `v_delivery_date`).
 
 ### RSK-08: Right to be Forgotten & Privacy Erasure (GDPR Art. 17 / CCPA)
+* **Owning Process:** **Process B** (Structural Sensor) & **Process C** (Computational Stress Battery)
+* **Risk Category:** Category 2 (Structural Defect) & Category 3 (Computational Stress)
 * **Root Cause:** Deleting a customer row under GDPR creates orphan foreign keys in historical facts, or deleting facts violates 7-year SOX tax accounting laws.
 * **Impact:** Fines up to €20M / 4% global turnover OR broken financial reconciliation.
 * **Mitigation:**
-  - **Pseudonymization Sentinels:** Customer PII is updated to `'REDACTED'`, phone to `NULL`, and email to a salt hash. The surrogate key (`customer_sk`) is preserved.
-  - **Zero Orphan Fact Proof:** Fact tables retain 100% of rows and sums with zero orphan keys, satisfying both privacy and financial compliance.
+  - **Process B Pseudonymization Sentinels:** Customer PII is flagged and updated to `'REDACTED'`, phone to `NULL`, and email to a salt hash. The surrogate key (`customer_sk`) is preserved.
+  - **Process C Zero Orphan Fact Proof:** Fact tables retain 100% of rows and sums with zero orphan keys, satisfying both privacy and financial compliance.
 
 ### RSK-09: Downstream Blast Radius & Breaking Changes
+* **Owning Process:** **Process B** (Structural Sensor)
+* **Risk Category:** Category 2 (Structural Defect)
 * **Root Cause:** Modifying a core mart column breaks downstream BI dashboards, ML feature stores, and reverse-ETL feeds.
 * **Impact:** Production outages for downstream data consumers.
-* **Mitigation:** **Column-Level Lineage Linter** + **Semantic Versioning Views** (`fct_orders_v1` as a backward-compatible view on top of `v2`).
+* **Mitigation:** **Process B Column-Level Lineage Linter** + **Semantic Versioning Views** (`fct_orders_v1` as a backward-compatible view on top of `v2`).
 
 ---
 
-## 4. The Extensible Plugin Registry (`@register_risk`)
+## 5. The Extensible Plugin Registry (`@register_risk`)
 
 To add a new risk evaluator (e.g. `RSK-10: FinOps Unpartitioned Scan Hazard`):
 1. Inherit from `BaseRiskEvaluator`.

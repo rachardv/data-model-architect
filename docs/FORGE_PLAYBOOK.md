@@ -70,106 +70,57 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 
 ---
 
-## 🔄 3. Standard Operating Procedures (SOP) for Evolving The Forge
+## 🔄 3. Standard Operating Procedures (SOP) & The Anti-Bloat Protocol
 
-When evolving The Forge, follow the standardized procedure matching your objective:
+> [!IMPORTANT]
+> **Mandatory Pre-Flight Anti-Bloat Gate:** Before adding any benchmark, risk rule, battery, or probe to The Forge, you **MUST** consult [`docs/RISK_TAXONOMY.md`](file:///C:/Coding/VSCode/data-model-architect/docs/RISK_TAXONOMY.md). Check the Master Risk Registry to verify that the hazard is not already covered, and follow the Intake Decision Matrix to identify the single correct process.
 
-### Procedure A: Adding a New Benchmark Scenario or Intentional Trap
-*Use this when expanding coverage for a new business domain, data grain, or architectural edge case.*
+### Process A: Adding Standardized Benchmarks & Scenarios (Domain Coverage Risk)
+*Protects against:* **Category 1: Domain Coverage & Semantic Competence Risk** (e.g. paradigm blindness, grain misattribution, contradictory requirements).
+*Scope:* All **schema-specific** benchmarks (curated YAML cases in `benchmarks/catalog/curated/` + standardized suites like TPC-DS, TPC-DI, SSB, TPC-H, BIRD-SQL).
 
-1. **Create the YAML Case File:**
+1. **Anti-Bloat Check:** Confirm that the business domain, entity topology, or grain pattern is not already covered by `CASE-01` through `CASE-04` or `TRAP-01` through `TRAP-04`.
+2. **Create the YAML Case File:**
    - Add `benchmarks/catalog/curated/CASE_XX_<slug>.yaml` (for clean baselines) or `TRAP_XX_<slug>.yaml` (for intentional defensive halts).
-   - Follow the standard YAML schema:
-     ```yaml
-     case_id: "CASE-05"
-     name: "Enterprise Subscription Billing & Churn Analytics"
-     domain: "saas_billing"
-     hazard_category: "CLEAN_BASELINE" # or CONTRADICTION_HALT, CHASM_TRAP_FANOUT, CYCLIC_FK_LOOP, etc.
-     is_intentional_trap: false
-     expected_status: "CERTIFIED_PRODUCTION_READY" # or "AWAITING_ARCHITECTURAL_CONFIRMATION"
-     citation: "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 14 (Accounting & Billing)"
-
-     prompt: >
-       SaaS subscription business tracking recurring monthly licenses, upgrades, and churn.
-
-     business_answers:
-       - "Analytics: Executive MRR, ARR, and cohort churn retention reporting"
-       - "Grain: One row per subscription billing interval"
-       - "Temporal: SCD Type 2 tracking on customer plan changes"
-       - "Lifecycle: Discrete monthly billing events"
-       - "Multiplicity: Standard 1:N account to subscriptions"
-
-     verification_queries:
-       - name: "Active Subscriptions Metric"
-         query: "SELECT COUNT(*) FROM fact_saas_billing_orders"
-         assertion_type: "scalar_gt"
-         expected_value: 0
-     ```
-2. **Execute Single-Case Verification:**
+   - Author standard schema with mandatory `citation`, `prompt`, `business_answers`, and `verification_queries`.
+3. **Execute Single-Case Verification:**
    ```powershell
-   .\forge.ps1 test CASE-05
+   .\forge.ps1 test CASE-XX
    ```
-3. **Inspect Regression Diff:**
+4. **Inspect Regression Diff & Promote Golden Baseline:**
    ```powershell
    .\forge.ps1 diff
-   ```
-4. **Promote into Golden Baseline:**
-   ```powershell
    .\forge.ps1 snapshot
    ```
 
 ---
 
-### Procedure B: Adding a New Architectural Risk (Expanding the Risk Council)
-*Use this when teaching The Forge to detect a new architectural flaw, security vulnerability, or anti-pattern.*
+### Process B: Adding Architectural Risk Sensors (Structural Defect Risk)
+*Protects against:* **Category 2: Structural & Architectural Defect Risk** (e.g. cyclic foreign key deadlocks, chasm trap structures, missing surrogate keys, unprotected PII).
+*Scope:* Pure static syntax, AST, and DAG linting in [`forge/risk_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_engine.py).
 
-1. **Define the Risk Rule in [`forge/risk_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_engine.py):**
-   - Assign a new Risk ID (e.g., `RSK-09: DATA_MESH_INTERFACE_DRIFT`).
-   - Assign a `ValidationTier` (Tier 1: Critical Blocker, Tier 2: High-Impact, Tier 3: Reliability, Tier 4: Polish).
-   - Implement the detection heuristic inside `ValidationStrategyEngine.evaluate()`:
-     ```python
-     # Example: Rule RSK-09 - Missing Primary Key Constraint
-     if not any(col.get("primary_key") for col in table.get("columns", [])):
-         results.append(RiskResult(
-             risk_id="RSK-09",
-             tier=ValidationTier.TIER_2_HIGH_IMPACT,
-             severity=RiskSeverity.HIGH,
-             name="Missing Primary Key Definition",
-             description=f"Table {table['name']} does not specify an explicit primary key.",
-             mitigation="Add a surrogate BIGINT primary key or natural key constraint.",
-             passed=False
-         ))
-     ```
-2. **Add Unit Test in [`tests/test_validation_strategy.py`](file:///C:/Coding/VSCode/data-model-architect/tests/test_validation_strategy.py):**
-   - Provide a flawed schema fixture and assert `RSK-09` is detected.
-3. **Run Universal Tests:**
+1. **Anti-Bloat Check:** Ensure this check runs in $O(V+E)$ graph time purely from schema metadata without booting DuckDB or running SQL. If it needs SQL, it belongs in Process C or D.
+2. **Define the Risk Rule in [`forge/risk_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_engine.py):**
+   - Assign a new Risk ID (`RSK-XX`), `ValidationTier` (1-4), and `RiskSeverity`.
+   - Implement the inspection heuristic inside `ValidationStrategyEngine.evaluate()`.
+3. **Add Unit Test in [`tests/test_validation_strategy.py`](file:///C:/Coding/VSCode/data-model-architect/tests/test_validation_strategy.py):**
+   - Provide a flawed schema fixture and assert `RSK-XX` is flagged.
+4. **Run Universal Tests:**
    ```powershell
    .\forge.ps1 tests
    ```
 
 ---
 
-### Procedure C: Adding a Targeted Physical Stress Test Battery
-*Use this when translating an architectural risk into a live SQL execution test in DuckDB.*
+### Process C: Adding Physical Stress Test Batteries (Computational Stress Risk)
+*Protects against:* **Category 3: Computational & Hardware Stress Risk** (e.g. Zipfian 80/20 key skew, 16MB RAM cap spill-to-disk, temporal stream jitter, GDPR Art. 17 cascades).
+*Scope:* Targeted DuckDB hardware stress batteries in [`forge/risk_dispatcher.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_dispatcher.py) and [`forge/chaos_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/chaos_engine.py).
 
-1. **Implement the Battery in [`forge/risk_dispatcher.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_dispatcher.py):**
-   - In `RiskToTestDispatcher.evaluate_and_certify()`, add the battery trigger:
-     ```python
-     # Battery H: Contract Drift Stress Test (RSK-09)
-     if any(r["risk_id"] == "RSK-09" for r in risk_scorecard.get("results", [])):
-         battery_status, details = cls._run_contract_stress_test(test_con, target_schema)
-         executed_batteries.append({
-             "battery": "CONTRACT_SCHEMA_VERIFICATION",
-             "triggered_by_risk": "RSK-09",
-             "status": battery_status,
-             "details": details
-         })
-     ```
-2. **If Adversarial Data Generation is Needed:**
-   - Add generator methods in [`forge/chaos_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/chaos_engine.py).
-3. **Verify Isolated Execution:**
-   - Ensure the battery executes against `test_con` and does not leak tables across runs.
-4. **Run Full Diff & Certification:**
+1. **Anti-Bloat Check:** Batteries in Process C are **not** run on every model; they are dynamically triggered by specific risk findings emitted by Process B. Ensure you are not re-testing a universal physical law (which belongs in Process D).
+2. **Implement the Battery in [`forge/risk_dispatcher.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_dispatcher.py):**
+   - In `RiskToTestDispatcher.evaluate_and_certify()`, add the battery trigger mapped to `RSK-XX`.
+   - Ensure the battery executes against isolated `test_con = duckdb.connect(":memory:")` and releases cleanly.
+3. **Run Full Diff & Certification:**
    ```powershell
    .\forge.ps1 strict-diff
    .\forge.ps1 certify
@@ -177,17 +128,19 @@ When evolving The Forge, follow the standardized procedure matching your objecti
 
 ---
 
-### Procedure D: Adding a New Industry Standards Suite
-*Use this when integrating a new academic or industry benchmark standard (e.g., TPC-E or LDBC Graph).*
+### Process D: Adding Universal Schema-Agnostic Mathematical Probes (Universal Invariant Risk)
+*Protects against:* **Category 4: Universal Mathematical Invariant Risk** (e.g. metric conservation drift, point-in-time causality violations, foreign key orphan leaks, Cartesian plan blowouts).
+*Scope:* 100% schema-agnostic probes in [`forge/benchmark_harness.py`](file:///C:/Coding/VSCode/data-model-architect/forge/benchmark_harness.py).
 
-1. **Create the Benchmark Module:**
-   - Create `forge/<standard>_benchmark.py` defining the suite class, schema specs, synthetic data loader, and SQL validation queries.
-2. **Wire into Forge Runner:**
-   - In [`forge/runner.py`](file:///C:/Coding/VSCode/data-model-architect/forge/runner.py), import and execute the new suite in `ForgeCertificationRunner.run_certification()`.
-3. **Expose in Forge CLI & PowerShell Script:**
-   - Update [`forge/cli.py`](file:///C:/Coding/VSCode/data-model-architect/forge/cli.py) and [`forge.ps1`](file:///C:/Coding/VSCode/data-model-architect/forge.ps1) with a new action or include it in `certify`.
-4. **Benchmark Latency & SLA:**
-   - Verify the suite completes within latency budgets (< 2 seconds total).
+1. **Anti-Bloat Check (HARD INVARIANT):** Process D probes are **strictly forbidden from hardcoding table or column names**. The probe must discover fact tables by numeric columns and dimension tables by surrogate keys using dynamic reflection (`information_schema`).
+2. **Implement the Universal Probe in [`forge/benchmark_harness.py`](file:///C:/Coding/VSCode/data-model-architect/forge/benchmark_harness.py):**
+   - Add the probe method executing reflection queries on DuckDB.
+   - Assert the mathematical invariant (e.g. $|\sum Raw - \sum Mart| == 0.0000$).
+3. **Verify Zero Regressions Across Full Suite:**
+   ```powershell
+   .\forge.ps1 tests
+   .\forge.ps1 certify
+   ```
 
 ---
 
