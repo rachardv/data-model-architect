@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-15 — Commercial Insurance Policy County Demographic Outrigger Dimension
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `85.26ms`
-> **Timestamp (UTC):** `2026-09-23T20:42:17.579105+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `90.45ms`
+> **Timestamp (UTC):** `2026-09-23T20:43:59.491183+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `underwriting_risk`
@@ -31,10 +31,10 @@ We operate an enterprise commercial property and casualty underwriting firm writ
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| High Flood Risk Written Premium Total | `scalar_eq` | `48000.0` | `48000.0` | `0.92ms` | ✅ PASS |
-| Total Commercial Written Premium Sum | `scalar_eq` | `64000.0` | `64000.0` | `0.3ms` | ✅ PASS |
-| Total Insured Property Value Attributed | `scalar_eq` | `3700000.0` | `3700000.0` | `0.27ms` | ✅ PASS |
-| Distinct Outrigger Dimension Counties Linked | `scalar_eq` | `2` | `2` | `0.58ms` | ✅ PASS |
+| High Flood Risk Written Premium Total | `scalar_eq` | `48000.0` | `48000.0` | `0.97ms` | ✅ PASS |
+| Total Commercial Written Premium Sum | `scalar_eq` | `64000.0` | `64000.0` | `0.29ms` | ✅ PASS |
+| Total Insured Property Value Attributed | `scalar_eq` | `3700000.0` | `3700000.0` | `0.34ms` | ✅ PASS |
+| Distinct Outrigger Dimension Counties Linked | `scalar_eq` | `2` | `2` | `0.55ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: High Flood Risk Written Premium Total

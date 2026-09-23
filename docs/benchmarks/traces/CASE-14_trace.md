@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-14 — Retail Orders Consolidated Junk Dimension for Flags and Indicators
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `82.91ms`
-> **Timestamp (UTC):** `2026-09-23T20:42:18.048795+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `84.97ms`
+> **Timestamp (UTC):** `2026-09-23T20:43:59.957443+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `retail_operations`
@@ -31,10 +31,10 @@ We operate an enterprise omnichannel retail sales network tracking point-of-sale
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Total Revenue for Gift-Wrapped Credit Transactions | `scalar_eq` | `270.0` | `270.0` | `0.68ms` | ✅ PASS |
-| Tax-Exempt Invoiced Net Revenue Sum | `scalar_eq` | `1200.0` | `1200.0` | `0.59ms` | ✅ PASS |
-| Consolidated Junk Dimension Row Count | `scalar_eq` | `3` | `3` | `0.23ms` | ✅ PASS |
-| Distinct Junk Surrogate Keys in Fact Table | `scalar_eq` | `3` | `3` | `0.48ms` | ✅ PASS |
+| Total Revenue for Gift-Wrapped Credit Transactions | `scalar_eq` | `270.0` | `270.0` | `0.67ms` | ✅ PASS |
+| Tax-Exempt Invoiced Net Revenue Sum | `scalar_eq` | `1200.0` | `1200.0` | `0.57ms` | ✅ PASS |
+| Consolidated Junk Dimension Row Count | `scalar_eq` | `3` | `3` | `0.22ms` | ✅ PASS |
+| Distinct Junk Surrogate Keys in Fact Table | `scalar_eq` | `3` | `3` | `0.6ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Total Revenue for Gift-Wrapped Credit Transactions
