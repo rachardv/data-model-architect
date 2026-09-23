@@ -156,3 +156,17 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 | `.\forge.ps1 tests` | Executes all 134+ pytest tests across repo | Universal test gate verifying zero regressions. |
 | `.\forge.ps1 snapshot` | Promotes current results to golden baseline | After intentionally adding new cases or approving schema evolutions. |
 | `.\forge.ps1 all` | Runs `tests` $\rightarrow$ `strict-diff` $\rightarrow$ `certify` in sequence | Complete pre-push validation battery. |
+
+---
+
+## 📝 5. Autonomous Failure Logging Protocol
+
+Whenever any Forge benchmark, test suite, or verification check (`.\forge.ps1 test`, `.\forge.ps1 diff`, `.\forge.ps1 certify`, `forge.cli`, or `pytest`) fails:
+
+1. **Mandatory Failure Log Structure:**
+   - **The Failure:** The exact test case, command, assertion, or metric that failed.
+   - **The Why (Root Cause):** The mechanical/technical error, metric drift, or AST rule violated.
+   - **The Remedy & General Reasoning:** The surgical resolution applied and why that architectural fix preserves system invariants.
+2. **Autonomous Remediation Invariant:**
+   - The failure log and reasoning are documented directly in the trajectory / artifact without blocking for user approval.
+   - The agent remediates immediately, re-verifies with the appropriate test suite, and proves 100% resolution with zero regressions.
