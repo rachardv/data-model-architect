@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-11 — SaaS Subscription Funnel Accumulating Snapshot & Milestone Lag
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `88.77ms`
-> **Timestamp (UTC):** `2026-09-23T20:17:41.103145+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `85.51ms`
+> **Timestamp (UTC):** `2026-09-23T20:32:43.531101+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `saas_subscription`
@@ -32,9 +32,9 @@ We operate an enterprise B2B SaaS platform delivering cloud-based subscription s
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | Active Enterprise MRR Sum | `scalar_eq` | `5000.0` | `5000.0` | `0.38ms` | ✅ PASS |
-| Trial-to-Activation Conversion Rate | `scalar_eq` | `66.7` | `66.7` | `0.38ms` | ✅ PASS |
-| Average Days from Trial to Activation for Activated Subscriptions | `scalar_eq` | `16.5` | `16.5` | `0.34ms` | ✅ PASS |
-| Churn Cohort Count | `scalar_eq` | `2` | `2` | `0.28ms` | ✅ PASS |
+| Trial-to-Activation Conversion Rate | `scalar_eq` | `66.7` | `66.7` | `0.39ms` | ✅ PASS |
+| Average Days from Trial to Activation for Activated Subscriptions | `scalar_eq` | `16.5` | `16.5` | `0.41ms` | ✅ PASS |
+| Churn Cohort Count | `scalar_eq` | `2` | `2` | `0.3ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Active Enterprise MRR Sum

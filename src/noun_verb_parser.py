@@ -293,6 +293,26 @@ class NounVerbSemanticParser:
             "factless", "fact-less", "event attendance", "security event",
             "audit event", "promotion coverage", "login event", "zero numeric measure"
         ])
+
+        # 14. Multi-Valued Dimension Bridge Tables & Weighting Factors (M:N)
+        has_multivalued_bridge = any(k in text for k in [
+            "bridge table", "multi-valued", "multivalued", "weighting factor",
+            "allocation factor", "group bridge", "co-owners", "co-ownership",
+            "care team attribution", "secondary comorbidity", "diagnosis bridge"
+        ])
+
+        # 15. Consolidated Junk Dimensions (Low-Cardinality Flags & Indicators)
+        has_junk_dimension = any(k in text for k in [
+            "junk dimension", "miscellaneous flags", "status indicators",
+            "indicator flags", "low-cardinality flags", "consolidated flags",
+            "flag consolidation", "order indicators"
+        ])
+
+        # 16. Dimension Outriggers (Secondary Dimension at Differing Grain)
+        has_outrigger_dimension = any(k in text for k in [
+            "outrigger dimension", "dimension outrigger", "secondary dimension",
+            "county demographic outrigger", "demographic outrigger"
+        ])
         
         return {
             "is_live_app": is_live_app,
@@ -307,5 +327,8 @@ class NounVerbSemanticParser:
             "has_multi_fact_bus_matrix": has_multi_fact_bus_matrix,
             "has_scd6_hybrid": has_scd6_hybrid,
             "has_semi_additive_balances": has_semi_additive_balances,
-            "is_factless_event": is_factless_event
+            "is_factless_event": is_factless_event,
+            "has_multivalued_bridge": has_multivalued_bridge,
+            "has_junk_dimension": has_junk_dimension,
+            "has_outrigger_dimension": has_outrigger_dimension
         }

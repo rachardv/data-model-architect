@@ -1,0 +1,122 @@
+{
+  "case_id": "CASE-14",
+  "domain": "retail_operations",
+  "name": "Retail Orders Consolidated Junk Dimension for Flags and Indicators",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "We operate an enterprise omnichannel retail sales network tracking point-of-sale customer merchandise purchases. Each retail transaction records operational status indicators and miscellaneous flags: payment method code (credit, cash, invoice), pre-authorization verification status (verified, approved, not applicable), gift wrap flag (true, false), tax-exempt status indicator (true, false), and receipt delivery method (email, print, electronic). Per Kimball Chapter 2, keeping 5 to 20 low-cardinality flags directly on the order transaction fact clutters the schema and swells fact row storage, while creating separate foreign key dimensions for each flag generates excessive join hops. We require a single consolidated Junk Dimension table (dim_retail_order_indicators_junk) that combines all possible permutations of these discrete operational flags into a single compact surrogate key. Analytical queries must filter transaction metrics across diverse flag combinations through this consolidated junk dimension with zero metric drift.\n",
+  "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 2 (\"Retail Sales: Junk Dimensions for Miscellaneous Transaction Indicators & Flags\"), pp. 58-60.\n",
+  "timestamp_utc": "2026-09-23T20:32:40.296123+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "JUNK_DIMENSION_CONSOLIDATION",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": false,
+      "is_factless_event": false,
+      "has_multivalued_bridge": false,
+      "has_junk_dimension": true,
+      "has_outrigger_dimension": false
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_retail_operations_customer_core",
+      "type": "DIMENSION",
+      "primary_key": "customer_sk",
+      "column_count": 7,
+      "columns": [
+        "customer_sk",
+        "customer_id",
+        "customer_name",
+        "scd_valid_from",
+        "scd_valid_to",
+        "is_current",
+        "is_inferred"
+      ]
+    },
+    {
+      "table_name": "fact_retail_operations_orders",
+      "type": "FACT",
+      "primary_key": "order_id",
+      "column_count": 4,
+      "columns": [
+        "order_id",
+        "customer_sk",
+        "total_amount_usd",
+        "estimated_delivery_days"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Total Revenue for Gift-Wrapped Credit Transactions",
+      "query": "SELECT CAST(ROUND(SUM(f.total_amount_usd), 2) AS DOUBLE) FROM fact_pos_retail_orders f JOIN dim_retail_order_indicators_junk j ON f.junk_sk = j.junk_sk WHERE j.payment_method = 'CREDIT_CARD' AND j.gift_wrap_flag = true;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 270.0,
+      "actual_value": 270.0,
+      "passed": true,
+      "latency_ms": 0.64,
+      "error": null
+    },
+    {
+      "name": "Tax-Exempt Invoiced Net Revenue Sum",
+      "query": "SELECT CAST(ROUND(SUM(f.net_amount_usd), 2) AS DOUBLE) FROM fact_pos_retail_orders f JOIN dim_retail_order_indicators_junk j ON f.junk_sk = j.junk_sk WHERE j.tax_exempt_indicator = true;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 1200.0,
+      "actual_value": 1200.0,
+      "passed": true,
+      "latency_ms": 0.6,
+      "error": null
+    },
+    {
+      "name": "Consolidated Junk Dimension Row Count",
+      "query": "SELECT COUNT(*) FROM dim_retail_order_indicators_junk;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 3,
+      "actual_value": 3,
+      "passed": true,
+      "latency_ms": 0.23,
+      "error": null
+    },
+    {
+      "name": "Distinct Junk Surrogate Keys in Fact Table",
+      "query": "SELECT COUNT(DISTINCT junk_sk) FROM fact_pos_retail_orders;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 3,
+      "actual_value": 3,
+      "passed": true,
+      "latency_ms": 0.48,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 83.51
+}

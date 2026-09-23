@@ -23,7 +23,10 @@ class DataModelDecisionEngine:
         is_nested_columnar: bool = False,
         has_multi_fact_bus_matrix: bool = False,
         has_scd6_hybrid: bool = False,
-        has_semi_additive_balances: bool = False
+        has_semi_additive_balances: bool = False,
+        has_multivalued_bridge: bool = False,
+        has_junk_dimension: bool = False,
+        has_outrigger_dimension: bool = False
     ) -> Dict[str, Any]:
         # 0. Factless Fact Table (Event Attendance / Coverage Matrix)
         if is_factless_event:
@@ -79,6 +82,42 @@ class DataModelDecisionEngine:
                 "schema_type": "Transaction Fact + SCD Type 6 Hybrid Dimension",
                 "temporal": "SCD6_HYBRID"
             }
+
+        # 0f. Multi-Valued Dimension Bridge Table (M:N Relationships with Weighting Factors)
+        if has_multivalued_bridge:
+            res = {
+                "pattern": "MULTIVALUED_BRIDGE_STAR",
+                "storage": "Kimball Multi-Valued Bridge Schema",
+                "schema_type": "Multi-Valued Dimension Bridge Table with Allocation Weighting",
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+            }
+            if is_multi_currency:
+                res["multi_currency_triad"] = True
+            return res
+
+        # 0g. Consolidated Junk Dimension (Low-Cardinality Transaction Flags & Indicators)
+        if has_junk_dimension:
+            res = {
+                "pattern": "JUNK_DIMENSION_CONSOLIDATION",
+                "storage": "Kimball Star Schema (Junk Dimension)",
+                "schema_type": "Transaction Fact with Consolidated Junk Dimension for Flags and Indicators",
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+            }
+            if is_multi_currency:
+                res["multi_currency_triad"] = True
+            return res
+
+        # 0h. Dimension Outrigger Table (Secondary Dimension at Differing Grain)
+        if has_outrigger_dimension:
+            res = {
+                "pattern": "KIMBALL_OUTRIGGER_STAR",
+                "storage": "Kimball Star Schema (Outrigger Dimension)",
+                "schema_type": "Dimension Outrigger Table at Secondary Grain",
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+            }
+            if is_multi_currency:
+                res["multi_currency_triad"] = True
+            return res
             
         # 1. High-Frequency Streaming Telemetry / Market Data
         if is_high_frequency_stream:

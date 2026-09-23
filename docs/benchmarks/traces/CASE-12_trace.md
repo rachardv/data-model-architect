@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-12 — Multi-Currency Global Procurement Spot Rate Triangulation
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `89.52ms`
-> **Timestamp (UTC):** `2026-09-23T20:17:37.438598+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `90.74ms`
+> **Timestamp (UTC):** `2026-09-23T20:32:39.909332+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `global_procurement`
@@ -31,10 +31,10 @@ We operate an international supply chain and manufacturing enterprise procuring 
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Consolidated Corporate USD Reporting Spend | `scalar_eq` | `23700.0` | `23700.0` | `0.36ms` | ✅ PASS |
-| Net Realized Foreign Exchange Variance Reconciled | `scalar_eq` | `400.0` | `400.0` | `0.29ms` | ✅ PASS |
-| Spot Rate Triangulation Invariance Verification | `zero_drift` | `0.0` | `0.0` | `0.37ms` | ✅ PASS |
-| Supplier Local vs Corporate Spend Breakdown | `scalar_eq` | `10800.0` | `10800.0` | `0.33ms` | ✅ PASS |
+| Consolidated Corporate USD Reporting Spend | `scalar_eq` | `23700.0` | `23700.0` | `0.31ms` | ✅ PASS |
+| Net Realized Foreign Exchange Variance Reconciled | `scalar_eq` | `400.0` | `400.0` | `0.28ms` | ✅ PASS |
+| Spot Rate Triangulation Invariance Verification | `zero_drift` | `0.0` | `0.0` | `0.35ms` | ✅ PASS |
+| Supplier Local vs Corporate Spend Breakdown | `scalar_eq` | `10800.0` | `10800.0` | `0.36ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Consolidated Corporate USD Reporting Spend

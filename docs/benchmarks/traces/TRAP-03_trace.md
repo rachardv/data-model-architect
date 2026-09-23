@@ -1,7 +1,7 @@
 # Decision Trace Report: TRAP-03 — Cyclic Foreign Key Dependency Loop
 
-> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `8.01ms`
-> **Timestamp (UTC):** `2026-09-23T20:17:41.298639+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `6.91ms`
+> **Timestamp (UTC):** `2026-09-23T20:32:43.717582+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `organization`

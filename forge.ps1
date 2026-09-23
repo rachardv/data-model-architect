@@ -7,6 +7,7 @@
 #   .\forge.ps1 strict-diff       -> Run regression diff and fail on any drift (CI gate)
 #   .\forge.ps1 certify           -> Run full Forge industry battery (TPC-H, TPC-DI, SSB, Spider)
 #   .\forge.ps1 snapshot          -> Promote current run as the new certified golden baseline
+#   .\forge.ps1 tree              -> Regenerate docs/DECISION_TREE.md in <30ms with zero credits
 #   .\forge.ps1 tests             -> Run the full 144+ pytest suite
 #   .\forge.ps1 all               -> Run tests + diff + forge certification in sequence
 #   .\forge.ps1 list              -> Discover and list all declarative benchmark cases
@@ -15,7 +16,7 @@
 
 param (
     [Parameter(Position=0)]
-    [ValidateSet("fast", "promote", "test", "diff", "strict-diff", "certify", "snapshot", "tests", "all", "list")]
+    [ValidateSet("fast", "promote", "test", "diff", "strict-diff", "certify", "snapshot", "tests", "all", "list", "tree")]
     [string]$Command = "fast",
 
     [Parameter(Position=1)]
@@ -90,7 +91,7 @@ switch ($Command) {
         Write-Host "==================================================" -ForegroundColor Green
         
         Write-Host "`n[Step 1/2] Core Strategy & Schema Generators (0.8s)..." -ForegroundColor Yellow
-        Run-PyCommand "-m pytest tests/test_risk_taxonomy_sync.py tests/test_catalog_loader.py tests/test_semantic_benchmarks.py tests/test_vector_conflict_guardrail.py tests/test_dynamic_intake_questions.py tests/test_sttm_generator.py tests/test_dbt_generator.py tests/test_medallion_pipeline.py -q --tb=short"
+        Run-PyCommand "-m pytest tests/test_risk_taxonomy_sync.py tests/test_decision_tree_sync.py tests/test_catalog_loader.py tests/test_semantic_benchmarks.py tests/test_vector_conflict_guardrail.py tests/test_dynamic_intake_questions.py tests/test_sttm_generator.py tests/test_dbt_generator.py tests/test_medallion_pipeline.py -q --tb=short"
         
         Write-Host "`n[Step 2/2] Golden Baseline Strict Diff (~9s)..." -ForegroundColor Yellow
         Run-PyCommand "-m forge.cli --benchmark-gate --diff --strict-drift"
@@ -121,6 +122,10 @@ switch ($Command) {
 
     "snapshot" {
         Run-PyCommand "-m forge.cli --benchmark-gate --snapshot"
+    }
+
+    "tree" {
+        Run-PyCommand "-m forge.decision_tree_generator" "Auto-regenerating docs/DECISION_TREE.md (zero-cost reflection)..."
     }
 
     "tests" {

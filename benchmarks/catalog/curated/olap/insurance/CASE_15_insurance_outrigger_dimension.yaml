@@ -1,0 +1,123 @@
+case_id: CASE-15
+domain: underwriting_risk
+workload_type: OLAP
+name: Commercial Insurance Policy County Demographic Outrigger Dimension
+description: Commercial property underwriting dimensional model evaluating a legitimate secondary grain Dimension Outrigger (County Demographics Outrigger table capturing median household income, flood risk tier, and catastrophe risk index joined to policy dimension) without snowflake normalization anomalies.
+citation: >
+  Ralph Kimball & Margy Ross (2013), "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling" (3rd Edition),
+  Chapter 7 ("Accounting & Insurance: Outrigger Dimensions vs. Snowflake Normalization"), pp. 252-254.
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - insurance
+  - outrigger
+  - kimball
+  - olap
+  - demographics
+
+prompt: >
+  We operate an enterprise commercial property and casualty underwriting firm writing property insurance policies across nationwide municipal regions.
+  Each insurance policy record references policyholder details, coverage limits, and insured property locations.
+  Actuarial risk analysts require analyzing written policy premiums against regional macroeconomic and environmental catastrophe factors:
+  county median household income, federal FEMA flood zone risk tiers (extreme, moderate, minimal), and severe storm catastrophe indices.
+  Per Kimball Chapter 7, while snowflaking sub-dimensions is strictly discouraged, secondary reference dimensions that represent a distinct grain
+  and are shared across multiple primary dimensions qualify as legitimate Kimball Outrigger Dimensions.
+  We require a County Demographic Outrigger table (dim_county_demographics_outrigger) referenced by the commercial policy dimension
+  via an outrigger surrogate key, enabling demographic risk attribution without snowflake relational anomalies or fan-out traps.
+
+business_answers:
+  - "Core business processes: Commercial property policy underwriting and catastrophic risk analysis"
+  - "Grain: One record per commercial insurance policy premium schedule"
+  - "Workload intent: Policy dimension joined to a secondary county demographic outrigger dimension table"
+  - "Dimensions: Commercial policies with SCD2 and secondary county demographic outrigger dimension"
+  - "Temporal policy: SCD Type 2 for policies, with stable annual demographic outrigger metrics"
+  - "Lifecycle funnel: Discrete underwriting policy premium events recorded per policy"
+  - "Metrics: written_premium_usd, insured_property_value_usd, catastrophe_risk_index"
+
+seed_data:
+  dim_county_demographics_outrigger:
+    - county_outrigger_sk: "CNTY-FL-MIAMI"
+      county_fips: "12086"
+      county_name: "Miami-Dade"
+      state_code: "FL"
+      flood_zone_risk_tier: "EXTREME"
+      catastrophe_risk_index: 94.5
+      median_household_income_usd: 57800
+
+    - county_outrigger_sk: "CNTY-CO-DENVER"
+      county_fips: "08031"
+      county_name: "Denver"
+      state_code: "CO"
+      flood_zone_risk_tier: "MINIMAL"
+      catastrophe_risk_index: 22.0
+      median_household_income_usd: 78500
+
+  dim_commercial_policy_core:
+    - policy_sk: "POL-COMM-01"
+      policy_number: "CP-1001"
+      policyholder_name: "Biscayne Marina Corp"
+      county_outrigger_sk: "CNTY-FL-MIAMI"
+      coverage_type: "COMMERCIAL_PROPERTY"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+    - policy_sk: "POL-COMM-02"
+      policy_number: "CP-1002"
+      policyholder_name: "Mile High Logistics"
+      county_outrigger_sk: "CNTY-CO-DENVER"
+      coverage_type: "COMMERCIAL_PROPERTY"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+  fact_commercial_underwriting_premiums:
+    - premium_id: "PRM-501"
+      policy_sk: "POL-COMM-01"
+      effective_date_key: 20260101
+      written_premium_usd: 48000.00
+      insured_property_value_usd: 2500000.00
+
+    - premium_id: "PRM-502"
+      policy_sk: "POL-COMM-02"
+      effective_date_key: 20260101
+      written_premium_usd: 16000.00
+      insured_property_value_usd: 1200000.00
+
+verification_queries:
+  - name: High Flood Risk Written Premium Total
+    query: >
+      SELECT CAST(ROUND(SUM(f.written_premium_usd), 2) AS DOUBLE)
+      FROM fact_commercial_underwriting_premiums f
+      JOIN dim_commercial_policy_core p ON f.policy_sk = p.policy_sk
+      JOIN dim_county_demographics_outrigger o ON p.county_outrigger_sk = o.county_outrigger_sk
+      WHERE o.flood_zone_risk_tier = 'EXTREME';
+    assertion_type: scalar_eq
+    expected_value: 48000.00
+    failure_message: Expected 48000.00 USD in written premiums for extreme flood risk policies
+
+  - name: Total Commercial Written Premium Sum
+    query: >
+      SELECT CAST(ROUND(SUM(written_premium_usd), 2) AS DOUBLE)
+      FROM fact_commercial_underwriting_premiums;
+    assertion_type: scalar_eq
+    expected_value: 64000.00
+    failure_message: Expected total written premium of 64000.00 USD across all policies
+
+  - name: Total Insured Property Value Attributed
+    query: >
+      SELECT CAST(ROUND(SUM(insured_property_value_usd), 2) AS DOUBLE)
+      FROM fact_commercial_underwriting_premiums;
+    assertion_type: scalar_eq
+    expected_value: 3700000.00
+    failure_message: Expected total insured property value of 3700000.00 USD
+
+  - name: Distinct Outrigger Dimension Counties Linked
+    query: >
+      SELECT COUNT(DISTINCT county_outrigger_sk)
+      FROM dim_commercial_policy_core;
+    assertion_type: scalar_eq
+    expected_value: 2
+    failure_message: Expected exactly 2 distinct county outrigger surrogate keys linked to policies

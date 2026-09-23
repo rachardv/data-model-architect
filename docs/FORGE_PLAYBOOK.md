@@ -55,9 +55,9 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 
 | Functional Layer | File / Directory Path | Key Procedures & Classes | Responsibility |
 | :--- | :--- | :--- | :--- |
-| **A. Declarative Catalogs** | [`benchmarks/catalog/curated/`](file:///C:/Coding/VSCode/data-model-architect/benchmarks/catalog/curated) | `CASE_01..13.yaml`, `TRAP_01..04.yaml` | Hierarchically organized by `<workload>/<domain>/` (`olap/`, `traps/`). Filterable via `--workload` and `--domain`. |
+| **A. Declarative Catalogs** | [`benchmarks/catalog/curated/`](file:///C:/Coding/VSCode/data-model-architect/benchmarks/catalog/curated) | `CASE_01..15.yaml`, `TRAP_01..04.yaml` | Hierarchically organized by `<workload>/<domain>/` (`olap/`, `traps/`). Filterable via `--workload` and `--domain`. |
 | **B. Catalog Loader & Parser** | [`forge/catalog_loader.py`](file:///C:/Coding/VSCode/data-model-architect/forge/catalog_loader.py) | `BenchmarkCatalogLoader.load_from_directory()` | Discovers, parses, validates YAML/JSON against Pydantic models, and registers cases. |
-| **C. Risk Council & Taxonomy** | [`forge/risk_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_engine.py) | `ValidationStrategyEngine.evaluate()`, `ValidationTier`, `RiskSeverity` | Inspects synthesized models for architectural hazards across 4 tiers (`RSK-01` to `RSK-08`). |
+| **C. Risk Council & Taxonomy** | [`forge/risk_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_engine.py) | `ValidationStrategyEngine.evaluate()`, `ValidationTier`, `RiskSeverity` | Inspects synthesized models for architectural hazards across 4 tiers (`RSK-01` to `RSK-14`). |
 | **D. Risk-to-Test Dispatcher** | [`forge/risk_dispatcher.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_dispatcher.py) | `RiskToTestDispatcher.evaluate_and_certify()` | Maps detected risks to targeted physical stress test batteries in DuckDB and awards `CERTIFIED_PRODUCTION_READY`. |
 | **E. 4-Pillar DuckDB Verifier** | [`forge/benchmark_harness.py`](file:///C:/Coding/VSCode/data-model-architect/forge/benchmark_harness.py) | `ModelBenchmarkHarness.run_full_benchmark()` | Executes physical tests in DuckDB: Metric Conservation, Temporal Causality, Referential Integrity, and Hash-Join execution plans. |
 | **F. Chaos & Adversarial Stress** | [`forge/chaos_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/chaos_engine.py) | `AdversarialChaosGenerator` | Injects Zipfian 80/20 key skew, join fan-out checks (factor <= 1.0), and GDPR pseudonymization tests. |
@@ -65,8 +65,9 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 | **H. Predefined Benchmark Gate** | [`forge/predefined_benchmark_gate.py`](file:///C:/Coding/VSCode/data-model-architect/forge/predefined_benchmark_gate.py) | `PredefinedBenchmarkGate.run_all_cases()` | Runs registered benchmark cases sequentially, executes custom SQL verification assertions, and coordinates certification. |
 | **I. Decision Tracer & Audit** | [`forge/decision_tracer.py`](file:///C:/Coding/VSCode/data-model-architect/forge/decision_tracer.py)<br/>[`docs/benchmarks/traces/`](file:///C:/Coding/VSCode/data-model-architect/docs/benchmarks/traces) | `DecisionTracer.record_*()`, `finalize()` | Generates immutable, machine-readable JSON and human-readable Markdown traces for every evaluated case. |
 | **J. Golden Baselines & Diffing** | [`benchmarks/baselines/golden_snapshot.json`](file:///C:/Coding/VSCode/data-model-architect/benchmarks/baselines/golden_snapshot.json)<br/>[`forge/snapshot_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/snapshot_engine.py) | `SnapshotEngine.capture_snapshot()`, `diff_snapshots()` | Computes schema drift, column changes, key migrations, and latency regressions against the certified golden baseline. |
-| **K. Industry & Academic Suites** | [`forge/industry_benchmarks.py`](file:///C:/Coding/VSCode/data-model-architect/forge/industry_benchmarks.py)<br/>[`forge/tpcdi_benchmark.py`](file:///C:/Coding/VSCode/data-model-architect/forge/tpcdi_benchmark.py)<br/>[`forge/semantic_benchmarks.py`](file:///C:/Coding/VSCode/data-model-architect/forge/semantic_benchmarks.py)<br/>[`forge/mega_benchmark.py`](file:///C:/Coding/VSCode/data-model-architect/forge/mega_benchmark.py) | SSB, TPC-DS, TPC-DI, TPC-H, BIRD-SQL, Spider | 200+ physical SQL test queries and parameterized cross-domain stress benchmarks. |
-| **L. Execution Interfaces** | [`forge/cli.py`](file:///C:/Coding/VSCode/data-model-architect/forge/cli.py)<br/>[`forge.ps1`](file:///C:/Coding/VSCode/data-model-architect/forge.ps1) | PowerShell & Python CLIs | Developer control plane for running tests, strict diffs, snapshots, and certifications. |
+| **K. Decision Tree & Documentation** | [`forge/decision_tree_generator.py`](file:///C:/Coding/VSCode/data-model-architect/forge/decision_tree_generator.py)<br/>[`docs/DECISION_TREE.md`](file:///C:/Coding/VSCode/data-model-architect/docs/DECISION_TREE.md) | `DecisionTreeGenerator.sync_docs()` | Deterministic zero-credit AST reflection generator producing full Mermaid decision flowcharts and 18-pattern matrices in <30ms. |
+| **L. Industry & Academic Suites** | [`forge/industry_benchmarks.py`](file:///C:/Coding/VSCode/data-model-architect/forge/industry_benchmarks.py)<br/>[`forge/tpcdi_benchmark.py`](file:///C:/Coding/VSCode/data-model-architect/forge/tpcdi_benchmark.py)<br/>[`forge/semantic_benchmarks.py`](file:///C:/Coding/VSCode/data-model-architect/forge/semantic_benchmarks.py)<br/>[`forge/mega_benchmark.py`](file:///C:/Coding/VSCode/data-model-architect/forge/mega_benchmark.py) | SSB, TPC-DS, TPC-DI, TPC-H, BIRD-SQL, Spider | 200+ physical SQL test queries and parameterized cross-domain stress benchmarks. |
+| **M. Execution Interfaces** | [`forge/cli.py`](file:///C:/Coding/VSCode/data-model-architect/forge/cli.py)<br/>[`forge.ps1`](file:///C:/Coding/VSCode/data-model-architect/forge.ps1) | PowerShell & Python CLIs | Developer control plane for running tests, strict diffs, snapshots, tree docs, and certifications. |
 
 ---
 
@@ -79,7 +80,7 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 *Protects against:* **Category 1: Domain Coverage & Semantic Competence Risk** (e.g. paradigm blindness, grain misattribution, contradictory requirements).
 *Scope:* All **schema-specific** benchmarks (curated YAML cases in `benchmarks/catalog/curated/<workload>/<domain>/` + standardized suites like TPC-DS, TPC-DI, SSB, TPC-H, BIRD-SQL).
 
-1. **Anti-Bloat Check:** Confirm that the business domain, entity topology, or grain pattern is not already covered by `CASE-01` through `CASE-13` or `TRAP-01` through `TRAP-04`.
+1. **Anti-Bloat Check:** Confirm that the business domain, entity topology, or grain pattern is not already covered by `CASE-01` through `CASE-15` or `TRAP-01` through `TRAP-04`.
 2. **Create the YAML Case File in Nested Directory:**
    - Add `benchmarks/catalog/curated/<workload>/<domain>/CASE_XX_<slug>.yaml` (for clean baselines) or `benchmarks/catalog/curated/traps/<domain>/TRAP_XX_<slug>.yaml` (for intentional defensive halts).
    - Author standard schema with mandatory `citation`, `workload_type`, `prompt`, `business_answers`, and `verification_queries`.
@@ -185,6 +186,7 @@ Whenever any Forge benchmark, test suite, or verification check (`.\forge.ps1 te
 | `2026-09-23T19:30:07Z` | `test_validation_strategy.py::test_rsk14_metric_additivity_and_rollup_linter` | `StopIteration` on `RSK-14` result | `RSK-01` halted early due to `Granularity Ambiguity in table 'fact_daily_account_balances'`: test fixture schema omitted `primary_key` and `grain` on mock fact table. | Added `primary_key: "snapshot_id"` and `grain: "daily account balance snapshot"` to test fixture table specifications. | **RESOLVED (100% Pass)** |
 | `2026-09-23T19:30:38Z` | `test_validation_strategy.py::test_rsk14_metric_additivity_and_rollup_linter` | `StopIteration` on `RSK-14` result | `RSK-12` halted early due to `MPP Partitioning Blindspot`: test fixture mock fact tables omitted `partition_by`. | Added `partition_by: "snapshot_date_key"` and `partition_by: "event_date_key"` to mock fact tables in test fixture. | **RESOLVED (100% Pass)** |
 | `2026-09-23T19:32:15Z` | `.\forge.ps1 certify` / `tests/test_semantic_benchmarks.py` | `SPIDER-BANKING-01` failed with classification mismatch (`PERIODIC_SNAPSHOT_BALANCES` != `PERIODIC_SNAPSHOT_FACT`) | `has_semi_additive_balances` parser regex in `src/noun_verb_parser.py` included overly broad keyword `"account balance"`, hijacking generic periodic snapshot banking scenarios. | Scoped `has_semi_additive_balances` to explicit semi-additive and rollup terms (`"semi-additive"`, `"ending balance"`, `"closing balance"`, `"aggregate rollup"`, etc.), leaving generic balance narratives to standard periodic snapshots. | **RESOLVED (100% Pass)** |
+| `2026-09-23T20:25:37Z` | `benchmarks/catalog/curated/` / `docs/DECISION_TREE.md` | Decision tree coverage gap on Kimball Junk Dimensions & Outriggers; manual docs drift risk. | Decision engine lacked explicit short-circuits for consolidated junk dimensions (`JUNK_DIMENSION_CONSOLIDATION`), dimension outriggers (`KIMBALL_OUTRIGGER_STAR`), and multi-valued bridges (`MULTIVALUED_BRIDGE_STAR`). | 1) Added 3 textbook patterns to `src/decision_engine.py` & semantic parser keywords.<br>2) Authored `CASE-14` (Retail Junk Dim) & `CASE-15` (Insurance Outrigger Dim).<br>3) Built zero-cost deterministic AST generator `forge/decision_tree_generator.py` (<1ms, 0 credits).<br>4) Enforced zero drift via `tests/test_decision_tree_sync.py` and git pre-commit hook. | **RESOLVED (100% Pass)** |
 
 ---
 
@@ -195,14 +197,14 @@ The repository operates a strict, two-tier branch governance policy designed to 
 ```mermaid
 flowchart LR
     subgraph STAGING["🌿 staging Branch (Inner Loop)"]
-        DEV["Active Coding & Refactoring"] --> FAST["⚡ .\\forge.ps1 fast (~10s)<br/>(Core Tests + 14-Case Strict Diff)"]
+        DEV["Active Coding & Refactoring"] --> FAST["⚡ .\\forge.ps1 fast (~10s)<br/>(Core Tests + 19-Case Strict Diff)"]
         FAST -->|Iterate rapidly| DEV
     end
 
     subgraph PROMOTION["🚀 Atomic Promotion Gate"]
         FAST -->|All checks green| PROMOTE["Run: .\\forge.ps1 promote"]
         PROMOTE --> FULL_TEST["1. Full 144 Pytest Suite"]
-        FULL_TEST --> STRICT_DIFF["2. 14-Case Golden Strict Diff"]
+        FULL_TEST --> STRICT_DIFF["2. 19-Case Golden Strict Diff"]
         STRICT_DIFF --> CERTIFY["3. Full 219 Industry Certification"]
         CERTIFY --> MERGE["4. Fast-Forward Merge staging -> main"]
         MERGE --> PUSH["5. Dual Push to origin & synology"]

@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-13 — Clinical Inpatient Episode DRG Comorbidity Bridge & Attending Allocation
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `99.37ms`
-> **Timestamp (UTC):** `2026-09-23T20:17:37.128823+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `100.02ms`
+> **Timestamp (UTC):** `2026-09-23T20:32:39.477119+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `clinical_healthcare`
@@ -19,7 +19,7 @@ We operate an acute care regional hospital network tracking clinical inpatient e
 
 ## 2. Intake & Architectural Decisions
 - **Completeness Score:** `0.0%`
-- **Selected Paradigm:** `ACCUMULATING_SNAPSHOT_FACT`
+- **Selected Paradigm:** `MULTIVALUED_BRIDGE_STAR`
 - **Resolution Applied:** `None`
 
 ## 3. Synthesized Schema Tables
@@ -31,10 +31,10 @@ We operate an acute care regional hospital network tracking clinical inpatient e
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Physician Bridge Allocation Weight Completeness | `scalar_eq` | `1.0` | `1.0` | `1.25ms` | ✅ PASS |
-| Total Inpatient Hospital Charges Reconciliation | `scalar_eq` | `80000.0` | `80000.0` | `0.32ms` | ✅ PASS |
-| Weighted Attending Revenue Attribution Without Double Counting | `scalar_eq` | `24500.0` | `24500.0` | `0.68ms` | ✅ PASS |
-| Comorbid Secondary Diagnoses Count Per Episode | `scalar_eq` | `2` | `2` | `0.3ms` | ✅ PASS |
+| Physician Bridge Allocation Weight Completeness | `scalar_eq` | `1.0` | `1.0` | `1.69ms` | ✅ PASS |
+| Total Inpatient Hospital Charges Reconciliation | `scalar_eq` | `80000.0` | `80000.0` | `0.35ms` | ✅ PASS |
+| Weighted Attending Revenue Attribution Without Double Counting | `scalar_eq` | `24500.0` | `24500.0` | `0.76ms` | ✅ PASS |
+| Comorbid Secondary Diagnoses Count Per Episode | `scalar_eq` | `2` | `2` | `0.31ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Physician Bridge Allocation Weight Completeness

@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise B2B SaaS platform delivering cloud-based subscription software. Our go-to-market and customer success teams require visibility across the entire multi-stage customer lifecycle: from marketing lead generation, self-serve trial sign-up, paid contract activation, tier upgrades, annual renewal, through to eventual churn or cancellation. Because subscriptions evolve over time across well-defined operational milestones with variable duration between steps, standard transaction facts fail to answer funnel velocity questions efficiently. We require an accumulating snapshot fact table where each record represents a single subscription lifecycle journey. As a customer transitions across milestones, their accumulating snapshot record is progressively updated with milestone date keys and lag metrics (days from lead to trial, days from trial to activation, and total subscription lifetime days). BI dashboards must query milestone lag distributions, cohort conversion rates, active Monthly Recurring Revenue (MRR), and churn rates with zero Cartesian fan-out or temporal metric inflation.\n",
   "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 14 (\"Accounting & Subscription Services: Accumulating Snapshot Fact Tables for Multi-Stage Lifecycle Funnels & Cohort Churn\"), pp. 385-412.\n",
-  "timestamp_utc": "2026-09-23T20:17:41.103145+00:00",
+  "timestamp_utc": "2026-09-23T20:32:43.531101+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -29,7 +29,10 @@
       "has_multi_fact_bus_matrix": false,
       "has_scd6_hybrid": false,
       "has_semi_additive_balances": false,
-      "is_factless_event": false
+      "is_factless_event": false,
+      "has_multivalued_bridge": false,
+      "has_junk_dimension": false,
+      "has_outrigger_dimension": false
     },
     "resolution_applied": null,
     "disposition_matrix": []
@@ -88,7 +91,7 @@
       "expected_value": 66.7,
       "actual_value": 66.7,
       "passed": true,
-      "latency_ms": 0.38,
+      "latency_ms": 0.39,
       "error": null
     },
     {
@@ -98,7 +101,7 @@
       "expected_value": 16.5,
       "actual_value": 16.5,
       "passed": true,
-      "latency_ms": 0.34,
+      "latency_ms": 0.41,
       "error": null
     },
     {
@@ -108,12 +111,12 @@
       "expected_value": 2,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.28,
+      "latency_ms": 0.3,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 88.77
+  "execution_time_ms": 85.51
 }

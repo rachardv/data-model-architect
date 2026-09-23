@@ -1,0 +1,138 @@
+case_id: CASE-14
+domain: retail_operations
+workload_type: OLAP
+name: Retail Orders Consolidated Junk Dimension for Flags and Indicators
+description: Point-of-sale retail order dimensional model evaluating a consolidated Junk Dimension holding miscellaneous low-cardinality status flags and operational codes (payment method, credit verification, gift wrapping, tax exemption, signature required) rather than bloating the fact table or creating 5 separate dimension foreign keys.
+citation: >
+  Ralph Kimball & Margy Ross (2013), "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling" (3rd Edition),
+  Chapter 2 ("Retail Sales: Junk Dimensions for Miscellaneous Transaction Indicators & Flags"), pp. 58-60.
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - retail
+  - junk_dimension
+  - indicator_flags
+  - kimball
+  - olap
+
+prompt: >
+  We operate an enterprise omnichannel retail sales network tracking point-of-sale customer merchandise purchases.
+  Each retail transaction records operational status indicators and miscellaneous flags: payment method code (credit, cash, invoice),
+  pre-authorization verification status (verified, approved, not applicable), gift wrap flag (true, false),
+  tax-exempt status indicator (true, false), and receipt delivery method (email, print, electronic).
+  Per Kimball Chapter 2, keeping 5 to 20 low-cardinality flags directly on the order transaction fact clutters the schema and swells
+  fact row storage, while creating separate foreign key dimensions for each flag generates excessive join hops.
+  We require a single consolidated Junk Dimension table (dim_retail_order_indicators_junk) that combines all possible permutations
+  of these discrete operational flags into a single compact surrogate key.
+  Analytical queries must filter transaction metrics across diverse flag combinations through this consolidated junk dimension with zero metric drift.
+
+business_answers:
+  - "Core business processes: Point-of-sale retail transactions and operational flag tracking"
+  - "Grain: One record per retail sales order transaction"
+  - "Workload intent: Transaction fact joined to a consolidated junk dimension for miscellaneous flags and status indicators"
+  - "Dimensions: Conformed retail customers with SCD2, product catalog, and consolidated junk dimension for order indicators"
+  - "Temporal policy: SCD Type 2 for customers and products, with discrete transaction timestamps on the fact"
+  - "Lifecycle funnel: Single event point-of-sale checkout orders with combined indicator flags"
+  - "Metrics: net_amount_usd, tax_amount_usd, total_amount_usd"
+
+seed_data:
+  dim_retail_customer_core:
+    - customer_sk: "CUST-01"
+      customer_id: "C-101"
+      customer_name: "Eleanor Rigby"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+    - customer_sk: "CUST-02"
+      customer_id: "C-102"
+      customer_name: "Jude Martin"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+  dim_retail_order_indicators_junk:
+    - junk_sk: 1
+      payment_method: "CREDIT_CARD"
+      verification_status: "VERIFIED"
+      gift_wrap_flag: true
+      tax_exempt_indicator: false
+      receipt_delivery_method: "EMAIL"
+
+    - junk_sk: 2
+      payment_method: "CASH"
+      verification_status: "NOT_APPLICABLE"
+      gift_wrap_flag: false
+      tax_exempt_indicator: false
+      receipt_delivery_method: "PRINT"
+
+    - junk_sk: 3
+      payment_method: "INVOICE"
+      verification_status: "APPROVED"
+      gift_wrap_flag: false
+      tax_exempt_indicator: true
+      receipt_delivery_method: "ELECTRONIC"
+
+  fact_pos_retail_orders:
+    - order_id: "ORD-101"
+      customer_sk: "CUST-01"
+      junk_sk: 1
+      order_date_key: 20260115
+      net_amount_usd: 250.00
+      tax_amount_usd: 20.00
+      total_amount_usd: 270.00
+
+    - order_id: "ORD-102"
+      customer_sk: "CUST-02"
+      junk_sk: 2
+      order_date_key: 20260115
+      net_amount_usd: 45.00
+      tax_amount_usd: 3.60
+      total_amount_usd: 48.60
+
+    - order_id: "ORD-103"
+      customer_sk: "CUST-01"
+      junk_sk: 3
+      order_date_key: 20260116
+      net_amount_usd: 1200.00
+      tax_amount_usd: 0.00
+      total_amount_usd: 1200.00
+
+verification_queries:
+  - name: Total Revenue for Gift-Wrapped Credit Transactions
+    query: >
+      SELECT CAST(ROUND(SUM(f.total_amount_usd), 2) AS DOUBLE)
+      FROM fact_pos_retail_orders f
+      JOIN dim_retail_order_indicators_junk j ON f.junk_sk = j.junk_sk
+      WHERE j.payment_method = 'CREDIT_CARD' AND j.gift_wrap_flag = true;
+    assertion_type: scalar_eq
+    expected_value: 270.00
+    failure_message: Expected total spend of 270.00 USD for gift-wrapped credit card transactions
+
+  - name: Tax-Exempt Invoiced Net Revenue Sum
+    query: >
+      SELECT CAST(ROUND(SUM(f.net_amount_usd), 2) AS DOUBLE)
+      FROM fact_pos_retail_orders f
+      JOIN dim_retail_order_indicators_junk j ON f.junk_sk = j.junk_sk
+      WHERE j.tax_exempt_indicator = true;
+    assertion_type: scalar_eq
+    expected_value: 1200.00
+    failure_message: Expected net revenue of 1200.00 USD for tax-exempt invoiced retail orders
+
+  - name: Consolidated Junk Dimension Row Count
+    query: >
+      SELECT COUNT(*)
+      FROM dim_retail_order_indicators_junk;
+    assertion_type: scalar_eq
+    expected_value: 3
+    failure_message: Expected exactly 3 consolidated junk indicator rows
+
+  - name: Distinct Junk Surrogate Keys in Fact Table
+    query: >
+      SELECT COUNT(DISTINCT junk_sk)
+      FROM fact_pos_retail_orders;
+    assertion_type: scalar_eq
+    expected_value: 3
+    failure_message: Expected all 3 junk dimension combinations to be referenced in the fact table

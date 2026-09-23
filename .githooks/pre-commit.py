@@ -60,18 +60,39 @@ def main():
             print("=" * 70 + "\n")
             sys.exit(1)
 
-    # 2. Run the deterministic taxonomy sync test
+    # 2. Check if decision engine or parser modified -> Auto-regenerate docs/DECISION_TREE.md
+    engine_modified = any(
+        f in ("src/decision_engine.py", "src/noun_verb_parser.py", "src/intake_engine.py")
+        for f in staged_files
+    )
+
+    if engine_modified:
+        print("[SYNC] Decision Engine modified. Auto-regenerating docs/DECISION_TREE.md...")
+        gen_code, gen_out = run_command([sys.executable, "-m", "forge.decision_tree_generator"])
+        if gen_code != 0:
+            print(f"[ERROR] Decision tree generation failed:\n{gen_out}")
+            sys.exit(1)
+        # Stage regenerated decision tree documentation
+        run_command(["git", "add", "docs/DECISION_TREE.md"])
+        print("[SYNC] docs/DECISION_TREE.md synchronized and staged.")
+
+    # 3. Run the deterministic taxonomy sync test & decision tree sync test
     print("[CHECK] Running Anti-Bloat Documentation Synchronization Gate...")
-    code, test_out = run_command([sys.executable, "-m", "pytest", "tests/test_risk_taxonomy_sync.py", "-q"])
+    code, test_out = run_command([
+        sys.executable, "-m", "pytest",
+        "tests/test_risk_taxonomy_sync.py",
+        "tests/test_decision_tree_sync.py",
+        "-q"
+    ])
     if code != 0:
         print("\n" + "=" * 70)
-        print("[ABORT] COMMIT REJECTED: RISK TAXONOMY SYNC TEST FAILED")
+        print("[ABORT] COMMIT REJECTED: DOCUMENTATION SYNC TEST FAILED")
         print("=" * 70)
         print(test_out)
         print("=" * 70 + "\n")
         sys.exit(1)
 
-    print("[PASS] Anti-Bloat Documentation Gate Passed.")
+    print("[PASS] Anti-Bloat Documentation & Decision Tree Gates Passed.")
     sys.exit(0)
 
 
