@@ -160,4 +160,16 @@ To ensure the decision tree documentation never drifts from the engine implement
    py -3.14 -m forge.decision_tree_generator
    ```
 
+---
+
+## 6. Architecture Revision History & Evolution Log
+
+This log tracks the chronological evolution of the Decision Tree across major architectural milestones, recording why patterns and priority thresholds were introduced:
+
+| Milestone / Version | Release Date | Active Patterns | Strategic Milestone Title | Focus & Summary of Architectural Changes | Canonical Textbook Citations | Baseline Commit |
+| :---: | :---: | :---: | :--- | :--- | :--- | :---: |
+| **`v1.0.0`** | `2026-09-01` | `8` | **Core Dimensional Star Foundation** | Initial baseline classification: OLTP 3NF relational, Kimball Star SCD1/SCD2, Bitemporal SCD2, Timescale Hypertables, Accumulating Snapshot, Periodic Snapshot, and Factless Events. | Kimball Ch 2, 5, 6; Snodgrass (1999); Codd (1970) | `Initial Release` |
+| **`v2.0.0`** | `2026-09-15` | `15` | **Modern MPP & Enterprise Bus Layer** | Expanded engine to 15 patterns: added Denormalized OBT Marts, Nested Columnar Arrays (ARRAY<STRUCT>), Multi-Fact Enterprise Bus Matrix with CTE drill-across, Semi-Additive Balances + Aggregate Navigation, and SCD Type 6 Hybrid Dimensions. | Kimball Ch 3, 4, 5, 17; BigQuery / Parquet Columnar Guides | `e4f5g6h` |
+| **`v3.0.0`** | `2026-09-23` | `18` | **100% Canonical Textbook Kimball Perfection** | Reached complete textbook coverage (18 patterns): added Multi-Valued Dimension Bridge Tables (M:N weighting factors), Consolidated Junk Dimensions for low-cardinality flags, and Secondary Dimension Outriggers. Integrated zero-cost AST decision tree generator and pre-commit sync gate. | Kimball Ch 2 (pp. 58-60), Ch 7 (pp. 252-254), Ch 10 (pp. 267-294) | `7c7c5a8` |
+
 *Zero credits. Zero tokens. Microsecond deterministic generation.*

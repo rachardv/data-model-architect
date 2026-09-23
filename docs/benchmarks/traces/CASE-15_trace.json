@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise commercial property and casualty underwriting firm writing property insurance policies across nationwide municipal regions. Each insurance policy record references policyholder details, coverage limits, and insured property locations. Actuarial risk analysts require analyzing written policy premiums against regional macroeconomic and environmental catastrophe factors: county median household income, federal FEMA flood zone risk tiers (extreme, moderate, minimal), and severe storm catastrophe indices. Per Kimball Chapter 7, while snowflaking sub-dimensions is strictly discouraged, secondary reference dimensions that represent a distinct grain and are shared across multiple primary dimensions qualify as legitimate Kimball Outrigger Dimensions. We require a County Demographic Outrigger table (dim_county_demographics_outrigger) referenced by the commercial policy dimension via an outrigger surrogate key, enabling demographic risk attribution without snowflake relational anomalies or fan-out traps.\n",
   "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 7 (\"Accounting & Insurance: Outrigger Dimensions vs. Snowflake Normalization\"), pp. 252-254.\n",
-  "timestamp_utc": "2026-09-23T20:32:39.797941+00:00",
+  "timestamp_utc": "2026-09-23T20:36:10.149889+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -81,7 +81,7 @@
       "expected_value": 48000.0,
       "actual_value": 48000.0,
       "passed": true,
-      "latency_ms": 1.22,
+      "latency_ms": 1.04,
       "error": null
     },
     {
@@ -91,7 +91,7 @@
       "expected_value": 64000.0,
       "actual_value": 64000.0,
       "passed": true,
-      "latency_ms": 0.32,
+      "latency_ms": 0.34,
       "error": null
     },
     {
@@ -101,7 +101,7 @@
       "expected_value": 3700000.0,
       "actual_value": 3700000.0,
       "passed": true,
-      "latency_ms": 0.38,
+      "latency_ms": 0.31,
       "error": null
     },
     {
@@ -111,12 +111,12 @@
       "expected_value": 2,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.57,
+      "latency_ms": 0.58,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 106.59
+  "execution_time_ms": 88.11
 }

@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise commercial property and casualty insurance carrier managing complex policy endorsements and claims lifecycles. Underwriting endorsements frequently occur retroactively, requiring historical policy timelines to be spliced into strict closed-open intervals without overlapping validity dates. Claims often arrive out-of-order weeks after an incident occurs, referencing policies that have not yet completed ETL ingestion; these must resolve to inferred ghost dimension records with sentinel surrogate keys to prevent catastrophic claim drop-outs. To support executive management and actuarial audits simultaneously, the policy dimension must implement Kimball SCD Type 6 hybrid attributes: preserving historical point-in-time risk tiers and sales territories (as-was) while maintaining current overwritten attributes (as-is) across all version slices.\n",
   "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 5 (\"Slowly Changing Dimension Techniques: Type 6 Hybrid Dimensions & Late-Arriving Data\"), pp. 153-188, and Martin Fowler (2005), \"Bitemporal History\".\n",
-  "timestamp_utc": "2026-09-23T20:32:39.581402+00:00",
+  "timestamp_utc": "2026-09-23T20:36:09.947653+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -87,7 +87,7 @@
       "expected_value": 0,
       "actual_value": 0,
       "passed": true,
-      "latency_ms": 0.79,
+      "latency_ms": 0.74,
       "error": null
     },
     {
@@ -97,7 +97,7 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 0.33,
+      "latency_ms": 0.32,
       "error": null
     },
     {
@@ -107,7 +107,7 @@
       "expected_value": 4,
       "actual_value": 4,
       "passed": true,
-      "latency_ms": 0.72,
+      "latency_ms": 0.81,
       "error": null
     },
     {
@@ -117,7 +117,7 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 1.09,
+      "latency_ms": 1.17,
       "error": null
     },
     {
@@ -127,12 +127,12 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 1.05,
+      "latency_ms": 1.15,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 211.88
+  "execution_time_ms": 197.33
 }

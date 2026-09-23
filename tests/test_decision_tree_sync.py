@@ -58,6 +58,14 @@ class TestDecisionTreeDocumentationSync:
                 f"Flag `{flag_name}` is returned by parser but not documented in `docs/DECISION_TREE.md`."
             )
 
+    def test_architecture_milestone_history_documented(self):
+        """Milestone evolution log must be documented in Section 6."""
+        content = DOCS_PATH.read_text(encoding="utf-8")
+        assert "## 6. Architecture Revision History & Evolution Log" in content
+        from forge.decision_tree_generator import MILESTONE_HISTORY
+        for m in MILESTONE_HISTORY:
+            assert f"`{m['version']}`" in content, f"Missing milestone {m['version']} in docs/DECISION_TREE.md"
+
     def test_generator_performance_sla(self):
         """Decision tree generation must complete in < 50ms without external API calls."""
         t0 = time.perf_counter()

@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise omnichannel retail sales network tracking point-of-sale customer merchandise purchases. Each retail transaction records operational status indicators and miscellaneous flags: payment method code (credit, cash, invoice), pre-authorization verification status (verified, approved, not applicable), gift wrap flag (true, false), tax-exempt status indicator (true, false), and receipt delivery method (email, print, electronic). Per Kimball Chapter 2, keeping 5 to 20 low-cardinality flags directly on the order transaction fact clutters the schema and swells fact row storage, while creating separate foreign key dimensions for each flag generates excessive join hops. We require a single consolidated Junk Dimension table (dim_retail_order_indicators_junk) that combines all possible permutations of these discrete operational flags into a single compact surrogate key. Analytical queries must filter transaction metrics across diverse flag combinations through this consolidated junk dimension with zero metric drift.\n",
   "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 2 (\"Retail Sales: Junk Dimensions for Miscellaneous Transaction Indicators & Flags\"), pp. 58-60.\n",
-  "timestamp_utc": "2026-09-23T20:32:40.296123+00:00",
+  "timestamp_utc": "2026-09-23T20:36:10.680380+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -81,7 +81,7 @@
       "expected_value": 270.0,
       "actual_value": 270.0,
       "passed": true,
-      "latency_ms": 0.64,
+      "latency_ms": 0.97,
       "error": null
     },
     {
@@ -91,7 +91,7 @@
       "expected_value": 1200.0,
       "actual_value": 1200.0,
       "passed": true,
-      "latency_ms": 0.6,
+      "latency_ms": 0.78,
       "error": null
     },
     {
@@ -101,7 +101,7 @@
       "expected_value": 3,
       "actual_value": 3,
       "passed": true,
-      "latency_ms": 0.23,
+      "latency_ms": 0.24,
       "error": null
     },
     {
@@ -111,12 +111,12 @@
       "expected_value": 3,
       "actual_value": 3,
       "passed": true,
-      "latency_ms": 0.48,
+      "latency_ms": 0.51,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 83.51
+  "execution_time_ms": 89.23
 }

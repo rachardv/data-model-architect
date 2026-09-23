@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate a high-scale global e-commerce marketplace. Each customer order contains multiple order line items (nested repeated records). To eliminate join fan-out traps and optimize columnar scanning in modern data warehouses, orders and line items must be stored together in a nested columnar mart using STRUCT and ARRAY fields. Customer address and profile changes are tracked historically using SCD Type 2.\n",
   "citation": "Google Cloud BigQuery Architecture Guide (2024), \"Data Modeling: Using Nested and Repeated Fields to Denormalize Parent-Child Relationships\".\n",
-  "timestamp_utc": "2026-09-23T20:32:36.276004+00:00",
+  "timestamp_utc": "2026-09-23T20:36:06.601329+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -91,7 +91,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.25,
+      "latency_ms": 0.27,
       "error": null
     },
     {
@@ -101,7 +101,7 @@
       "expected_value": 0,
       "actual_value": 4,
       "passed": true,
-      "latency_ms": 0.42,
+      "latency_ms": 0.38,
       "error": null
     },
     {
@@ -111,12 +111,12 @@
       "expected_value": 0.0,
       "actual_value": "299.00",
       "passed": true,
-      "latency_ms": 0.46,
+      "latency_ms": 0.44,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 3108.65
+  "execution_time_ms": 3159.69
 }
