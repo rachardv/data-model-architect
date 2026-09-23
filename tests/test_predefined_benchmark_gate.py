@@ -2,15 +2,15 @@ import os
 import json
 import pytest
 import tempfile
-from src.benchmark_catalog import (
+from forge.benchmark_catalog import (
     PredefinedBenchmarkCase,
     VerificationQuery,
     get_predefined_benchmark_catalog,
     register_benchmark_case,
     clear_registered_benchmark_cases
 )
-from src.decision_tracer import DecisionTracer
-from src.predefined_benchmark_gate import PredefinedBenchmarkGate
+from forge.decision_tracer import DecisionTracer
+from forge.predefined_benchmark_gate import PredefinedBenchmarkGate
 
 @pytest.fixture(autouse=True)
 def clean_catalog():

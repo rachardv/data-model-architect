@@ -68,6 +68,41 @@ Run `.\forge.ps1 snapshot` to update `benchmarks/baselines/golden_snapshot.json`
 
 ---
 
+---
+
+## 🏛️ Root Directory Separation Architecture
+
+The repository enforces a strict two-pillar architecture to support standalone binary packaging (`dma.exe`) for enterprise use without test fixture bloat:
+
+```
+data-model-architect/
+├── src/                    # 🧠 Core Data Model Engine (Compiles to dma.exe)
+│   ├── intake_engine.py    # Vector extraction & sanity filter
+│   ├── decision_engine.py  # Dimensional architecture decision tree
+│   ├── schema_author.py    # Dynamic schema specification author
+│   ├── medallion_generator # Bronze/Silver/Gold SQL pipelines
+│   ├── dbt_generator.py    # dbt Core repository generation
+│   ├── sql_runner.py       # In-memory DuckDB runner
+│   ├── cli.py              # Studio CLI (Compiler interface)
+│   └── orchestration/      # Captain & Reviewer Council
+│
+└── forge/                  # 🛠️ The Forge Test Harness & Evaluation Suite
+    ├── cli.py              # Dedicated Forge CLI (py -3.14 -m forge.cli)
+    ├── runner.py           # Forge certification battery runner
+    ├── snapshot_engine.py  # Golden snapshot & regression diffing
+    ├── predefined_benchmark_gate.py # 1-by-1 case evaluation
+    ├── catalog_loader.py   # YAML/JSON catalog discovery
+    ├── industry_benchmarks # SSB, TPC-DS, TPC-DI, TPC-H suites
+    ├── semantic_benchmarks # BIRD-SQL & Spider evaluation
+    ├── mega_benchmark.py   # Academic stress-testing suite
+    └── chaos_engine.py     # Zipfian skew & GDPR eraser
+```
+
+> [!IMPORTANT]
+> **One-Way Architectural Invariant:** `forge/` may import from `src/`, but `src/` is strictly forbidden from importing anything from `forge/`. Production binaries compile purely from `src/`.
+
+---
+
 ## 🛠️ How to Tweak This Workflow
 
 1. **To tweak commands or add new steps:**
@@ -75,4 +110,4 @@ Run `.\forge.ps1 snapshot` to update `benchmarks/baselines/golden_snapshot.json`
 2. **To tweak the AI Agent's instructions:**
    - Edit [`C:/Users/racha/.gemini/config/skills/forge/SKILL.md`](file:///C:/Users/racha/.gemini/config/skills/forge/SKILL.md).
 3. **To adjust regression thresholds:**
-   - Change `--latency-threshold` (default: `100.0%`) or `--baseline-path` in `forge.ps1` or `src/cli.py`.
+   - Change `--latency-threshold` (default: `100.0%`) or `--baseline-path` in `forge.ps1` or `forge/cli.py`.

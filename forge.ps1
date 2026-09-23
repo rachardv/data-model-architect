@@ -31,27 +31,27 @@ function Run-PyCommand {
 
 switch ($Command) {
     "list" {
-        Run-PyCommand "src/cli.py --list-cases"
+        Run-PyCommand "-m forge.cli --list-cases"
     }
     "test" {
         if (-not $TargetCase) {
             Write-Host "Please specify a case ID, e.g.: .\forge.ps1 test CASE-01" -ForegroundColor Yellow
-            Run-PyCommand "src/cli.py --list-cases"
+            Run-PyCommand "-m forge.cli --list-cases"
             exit 1
         }
-        Run-PyCommand "src/cli.py --benchmark-case $TargetCase"
+        Run-PyCommand "-m forge.cli --benchmark-case $TargetCase"
     }
     "diff" {
-        Run-PyCommand "src/cli.py --diff"
+        Run-PyCommand "-m forge.cli --benchmark-gate --diff"
     }
     "strict-diff" {
-        Run-PyCommand "src/cli.py --diff --strict-drift"
+        Run-PyCommand "-m forge.cli --benchmark-gate --diff --strict-drift"
     }
     "certify" {
-        Run-PyCommand "src/cli.py --forge"
+        Run-PyCommand "-m forge.cli --forge"
     }
     "snapshot" {
-        Run-PyCommand "src/cli.py --benchmark-gate --snapshot"
+        Run-PyCommand "-m forge.cli --benchmark-gate --snapshot"
     }
     "tests" {
         Run-PyCommand "-m pytest -q"
@@ -65,10 +65,10 @@ switch ($Command) {
         Run-PyCommand "-m pytest -q"
 
         Write-Host "`n[Step 2/3] Golden Snapshot Regression Diff Guard..." -ForegroundColor Yellow
-        Run-PyCommand "src/cli.py --diff --strict-drift"
+        Run-PyCommand "-m forge.cli --benchmark-gate --diff --strict-drift"
 
         Write-Host "`n[Step 3/3] Forge Industry Certification Battery..." -ForegroundColor Yellow
-        Run-PyCommand "src/cli.py --forge"
+        Run-PyCommand "-m forge.cli --forge"
 
         Write-Host "`n✨ 100% FORGE CERTIFICATION COMPLETE: Zero Regressions Detected!" -ForegroundColor Green
     }

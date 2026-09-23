@@ -4,8 +4,8 @@ import time
 import tempfile
 import duckdb
 from typing import Dict, Any, List, Optional
-from src.benchmark_catalog import PredefinedBenchmarkCase, VerificationQuery, get_predefined_benchmark_catalog
-from src.decision_tracer import DecisionTracer
+from forge.benchmark_catalog import PredefinedBenchmarkCase, VerificationQuery, get_predefined_benchmark_catalog
+from forge.decision_tracer import DecisionTracer
 from src.orchestration.captain import CaptainOrchestrator
 from src.sql_runner import DuckDBPipelineRunner
 from src.logger import get_logger
@@ -182,6 +182,10 @@ class PredefinedBenchmarkGate:
         Returns an aggregated scorecard.
         """
         cases_to_run = catalog if catalog is not None else get_predefined_benchmark_catalog()
+        if not cases_to_run and os.path.exists("benchmarks/catalog"):
+            from forge.catalog_loader import BenchmarkCatalogLoader
+            BenchmarkCatalogLoader.load_from_directory("benchmarks/catalog", register=True)
+            cases_to_run = get_predefined_benchmark_catalog()
         
         if not cases_to_run:
             logger.info("Predefined benchmark catalog is currently empty. Zero cases executed.")

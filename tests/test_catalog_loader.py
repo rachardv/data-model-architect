@@ -3,14 +3,14 @@ import json
 import pytest
 import tempfile
 import duckdb
-from src.benchmark_catalog import (
+from forge.benchmark_catalog import (
     PredefinedBenchmarkCase,
     VerificationQuery,
     get_predefined_benchmark_catalog,
     clear_registered_benchmark_cases
 )
-from src.catalog_loader import BenchmarkCatalogLoader
-from src.predefined_benchmark_gate import PredefinedBenchmarkGate
+from forge.catalog_loader import BenchmarkCatalogLoader
+from forge.predefined_benchmark_gate import PredefinedBenchmarkGate
 
 @pytest.fixture(autouse=True)
 def clean_catalog():

@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 from src.orchestration.captain import CaptainOrchestrator
 from src.decision_engine import DataModelDecisionEngine
 from src.noun_verb_parser import NounVerbSemanticParser
-from src.semantic_benchmarks import BIRD_SPIDER_SCENARIOS
+from forge.semantic_benchmarks import BIRD_SPIDER_SCENARIOS
 from src.logger import get_logger
 
 logger = get_logger("data_model_architect.mega_benchmark")

@@ -256,7 +256,7 @@ class IndustryBenchmarkRunner:
         automated audit queries (tpcdi_audit.sql) with 0.0% metric drift.
         """
         try:
-            from src.tpcdi_benchmark import TPCDIBenchmarkRunner
+            from forge.tpcdi_benchmark import TPCDIBenchmarkRunner
             tpcdi_results = TPCDIBenchmarkRunner.run_full_benchmark()
             results["tpcdi"] = tpcdi_results
         except Exception as e:

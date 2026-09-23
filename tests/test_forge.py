@@ -1,5 +1,5 @@
 import pytest
-from src.forge import ForgeEngineRunner
+from forge.runner import ForgeEngineRunner
 
 def test_forge_engine_certification_suite():
     """Validates full execution of the Forge Workflow certification battery."""

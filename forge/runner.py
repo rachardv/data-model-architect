@@ -1,8 +1,8 @@
 import time
 from typing import Dict, Any, Optional
-from src.predefined_benchmark_gate import PredefinedBenchmarkGate
-from src.industry_benchmarks import IndustryBenchmarkRunner
-from src.semantic_benchmarks import SemanticBenchmarkRunner
+from forge.predefined_benchmark_gate import PredefinedBenchmarkGate
+from forge.industry_benchmarks import IndustryBenchmarkRunner
+from forge.semantic_benchmarks import SemanticBenchmarkRunner
 from src.logger import get_logger
 
 logger = get_logger("forge")

@@ -1,5 +1,5 @@
 import pytest
-from src.tpcdi_benchmark import TPCDIBenchmarkRunner
+from forge.tpcdi_benchmark import TPCDIBenchmarkRunner
 
 def test_tpcdi_full_benchmark_runner():
     """Verify official TPC-DI 3-batch lifecycle and 46 automated audit queries."""

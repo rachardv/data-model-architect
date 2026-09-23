@@ -3,7 +3,9 @@ import time
 from typing import Dict, Any, List, Optional
 from src.sql_runner import DuckDBPipelineRunner
 from src.ddl_generator import ANSISQLGenerator
-from src.dbt_evaluator import DBTProjectEvaluator
+from forge.industry_benchmarks import IndustryBenchmarkRunner
+from forge.dbt_evaluator import DBTProjectEvaluator
+from forge.semantic_benchmarks import SemanticBenchmarkRunner
 from src.logger import get_logger
 
 logger = get_logger("benchmark_harness")
@@ -118,8 +120,18 @@ class ModelBenchmarkHarness:
             # SUITE 3 & 4: Industry Standards (SSB, TPC-DS, TPC-DI, TPC-H) & BIRD/Spider
             # -------------------------------------------------------------
             if run_industry_suites:
-                scorecard["industry_benchmarks"] = {"status": "DELEGATED_TO_FORGE", "details": "Industry benchmarks decoupled from engine. Run via 'forge.cli --industry-benchmark'"}
-                all_passed = deterministic_pass and (scorecard["dbt_project_evaluator"]["status"] in ["PASS", "SKIPPED"])
+                industry_res = IndustryBenchmarkRunner.run_all_benchmarks(domain, target_schema, medallion_pipeline)
+                scorecard["industry_benchmarks"] = industry_res
+                
+                semantic_res = SemanticBenchmarkRunner.run_all_benchmarks()
+                scorecard["semantic_benchmarks"] = semantic_res
+                
+                all_passed = (
+                    deterministic_pass and
+                    (scorecard["dbt_project_evaluator"]["status"] in ["PASS", "SKIPPED"]) and
+                    (industry_res["overall_status"] == "PASS") and
+                    (semantic_res["overall_status"] == "PASS")
+                )
             else:
                 all_passed = deterministic_pass and (scorecard["dbt_project_evaluator"]["status"] in ["PASS", "SKIPPED"])
 

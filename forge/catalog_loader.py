@@ -4,7 +4,7 @@ import json
 import yaml
 from typing import Dict, Any, List, Optional
 from pydantic import ValidationError
-from src.benchmark_catalog import (
+from forge.benchmark_catalog import (
     PredefinedBenchmarkCase,
     VerificationQuery,
     register_benchmark_case,

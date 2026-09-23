@@ -90,115 +90,20 @@ def main():
     
     args = parser.parse_args()
     
-    if args.forge:
-        from src.forge import ForgeEngineRunner
-        sc = ForgeEngineRunner.run_forge_certification()
-        ForgeEngineRunner.print_forge_scorecard(sc)
-        return
-
-    if args.industry_benchmark:
-        from src.forge import ForgeEngineRunner
-        sc = ForgeEngineRunner.run_forge_certification(include_predefined_gate=False)
-        ForgeEngineRunner.print_forge_scorecard(sc)
-        return
-
-    if args.list_cases:
-        from src.catalog_loader import BenchmarkCatalogLoader
-        from src.benchmark_catalog import get_predefined_benchmark_catalog
-        
-        discovered = BenchmarkCatalogLoader.load_from_directory(args.catalog_path, register=True, clear_existing=True)
-        cases = get_predefined_benchmark_catalog()
-        print(f"\n=== 📚 PREDEFINED BENCHMARK CATALOG ({len(cases)} cases discovered in '{args.catalog_path}') ===")
-        if not cases:
-            print("  No benchmark cases found. Add .yaml or .json case definitions to benchmarks/catalog/")
+    forge_flags = [
+        args.forge, args.industry_benchmark, args.list_cases,
+        args.benchmark_gate, args.benchmark_case, args.snapshot,
+        args.diff, args.mega_benchmark
+    ]
+    if any(forge_flags):
+        try:
+            from forge.cli import main as forge_main
+            forge_main()
             return
-        print(f"{'CASE ID':<10} {'NAME':<34} {'HAZARD CATEGORY':<22} {'TRAP?':<6} {'STATUS':<28}")
-        print("-" * 105)
-        for c in cases:
-            is_trap = "YES" if c.is_intentional_trap else "NO"
-            print(f"{c.case_id:<10} {c.name[:32]:<34} {c.hazard_category[:20]:<22} {is_trap:<6} {c.expected_status[:26]:<28}")
-            if c.citation:
-                print(f"  └─ 📚 Source: {c.citation.strip()}")
-        print("-" * 105)
-        return
-
-    if args.benchmark_gate or args.benchmark_case or args.snapshot or args.diff:
-        from src.predefined_benchmark_gate import PredefinedBenchmarkGate
-        from src.benchmark_catalog import get_predefined_benchmark_catalog
-        from src.catalog_loader import BenchmarkCatalogLoader
-        
-        # Auto-load declarative cases from catalog path if catalog is empty
-        catalog = get_predefined_benchmark_catalog()
-        if not catalog and os.path.exists(args.catalog_path):
-            BenchmarkCatalogLoader.load_from_directory(args.catalog_path, register=True)
-            catalog = get_predefined_benchmark_catalog()
-
-        gate = PredefinedBenchmarkGate()
-        
-        if args.benchmark_case:
-            target_case = next((c for c in catalog if c.case_id.upper() == args.benchmark_case.upper()), None)
-            if not target_case:
-                print(f"Error: Benchmark case '{args.benchmark_case}' not found in catalog ({len(catalog)} case(s) available).")
-                return
-            res = gate.run_case(target_case)
-            print(f"\n=== 🎯 PREDEFINED BENCHMARK CASE [{res['case_id']}] ===")
-            print(f"Name:          {res['name']}")
-            print(f"Domain:        {res['domain']}")
-            if target_case.citation:
-                print(f"Citation:      {target_case.citation.strip()}")
-            print(f"Verdict:       {res['verdict']} in {res['execution_time_ms']}ms")
-            print(f"Status:        {res['final_status']} (Expected: {res['expected_status']})")
-            print(f"Queries:       {res['queries_passed']}/{res['queries_executed']} passed")
-            print(f"Trace JSON:    {res['trace_files']['json_path']}")
-            print(f"Trace Report:  {res['trace_files']['md_path']}")
-            return
-
-        scorecard = gate.run_all_cases()
-        print(f"\n=== 🎯 PREDEFINED BENCHMARK GATE SCORECARD ===")
-        print(f"Status:            {scorecard['status']} ({scorecard['passed_cases']}/{scorecard['total_cases']} cases passed, {scorecard['pass_rate_pct']}%)")
-        print(f"Execution Time:    {scorecard['execution_time_ms']}ms")
-        if scorecard['status'] == "EMPTY_CATALOG":
-            print(f"Notice:            {scorecard['message']}")
-        else:
-            print(f"Trap Defenses:     {scorecard['trap_defenses_passed']}/{scorecard['trap_defenses_tested']} verified")
-            for c_res in scorecard['cases']:
-                badge = "PASS" if c_res['verdict'] == "PASS" else "FAIL"
-                print(f"  • [{badge}] {c_res['case_id']}: {c_res['name']} ({c_res['execution_time_ms']}ms)")
-
-        # Handle Phase 2 Golden Snapshot Capture
-        if args.snapshot:
-            from src.snapshot_engine import GoldenSnapshotEngine
-            snap = GoldenSnapshotEngine.capture_snapshot(scorecard["cases"], args.baseline_path)
-            print(f"\n📸 [SNAPSHOT CAPTURED] Golden baseline saved to: {args.baseline_path} ({len(snap['cases'])} cases)")
-
-        # Handle Phase 2 Regression Diffing
-        if args.diff:
-            from src.snapshot_engine import GoldenSnapshotEngine
-            baseline = GoldenSnapshotEngine.load_snapshot(args.baseline_path)
-            if not baseline:
-                print(f"\n⚠️  Cannot diff: No golden baseline found at '{args.baseline_path}'. Run with --snapshot first.")
-                if args.strict_drift:
-                    sys.exit(1)
-                return
-            diff_res = GoldenSnapshotEngine.compare_run_to_snapshot(
-                live_results=scorecard["cases"],
-                snapshot=baseline,
-                latency_threshold_pct=args.latency_threshold
-            )
-            print(GoldenSnapshotEngine.format_diff_terminal_report(diff_res))
-            if args.strict_drift and diff_res["has_drift"]:
-                print(f"\n❌ [STRICT DRIFT GATE FAILED] Schema drift or status deviations detected.")
-                sys.exit(1)
-        return
-
-    if args.mega_benchmark:
-        from src.mega_benchmark import MegaBenchmarkRunner
-        MegaBenchmarkRunner.run_mega_benchmark(
-            total_cases=args.cases,
-            verbose=True,
-            end_to_end=not args.fast_nlp
-        )
-        return
+        except ImportError:
+            print("Error: The Forge test harness is not installed in this distribution.")
+            print("To run benchmarks, ensure the 'forge/' directory is present.")
+            sys.exit(1)
         
     captain = CaptainOrchestrator()
     
@@ -292,7 +197,7 @@ def main():
         
         if args.duckdb:
             from src.sql_runner import DuckDBPipelineRunner
-            schema_spec = payload.get("schema_spec", {
+            schema_spec = result.get("schema_spec") or result.get("target_schema") or payload.get("schema_spec", {
                 "tables": [
                     {
                         "name": f"dim_{args.domain}_customer_core",

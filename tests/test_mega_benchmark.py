@@ -1,5 +1,5 @@
 import pytest
-from src.mega_benchmark import MegaBenchmarkRunner
+from forge.mega_benchmark import MegaBenchmarkRunner
 
 def test_mega_benchmark_end_to_end():
     report = MegaBenchmarkRunner.run_mega_benchmark(total_cases=5, verbose=False, end_to_end=True)

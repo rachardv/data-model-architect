@@ -1,5 +1,5 @@
 import pytest
-from src.semantic_benchmarks import SemanticBenchmarkRunner
+from forge.semantic_benchmarks import SemanticBenchmarkRunner
 
 def test_semantic_benchmark_suite_execution():
     results = SemanticBenchmarkRunner.run_all_benchmarks()

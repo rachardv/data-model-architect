@@ -3,7 +3,7 @@ import json
 import pytest
 import tempfile
 from decimal import Decimal
-from src.snapshot_engine import GoldenSnapshotEngine, _normalize_json_val
+from forge.snapshot_engine import GoldenSnapshotEngine, _normalize_json_val
 
 @pytest.fixture
 def sample_case_results():

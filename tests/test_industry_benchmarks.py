@@ -1,5 +1,5 @@
 import pytest
-from src.industry_benchmarks import IndustryBenchmarkRunner
+from forge.industry_benchmarks import IndustryBenchmarkRunner
 
 def test_industry_benchmark_suite_execution():
     results = IndustryBenchmarkRunner.run_all_benchmarks(domain="retail")
