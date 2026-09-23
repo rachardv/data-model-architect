@@ -175,6 +175,17 @@ The validation architecture operates across **3 distinct, non-redundant layers**
 * **Impact:** Production outages for downstream data consumers.
 * **Mitigation:** **Process B Column-Level Lineage Linter** + **Semantic Versioning Views** (`fct_orders_v1` as a backward-compatible view on top of `v2`).
 
+### RSK-10: OLAP Workload & Query Hop Alignment
+* **Owning Process:** **Process B & Process C** (AST Hop Sensor + Battery H Dispatch)
+* **Risk Category:** Category 2 (Structural Defect) & Category 3 (Computational Stress)
+* **Root Cause:** Schema topology misaligned with analytical workload latency requirements (e.g. multi-table join hops for interactive sub-second dashboards, or un-nested repeated records causing join fan-out).
+* **Impact:** Slow BI query latencies, excessive join compute, and Cartesian product explosions.
+* **Mitigation:**
+  - **Denormalized OBT Marts:** Assert Query Hop Depth $= 0$ (single flat table with 0 foreign keys for sub-second scans).
+  - **Nested Columnar Marts:** Assert Query Hop Depth $\le 1$ via `ARRAY<STRUCT>` unnesting without table joins.
+  - **Kimball Star Schemas:** Assert conformed dimension reuse without chasm traps.
+* **Physical Dispatch:** **Battery H (`OLAP_WORKLOAD_HOP_EFFICIENCY`)** verifies query hop depth and structural fit against workload latency intent.
+
 ---
 
 ## 5. The Extensible Plugin Registry (`@register_risk`)

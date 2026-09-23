@@ -79,7 +79,7 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 *Protects against:* **Category 1: Domain Coverage & Semantic Competence Risk** (e.g. paradigm blindness, grain misattribution, contradictory requirements).
 *Scope:* All **schema-specific** benchmarks (curated YAML cases in `benchmarks/catalog/curated/` + standardized suites like TPC-DS, TPC-DI, SSB, TPC-H, BIRD-SQL).
 
-1. **Anti-Bloat Check:** Confirm that the business domain, entity topology, or grain pattern is not already covered by `CASE-01` through `CASE-04` or `TRAP-01` through `TRAP-04`.
+1. **Anti-Bloat Check:** Confirm that the business domain, entity topology, or grain pattern is not already covered by `CASE-01` through `CASE-06` or `TRAP-01` through `TRAP-04`.
 2. **Create the YAML Case File:**
    - Add `benchmarks/catalog/curated/CASE_XX_<slug>.yaml` (for clean baselines) or `TRAP_XX_<slug>.yaml` (for intentional defensive halts).
    - Author standard schema with mandatory `citation`, `prompt`, `business_answers`, and `verification_queries`.

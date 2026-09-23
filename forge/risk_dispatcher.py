@@ -148,6 +148,16 @@ class RiskToTestDispatcher:
                     "details": f"{dbt_eval.get('rules_passed', 0)}/{dbt_eval.get('total_rules', 4)} dbt rules passed."
                 })
 
+            # Battery H: OLAP Workload & Hop Efficiency (RSK-10)
+            olap_hop_risk = next((r for r in risk_scorecard.get("results", []) if r.get("risk_id") == "RSK-10"), None)
+            if olap_hop_risk:
+                executed_batteries.append({
+                    "battery": "OLAP_WORKLOAD_HOP_EFFICIENCY",
+                    "triggered_by_risk": "RSK-10",
+                    "status": olap_hop_risk.get("status", "PASS"),
+                    "details": olap_hop_risk.get("details", "Query hop depth and structural fit verified against workload intent.")
+                })
+
             # 5. Check Custom Case Verification Queries (if provided)
             custom_queries_passed = True
             if custom_verification_results is not None:

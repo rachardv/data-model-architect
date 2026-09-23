@@ -242,6 +242,20 @@ class NounVerbSemanticParser:
             "ml score", "churn risk", "health score", "fico", "propensity",
             "dynamic score", "daily risk scoring", "updating nightly"
         ])
+
+        # 8. Denormalized One Big Table (OBT) Mart
+        is_denormalized_obt = any(k in text for k in [
+            "one big table", "obt", "single flat table", "denormalized mart",
+            "zero join latency", "sub-second dashboard scan", "flattened reporting",
+            "single denormalized"
+        ])
+
+        # 9. Nested & Repeated Columnar Mart (ARRAY<STRUCT>)
+        is_nested_columnar = any(k in text for k in [
+            "nested repeated", "repeated records", "line items inside order",
+            "struct and array", "nested columnar", "array of structs",
+            "repeated line items", "nested line items"
+        ])
         
         return {
             "is_live_app": is_live_app,
@@ -250,5 +264,7 @@ class NounVerbSemanticParser:
             "has_retroactive_backdating": has_retroactive_backdating,
             "has_multi_stage_milestones": has_multi_stage_milestones,
             "is_periodic_state_rollup": is_periodic_state_rollup,
-            "has_high_churn_ml_scores": has_high_churn_ml_scores
+            "has_high_churn_ml_scores": has_high_churn_ml_scores,
+            "is_denormalized_obt": is_denormalized_obt,
+            "is_nested_columnar": is_nested_columnar
         }

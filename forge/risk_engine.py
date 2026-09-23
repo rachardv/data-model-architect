@@ -437,6 +437,99 @@ class RSK09_BlastRadiusEvaluator(BaseRiskEvaluator):
             metrics={"monitored_entities": len(tables)}
         )
 
+@register_risk("RSK-10")
+class RSK10_OlapWorkloadAlignmentEvaluator(BaseRiskEvaluator):
+    risk_id = "RSK-10"
+    name = "OLAP Workload & Query Hop Alignment Evaluator"
+    tier = ValidationTier.TIER_2_AST_LINTER
+    default_severity = RiskSeverity.HIGH
+    default_blocking = True
+
+    def evaluate(self, context: ValidationContext) -> RiskResult:
+        target_schema = context.target_schema or {}
+        tables = target_schema.get("tables", [])
+        pattern = target_schema.get("pattern", "KIMBALL_STAR_SCD2")
+        params = context.inferred_usage_params or {}
+
+        # 1. Denormalized One Big Table (OBT) Mart
+        if pattern == "DENORMALIZED_OBT_MART" or params.get("is_denormalized_obt"):
+            if len(tables) > 1:
+                return RiskResult(
+                    risk_id=self.risk_id,
+                    name=self.name,
+                    tier=self.tier,
+                    status="FAIL",
+                    severity=self.default_severity,
+                    blocking=self.default_blocking,
+                    details=f"OBT alignment violation: Denormalized One Big Table mart must consist of exactly 1 flat serving table, but found {len(tables)} tables.",
+                    remediation_advice="Collapse dimensions into a single wide flat table with 0 foreign keys for sub-second scan performance."
+                )
+            obt_table = tables[0] if tables else {}
+            has_fk = any(bool(c.get("foreign_key")) for c in obt_table.get("columns", []))
+            if has_fk:
+                return RiskResult(
+                    risk_id=self.risk_id,
+                    name=self.name,
+                    tier=self.tier,
+                    status="FAIL",
+                    severity=self.default_severity,
+                    blocking=self.default_blocking,
+                    details=f"OBT alignment violation: Table '{obt_table.get('name')}' contains foreign keys. OBT mart must eliminate all join foreign keys.",
+                    remediation_advice="Remove foreign keys and store descriptive attributes directly inside the flat table."
+                )
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="PASS",
+                severity=self.default_severity,
+                blocking=False,
+                details="OBT Workload Alignment Confirmed: Single flat serving table with zero join latency (Query Hop Depth = 0).",
+                metrics={"query_hop_depth": 0, "model_archetype": "DENORMALIZED_OBT_MART", "table_count": 1}
+            )
+
+        # 2. Nested & Repeated Columnar Mart
+        if pattern == "NESTED_COLUMNAR_MART" or params.get("is_nested_columnar"):
+            has_nested = any(
+                any("STRUCT" in str(c.get("type", "")).upper() or "ARRAY" in str(c.get("type", "")).upper() for c in t.get("columns", []))
+                for t in tables
+            )
+            if not has_nested:
+                return RiskResult(
+                    risk_id=self.risk_id,
+                    name=self.name,
+                    tier=self.tier,
+                    status="FAIL",
+                    severity=self.default_severity,
+                    blocking=self.default_blocking,
+                    details="Nested columnar alignment violation: Workload requested nested repeated records, but schema contains zero STRUCT/ARRAY columns.",
+                    remediation_advice="Author child entities as nested STRUCT arrays within the parent mart table to eliminate fan-out traps."
+                )
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="PASS",
+                severity=self.default_severity,
+                blocking=False,
+                details="Nested Columnar Alignment Confirmed: ARRAY<STRUCT> columns eliminate join fan-out traps without Cartesian row multiplication.",
+                metrics={"query_hop_depth": 1, "model_archetype": "NESTED_COLUMNAR_MART", "nested_columnar": True}
+            )
+
+        # 3. Standard Kimball Star Schema
+        facts = [t for t in tables if t.get("type") in ["FACT", "FACTLESS_FACT", "ACCUMULATING_FACT", "PERIODIC_SNAPSHOT"]]
+        dims = [t for t in tables if t.get("type") == "DIMENSION"]
+        return RiskResult(
+            risk_id=self.risk_id,
+            name=self.name,
+            tier=self.tier,
+            status="PASS",
+            severity=self.default_severity,
+            blocking=False,
+            details=f"Kimball Star Workload Alignment Confirmed: Conformed dimensions ({len(dims)}) properly decoupled from facts ({len(facts)}).",
+            metrics={"query_hop_depth": 1, "model_archetype": pattern, "fact_count": len(facts), "dimension_count": len(dims)}
+        )
+
 
 # =====================================================================
 # TIER 3 EVALUATORS (In-Memory Physical Proofs in DuckDB)

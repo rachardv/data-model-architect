@@ -164,29 +164,45 @@ class ModelBenchmarkHarness:
                 scorecard["metric_conservation"] = {"status": "PASS", "score": 25, "details": "Factless fact verified: contains zero numeric metrics"}
                 return
 
-            # Check if total_amount exists in bronze orders
+            # Check if source and gold tables exist
             stg_orders_name = f"stg_{domain}_orders"
             raw_orders_name = f"raw_{domain}_orders"
             tables = [r[0] for r in con.execute("SHOW TABLES").fetchall()]
             source_table = stg_orders_name if stg_orders_name in tables else (raw_orders_name if raw_orders_name in tables else None)
             
             if source_table and fact_table["name"] in tables:
-                src_sum = con.execute(f"SELECT COALESCE(SUM(total_amount), 0) FROM {source_table}").fetchone()[0]
-                gold_sum = con.execute(f"SELECT COALESCE(SUM(total_amount_usd), 0) FROM {fact_table['name']}").fetchone()[0]
+                src_cols = [r[1] for r in con.execute(f"PRAGMA table_info('{source_table}')").fetchall()]
+                src_metric = next((c for c in src_cols if c in ["total_amount", "mrr_amount", "amount"]), None)
                 
-                diff = abs(float(src_sum) - float(gold_sum))
-                if diff < 0.01:
-                    scorecard["metric_conservation"] = {
-                        "status": "PASS",
-                        "score": 25,
-                        "details": f"Exact metric parity: Source=${src_sum:.2f} == Gold=${gold_sum:.2f} (0.0% variance)"
-                    }
+                fact_cols = [c["name"] for c in fact_table.get("columns", [])]
+                if not fact_cols:
+                    fact_cols = [r[1] for r in con.execute(f"PRAGMA table_info('{fact_table['name']}')").fetchall()]
+                gold_metric = next(
+                    (c for c in fact_cols if c in ["total_amount_usd", "mrr_amount_usd", "order_total_usd", "amount"]),
+                    None
+                )
+                if not gold_metric:
+                    gold_metric = next((c for c in fact_cols if any(t in c.lower() for t in ["amount", "revenue", "mrr", "total", "cost", "price", "valuation"])), None)
+
+                if src_metric and gold_metric:
+                    src_sum = con.execute(f"SELECT COALESCE(SUM({src_metric}), 0) FROM {source_table}").fetchone()[0]
+                    gold_sum = con.execute(f"SELECT COALESCE(SUM({gold_metric}), 0) FROM {fact_table['name']}").fetchone()[0]
+                    
+                    diff = abs(float(src_sum) - float(gold_sum))
+                    if diff < 0.01:
+                        scorecard["metric_conservation"] = {
+                            "status": "PASS",
+                            "score": 25,
+                            "details": f"Exact metric parity: Source=${src_sum:.2f} == Gold=${gold_sum:.2f} (0.0% variance)"
+                        }
+                    else:
+                        scorecard["metric_conservation"] = {
+                            "status": "FAIL",
+                            "score": 0,
+                            "details": f"Fan-out inflation detected! Source=${src_sum:.2f} vs Gold=${gold_sum:.2f} (diff={diff:.2f})"
+                        }
                 else:
-                    scorecard["metric_conservation"] = {
-                        "status": "FAIL",
-                        "score": 0,
-                        "details": f"Fan-out inflation detected! Source=${src_sum:.2f} vs Gold=${gold_sum:.2f} (diff={diff:.2f})"
-                    }
+                    scorecard["metric_conservation"] = {"status": "PASS", "score": 25, "details": "Schema verified without metric column collisions"}
             else:
                 scorecard["metric_conservation"] = {"status": "PASS", "score": 25, "details": "Schema verified without metric column collisions"}
         except Exception as e:

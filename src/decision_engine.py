@@ -18,7 +18,9 @@ class DataModelDecisionEngine:
         has_high_churn_ml_scores: bool,
         has_recursive_hierarchy: bool = False,
         is_multi_currency: bool = False,
-        is_factless_event: bool = False
+        is_factless_event: bool = False,
+        is_denormalized_obt: bool = False,
+        is_nested_columnar: bool = False
     ) -> Dict[str, Any]:
         # 0. Factless Fact Table (Event Attendance / Coverage Matrix)
         if is_factless_event:
@@ -27,6 +29,24 @@ class DataModelDecisionEngine:
                 "storage": "Kimball Star Schema",
                 "schema_type": "Factless Event / Coverage Matrix",
                 "temporal": "SCD1_OVERWRITE"
+            }
+
+        # 0b. Denormalized OBT Mart (Single Flat Table / Sub-Second Scan / Zero Join Latency)
+        if is_denormalized_obt:
+            return {
+                "pattern": "DENORMALIZED_OBT_MART",
+                "storage": "Columnar Flat Mart (OBT)",
+                "schema_type": "Denormalized One Big Table",
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+            }
+
+        # 0c. Nested & Repeated Columnar Mart (ARRAY<STRUCT> / Parquet Native)
+        if is_nested_columnar:
+            return {
+                "pattern": "NESTED_COLUMNAR_MART",
+                "storage": "Nested Columnar (Parquet/BigQuery/DuckDB)",
+                "schema_type": "Nested and Repeated Records (ARRAY<STRUCT>)",
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
             }
             
         # 1. High-Frequency Streaming Telemetry / Market Data

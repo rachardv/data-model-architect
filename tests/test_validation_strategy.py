@@ -79,11 +79,11 @@ def clean_test_context() -> ValidationContext:
 
 
 class TestPluggableRiskRegistry:
-    def test_registry_has_all_9_evaluators(self):
+    def test_registry_has_all_registered_evaluators(self):
         registered_risks = RiskRegistry.list_risks()
         expected = {
             "RSK-01", "RSK-02", "RSK-03", "RSK-04",
-            "RSK-05", "RSK-06", "RSK-07", "RSK-08", "RSK-09"
+            "RSK-05", "RSK-06", "RSK-07", "RSK-08", "RSK-09", "RSK-10"
         }
         for rsk in expected:
             assert rsk in registered_risks
@@ -202,6 +202,70 @@ class TestAllTiersEvaluation:
         rsk08_results = [r for r in scorecard["results"] if "RSK-08" in r["risk_id"]]
         assert len(rsk08_results) > 0
         assert any(r["status"] == "PASS" for r in rsk08_results)
+
+    def test_rsk10_obt_and_nested_hop_alignment(self):
+        # 1. Valid OBT passes with 0 query hops
+        obt_schema = {
+            "pattern": "DENORMALIZED_OBT_MART",
+            "tables": [
+                {
+                    "name": "obt_sales",
+                    "type": "FACT",
+                    "primary_key": "sale_id",
+                    "columns": [
+                        {"name": "sale_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "customer_name", "type": "VARCHAR"},
+                        {"name": "amount", "type": "DECIMAL(14,2)"}
+                    ]
+                }
+            ]
+        }
+        ctx_obt = ValidationContext(domain="obt_test", target_schema=obt_schema)
+        sc_obt = ValidationStrategyEngine.evaluate(ctx_obt)
+        rsk10_obt = next(r for r in sc_obt["results"] if r["risk_id"] == "RSK-10")
+        assert rsk10_obt["status"] == "PASS"
+        assert rsk10_obt["metrics"]["query_hop_depth"] == 0
+
+        # 2. Invalid OBT with FK fails
+        obt_bad = {
+            "pattern": "DENORMALIZED_OBT_MART",
+            "tables": [
+                {
+                    "name": "obt_sales",
+                    "type": "FACT",
+                    "primary_key": "sale_id",
+                    "columns": [
+                        {"name": "sale_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "cust_id", "foreign_key": "dim_cust.id"}
+                    ]
+                }
+            ]
+        }
+        ctx_obt_bad = ValidationContext(domain="obt_bad", target_schema=obt_bad)
+        sc_obt_bad = ValidationStrategyEngine.evaluate(ctx_obt_bad)
+        rsk10_bad = next(r for r in sc_obt_bad["results"] if r["risk_id"] == "RSK-10")
+        assert rsk10_bad["status"] == "FAIL"
+
+        # 3. Valid Nested Columnar Mart passes
+        nested_schema = {
+            "pattern": "NESTED_COLUMNAR_MART",
+            "tables": [
+                {
+                    "name": "mart_orders",
+                    "type": "FACT",
+                    "primary_key": "order_id",
+                    "columns": [
+                        {"name": "order_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "items", "type": "STRUCT(item_id VARCHAR, quantity INT)[]"}
+                    ]
+                }
+            ]
+        }
+        ctx_nested = ValidationContext(domain="nested_test", target_schema=nested_schema)
+        sc_nested = ValidationStrategyEngine.evaluate(ctx_nested)
+        rsk10_nested = next(r for r in sc_nested["results"] if r["risk_id"] == "RSK-10")
+        assert rsk10_nested["status"] == "PASS"
+        assert rsk10_nested["metrics"]["query_hop_depth"] == 1
 
 
 class TestChaosEngineStandalone:

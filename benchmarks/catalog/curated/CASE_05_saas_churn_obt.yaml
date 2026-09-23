@@ -1,0 +1,48 @@
+case_id: CASE-05
+domain: saas
+name: Enterprise SaaS Subscription Cohort OBT
+description: High-growth SaaS subscription renewal mart using a denormalized One Big Table (OBT) architecture for sub-second cohort and churn reporting without join latency.
+citation: >
+  Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition),
+  Chapter 14: "Accounting", pp. 385-412 ("Subscription Billing, Recurring Revenue, and Denormalized Reporting Marts").
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - saas
+  - obt
+  - denormalized
+
+prompt: >
+  We operate an enterprise B2B SaaS platform tracking recurring software subscriptions.
+  For real-time executive dashboarding and cohort churn analysis, our BI teams require
+  sub-second query response times without multi-table join latency.
+  We require a single denormalized One Big Table (OBT) mart capturing subscription renewals,
+  monthly recurring revenue (MRR), customer attributes, plan tiers, and churn indicators in one flat table.
+
+business_answers:
+  - "Core business processes: SaaS recurring subscription renewals and churn cohort reporting"
+  - "Grain: One row per subscription contract renewal with denormalized customer attributes"
+  - "Workload intent: Sub-second analytical reporting via a single flat denormalized OBT mart with zero join latency"
+  - "Dimensions & Attributes: Customer details, subscription plan tier, and account billing attributes denormalized"
+  - "Metrics: mrr_amount_usd, contract_duration_months"
+
+verification_queries:
+  - name: OBT Table Subscriptions Positive MRR Count
+    query: "SELECT COUNT(*) FROM obt_saas_subscriptions WHERE mrr_amount_usd >= 0;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected active subscription records in OBT mart
+
+  - name: Total Recurring Revenue MRR Sum
+    query: "SELECT SUM(mrr_amount_usd) FROM obt_saas_subscriptions;"
+    assertion_type: scalar_gt
+    expected_value: 0.0
+    failure_message: Expected positive total monthly recurring revenue in OBT mart
+
+  - name: Zero Join Flat Cohort Aggregation
+    query: "SELECT plan_tier, COUNT(*), SUM(mrr_amount_usd) FROM obt_saas_subscriptions GROUP BY plan_tier;"
+    assertion_type: row_count_gt
+    expected_value: 0
+    failure_message: Expected successful flat aggregation without multi-table joins

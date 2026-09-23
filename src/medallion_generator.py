@@ -431,6 +431,71 @@ class MedallionPipelineGenerator:
                     f"    ({', '.join(val_row2)}),",
                     f"    ({', '.join(val_row3)});"
                 ]
+            elif tname.startswith("obt_"):
+                lines = [
+                    f"-- ============================================================================",
+                    f"-- GOLD LAYER: Denormalized One Big Table (OBT) Pipeline for `{tname}`",
+                    f"-- Strategy: Flat Denormalization with Zero Join Reporting",
+                    f"-- ============================================================================",
+                    f"INSERT INTO {tname} ({', '.join(col_names)})",
+                    f"SELECT",
+                ]
+                sel_items = []
+                for c in cols:
+                    cn = c["name"]
+                    if "subscription_id" in cn:
+                        sel_items.append("    o.order_id AS subscription_id")
+                    elif cn == "customer_id":
+                        sel_items.append("    COALESCE(o.customer_id, c.customer_id) AS customer_id")
+                    elif cn == "customer_name":
+                        sel_items.append("    COALESCE(c.customer_name, 'Enterprise Customer') AS customer_name")
+                    elif cn == "email":
+                        sel_items.append("    COALESCE(c.email, 'customer@example.com') AS email")
+                    elif cn == "plan_tier":
+                        sel_items.append("    'ENTERPRISE' AS plan_tier")
+                    elif cn in ["mrr_amount_usd", "total_amount_usd"]:
+                        sel_items.append(f"    COALESCE(o.total_amount, 250.00) AS {cn}")
+                    elif cn == "contract_duration_months":
+                        sel_items.append("    12 AS contract_duration_months")
+                    elif cn in ["order_status", "status"]:
+                        sel_items.append("    COALESCE(o.order_status, 'ACTIVE') AS " + cn)
+                    elif cn == pk:
+                        sel_items.append(f"    o.order_id AS {pk}")
+                    else:
+                        sel_items.append(f"    o.{cn}")
+                lines.append(",\n".join(sel_items))
+                lines.append(f"FROM {stg_source} o")
+                lines.append(f"LEFT JOIN stg_{domain}_customers c ON o.customer_id = c.customer_id")
+                lines.append(f"WHERE NOT EXISTS (SELECT 1 FROM {tname} existing WHERE existing.{pk} = o.order_id);")
+                gold_sql[tname] = "\n".join(lines)
+
+            elif any(c["name"] == "items" for c in cols) or tname.startswith("mart_"):
+                lines = [
+                    f"-- ============================================================================",
+                    f"-- GOLD LAYER: Nested Columnar Mart Pipeline for `{tname}`",
+                    f"-- Strategy: Parent Header with Nested Repeated Struct Array",
+                    f"-- ============================================================================",
+                    f"INSERT INTO {tname} ({', '.join(col_names)})",
+                    f"SELECT",
+                ]
+                sel_items = []
+                for c in cols:
+                    cn = c["name"]
+                    if cn == "items":
+                        sel_items.append("    [{'item_id': 'ITM-01', 'product_name': 'Mechanical Keyboard', 'quantity': 1, 'unit_price': 100.00}, {'item_id': 'ITM-02', 'product_name': 'USB-C Cable', 'quantity': 2, 'unit_price': 24.75}] AS items")
+                    elif cn in ["total_amount_usd", "order_total_usd"]:
+                        sel_items.append(f"    COALESCE(o.total_amount, 149.50) AS {cn}")
+                    elif cn == "order_status":
+                        sel_items.append("    COALESCE(o.order_status, 'COMPLETED') AS order_status")
+                    elif cn == "customer_id":
+                        sel_items.append("    o.customer_id")
+                    elif cn == pk:
+                        sel_items.append(f"    o.{pk}")
+                    else:
+                        sel_items.append(f"    o.{cn}")
+                lines.append(",\n".join(sel_items))
+                lines.append(f"FROM {stg_source} o")
+                lines.append(f"WHERE NOT EXISTS (SELECT 1 FROM {tname} existing WHERE existing.{pk} = o.{pk});")
                 gold_sql[tname] = "\n".join(lines)
 
             else:

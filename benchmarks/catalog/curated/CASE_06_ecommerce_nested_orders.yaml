@@ -1,0 +1,54 @@
+case_id: CASE-06
+domain: ecommerce
+name: E-Commerce Orders with Nested Repeated Line Items
+description: High-scale global e-commerce marketplace storing orders and repeated line items together in a nested columnar mart using STRUCT and ARRAY fields to eliminate join fan-out traps.
+citation: >
+  Google Cloud BigQuery Architecture Guide (2024),
+  "Data Modeling: Using Nested and Repeated Fields to Denormalize Parent-Child Relationships".
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - ecommerce
+  - nested
+  - columnar
+
+prompt: >
+  We operate a high-scale global e-commerce marketplace.
+  Each customer order contains multiple order line items (nested repeated records).
+  To eliminate join fan-out traps and optimize columnar scanning in modern data warehouses,
+  orders and line items must be stored together in a nested columnar mart using STRUCT and ARRAY fields.
+  Customer address and profile changes are tracked historically using SCD Type 2.
+
+business_answers:
+  - "Core business processes: e-commerce order checkout with nested line items"
+  - "Grain: One row per order with repeated line item records stored as an array of structs"
+  - "Workload intent: High-performance analytical reporting using nested columnar arrays to eliminate chasm fan-out"
+  - "Dimensions: Customers with SCD2 tracking, and nested line items (STRUCT of item_id, product_name, quantity, unit_price)"
+  - "Metrics: total_amount_usd, estimated_delivery_days"
+
+verification_queries:
+  - name: Active SCD2 Customers Dimension Count
+    query: "SELECT COUNT(*) FROM dim_ecommerce_customer_core WHERE is_current = true;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected active SCD2 customer records in dimension
+
+  - name: Nested Mart Orders Count
+    query: "SELECT COUNT(*) FROM mart_ecommerce_orders WHERE total_amount_usd >= 0;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected valid positive order records in nested columnar mart
+
+  - name: Unnested Line Items Projection Count
+    query: "SELECT order_id, unnest(items).product_name, unnest(items).quantity FROM mart_ecommerce_orders;"
+    assertion_type: row_count_gt
+    expected_value: 0
+    failure_message: Expected successful projection of unnested item records
+
+  - name: Total Revenue from Unnested Line Items
+    query: "WITH unnested_items AS (SELECT unnest(items) AS itm FROM mart_ecommerce_orders) SELECT SUM(itm.quantity * itm.unit_price) FROM unnested_items;"
+    assertion_type: scalar_gt
+    expected_value: 0.0
+    failure_message: Expected positive revenue calculated across unnested line items

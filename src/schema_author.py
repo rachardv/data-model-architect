@@ -95,6 +95,83 @@ class DynamicSchemaAuthor:
             if not event.endswith("s"):
                 event += "s"
 
+        # 3b. Check for Denormalized One Big Table (OBT) Mart
+        if pattern == "DENORMALIZED_OBT_MART" or inferred_params.get("is_denormalized_obt"):
+            obt_event = "subscriptions" if ("saas" in clean_domain or "sub" in clean_domain or "sub" in event) else event
+            obt_table_name = f"obt_{clean_domain}_{obt_event}"
+            sing_event = obt_event[:-1] if obt_event.endswith("s") else obt_event
+            pk_col = f"{sing_event}_id"
+            metric_col = "mrr_amount_usd" if ("saas" in clean_domain or "sub" in clean_domain) else "total_amount_usd"
+
+            obt_columns = [
+                {"name": pk_col, "type": "BIGINT", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": f"{actor}_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": f"{actor}_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                {"name": "email", "type": "VARCHAR(255)", "nullable": True, "is_inferred": False},
+                {"name": "plan_tier", "type": "VARCHAR(64)", "nullable": False, "default": "'PRO'"} if "saas" in clean_domain else {"name": "product_category", "type": "VARCHAR(64)", "nullable": True},
+                {"name": metric_col, "type": "DECIMAL(14,2)", "nullable": False, "is_inferred": False},
+                {"name": "contract_duration_months" if "saas" in clean_domain else "order_status", "type": "INT" if "saas" in clean_domain else "VARCHAR(32)", "nullable": False}
+            ]
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "SCD1",
+                "pattern": "DENORMALIZED_OBT_MART",
+                "tables": [
+                    {
+                        "name": obt_table_name,
+                        "type": "FACT",
+                        "description": "Denormalized One Big Table (OBT) analytical mart with zero join latency",
+                        "primary_key": pk_col,
+                        "columns": obt_columns
+                    }
+                ]
+            }
+
+        # 3c. Check for Nested Columnar Mart (ARRAY<STRUCT>)
+        if pattern == "NESTED_COLUMNAR_MART" or inferred_params.get("is_nested_columnar"):
+            mart_table_name = f"mart_{clean_domain}_{event}"
+            sing_event = event[:-1] if event.endswith("s") else event
+            pk_col = f"{sing_event}_id"
+            actor_sk = f"{actor}_sk"
+            dim_table_name = f"dim_{clean_domain}_{actor}_core" if actor == "customer" else f"dim_{clean_domain}_{actor}"
+
+            mart_columns = [
+                {"name": pk_col, "type": "BIGINT", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": f"{actor}_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "total_amount_usd", "type": "DECIMAL(14,2)", "nullable": False, "is_inferred": False},
+                {"name": "order_status", "type": "VARCHAR(32)", "nullable": False, "default": "'COMPLETED'"},
+                {"name": "items", "type": "STRUCT(item_id VARCHAR, product_name VARCHAR, quantity INT, unit_price DECIMAL(10,2))[]", "nullable": False}
+            ]
+            dim_columns = [
+                {"name": actor_sk, "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": f"{actor}_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": f"{actor}_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
+                {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"},
+                {"name": "is_current", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "TRUE"}
+            ]
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "SCD2",
+                "pattern": "NESTED_COLUMNAR_MART",
+                "tables": [
+                    {
+                        "name": dim_table_name,
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "primary_key": actor_sk,
+                        "columns": dim_columns
+                    },
+                    {
+                        "name": mart_table_name,
+                        "type": "FACT",
+                        "description": "Nested and repeated columnar mart eliminating join fan-out traps",
+                        "primary_key": pk_col,
+                        "columns": mart_columns
+                    }
+                ]
+            }
+
         # Table naming conventions
         # Preserve standard dim_{domain}_customer_core and fact_{domain}_orders for ecommerce / retail
         dim_table_name = f"dim_{clean_domain}_{actor}_core" if actor == "customer" else f"dim_{clean_domain}_{actor}"
