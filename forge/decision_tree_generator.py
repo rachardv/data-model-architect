@@ -29,6 +29,50 @@ PARSER_PATH = REPO_ROOT / "src" / "noun_verb_parser.py"
 PATTERN_METADATA: List[Dict[str, Any]] = [
     {
         "priority": 1,
+        "flag": "is_data_vault",
+        "pattern": "DATA_VAULT_2_RAW",
+        "storage": "Data Vault 2.0 Raw Vault",
+        "schema_type": "Hubs, Links, and Satellites with SHA-256 Hash Keys",
+        "temporal": "APPEND_ONLY_INSERT_LOAD_DTS",
+        "citation": "Dan Linstedt & Michael Olschimke (2015), 'Building a Scalable Data Warehouse with Data Vault 2.0', Morgan Kaufmann, Ch 3 & 4",
+        "description": "Enterprise audit-proof ingestion layer separating core business keys (Hubs), relationships (Links), and descriptive context (Satellites) via deterministic SHA-256 hash keys.",
+        "cases": ["CASE-16"]
+    },
+    {
+        "priority": 2,
+        "flag": "is_graph_topology",
+        "pattern": "GRAPH_PROPERTY_TOPOLOGY",
+        "storage": "Graph Columnar Adjacency (Nodes & Edges)",
+        "schema_type": "Property Graph Topology (Vertices and Directed Edges)",
+        "temporal": "DIRECTED_TEMPORAL_EDGE",
+        "citation": "Ian Robinson, Jim Webber & Emil Eifrem (2015), 'Graph Databases: New Opportunities for Connected Data' (2nd Ed), O'Reilly Media, Ch 1, 3 & 6",
+        "description": "Entity-relationship network topology with discrete vertex tables and directed weighted edge tables enabling recursive CTE traversal, cycle detection, and topological graph analytics.",
+        "cases": ["CASE-17"]
+    },
+    {
+        "priority": 3,
+        "flag": "is_realtime_streaming_olap",
+        "pattern": "REALTIME_STREAMING_OLAP",
+        "storage": "Real-Time Columnar Streaming Engine (ClickHouse/Pinot)",
+        "schema_type": "Denormalized Streaming Event Table with Approximate HLL Sketches",
+        "temporal": "STREAMING_INGESTION_TIME",
+        "citation": "Alexey Milovidov et al. (2024), 'ClickHouse: Ultra-Fast Analytical DBMS Architecture' / Apache Pinot Real-Time Columnar Engine (VLDB 2021)",
+        "description": "High-throughput append streaming mart with sub-second ingestion-to-query latency, pre-computed approximate sketches (HyperLogLog), and zero-join flat layout.",
+        "cases": ["CASE-18"]
+    },
+    {
+        "priority": 4,
+        "flag": "is_vector_feature_store",
+        "pattern": "VECTOR_FEATURE_STORE",
+        "storage": "Dual-Speed Feature Store (Online KV + Offline Columnar)",
+        "schema_type": "Time-Versioned Entity Features with Dense Vector Embeddings",
+        "temporal": "POINT_IN_TIME_ASOF_JOIN",
+        "citation": "Chip Huyen (2022), 'Designing Machine Learning Systems', O'Reilly Media, Ch 3 ('Feature Stores & Data Leakage')",
+        "description": "Time-versioned ML feature store with point-in-time ASOF JOIN alignment to prevent data leakage between training and inference, alongside dense vector embeddings.",
+        "cases": ["CASE-19"]
+    },
+    {
+        "priority": 5,
         "flag": "is_factless_event",
         "pattern": "FACTLESS_FACT_COVERAGE",
         "storage": "Kimball Star Schema",
@@ -39,7 +83,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-10 (partially)"]
     },
     {
-        "priority": 2,
+        "priority": 6,
         "flag": "has_semi_additive_balances",
         "pattern": "PERIODIC_SNAPSHOT_BALANCES",
         "storage": "Kimball Star Schema (Periodic Snapshot + Rollups)",
@@ -50,7 +94,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-04", "CASE-10"]
     },
     {
-        "priority": 3,
+        "priority": 7,
         "flag": "is_denormalized_obt",
         "pattern": "DENORMALIZED_OBT_MART",
         "storage": "Columnar Flat Mart (OBT)",
@@ -61,7 +105,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-05"]
     },
     {
-        "priority": 4,
+        "priority": 8,
         "flag": "is_nested_columnar",
         "pattern": "NESTED_COLUMNAR_MART",
         "storage": "Nested Columnar (Parquet/BigQuery/DuckDB)",
@@ -72,7 +116,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-06"]
     },
     {
-        "priority": 5,
+        "priority": 9,
         "flag": "has_multi_fact_bus_matrix",
         "pattern": "MULTI_FACT_BUS_MATRIX",
         "storage": "Kimball Enterprise Bus Matrix",
@@ -83,7 +127,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-07", "TRAP-02"]
     },
     {
-        "priority": 6,
+        "priority": 10,
         "flag": "has_scd6_hybrid",
         "pattern": "KIMBALL_STAR_SCD6",
         "storage": "Kimball Star Schema (Type 6 Hybrid)",
@@ -94,7 +138,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-09"]
     },
     {
-        "priority": 7,
+        "priority": 11,
         "flag": "has_multivalued_bridge",
         "pattern": "MULTIVALUED_BRIDGE_STAR",
         "storage": "Kimball Multi-Valued Bridge Schema",
@@ -105,7 +149,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-02", "CASE-03", "CASE-13"]
     },
     {
-        "priority": 8,
+        "priority": 12,
         "flag": "has_junk_dimension",
         "pattern": "JUNK_DIMENSION_CONSOLIDATION",
         "storage": "Kimball Star Schema (Junk Dimension)",
@@ -116,7 +160,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-14"]
     },
     {
-        "priority": 9,
+        "priority": 13,
         "flag": "has_outrigger_dimension",
         "pattern": "KIMBALL_OUTRIGGER_STAR",
         "storage": "Kimball Star Schema (Outrigger Dimension)",
@@ -127,7 +171,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-15"]
     },
     {
-        "priority": 10,
+        "priority": 14,
         "flag": "is_high_frequency_stream",
         "pattern": "TIMESCALEDB_HYPERTABLE",
         "storage": "Time-Series Hypertables",
@@ -138,7 +182,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["Telematics / Streaming Engine"]
     },
     {
-        "priority": 11,
+        "priority": 15,
         "flag": "has_recursive_hierarchy",
         "pattern": "RECURSIVE_HIERARCHY_CLOSURE",
         "storage": "Kimball Closure Bridge Table",
@@ -149,7 +193,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["Org Charts / BOM Models"]
     },
     {
-        "priority": 12,
+        "priority": 16,
         "flag": "is_live_app and not needs_history",
         "pattern": "OLTP_3NF_RELATIONAL",
         "storage": "Standard ANSI Relational",
@@ -160,7 +204,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["TRAP-01 (Contradiction Gate)"]
     },
     {
-        "priority": 13,
+        "priority": 17,
         "flag": "has_multi_stage_milestones",
         "pattern": "ACCUMULATING_SNAPSHOT_FACT",
         "storage": "Kimball Star Schema",
@@ -171,7 +215,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-11"]
     },
     {
-        "priority": 14,
+        "priority": 18,
         "flag": "is_periodic_state_rollup and has_high_churn_ml_scores",
         "pattern": "PERIODIC_SNAPSHOT_MINIDIM",
         "storage": "Kimball Star Schema",
@@ -182,7 +226,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["ML Scoring / Risk Marts"]
     },
     {
-        "priority": 15,
+        "priority": 19,
         "flag": "is_periodic_state_rollup",
         "pattern": "PERIODIC_SNAPSHOT_FACT",
         "storage": "Kimball Star Schema",
@@ -193,7 +237,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-04"]
     },
     {
-        "priority": 16,
+        "priority": 20,
         "flag": "needs_history and has_retroactive_backdating",
         "pattern": "BITEMPORAL_SCD2_ENGINE",
         "storage": "Bi-Temporal Relational",
@@ -204,7 +248,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-09", "TRAP-04"]
     },
     {
-        "priority": 17,
+        "priority": 21,
         "flag": "needs_history",
         "pattern": "KIMBALL_STAR_SCD2",
         "storage": "Kimball Star Schema",
@@ -215,7 +259,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-01", "CASE-08", "CASE-12"]
     },
     {
-        "priority": 18,
+        "priority": 22,
         "flag": "Default / Fallback",
         "pattern": "KIMBALL_STAR_SCD1",
         "storage": "Kimball Star Schema",
@@ -256,6 +300,15 @@ MILESTONE_HISTORY: List[Dict[str, str]] = [
         "summary": "Reached complete textbook coverage (18 patterns): added Multi-Valued Dimension Bridge Tables (M:N weighting factors), Consolidated Junk Dimensions for low-cardinality flags, and Secondary Dimension Outriggers. Integrated zero-cost AST decision tree generator and pre-commit sync gate.",
         "citations": "Kimball Ch 2 (pp. 58-60), Ch 7 (pp. 252-254), Ch 10 (pp. 267-294)",
         "commit": "`7c7c5a8`"
+    },
+    {
+        "version": "v4.0.0",
+        "date": "2026-09-23",
+        "patterns_count": "22",
+        "title": "Universal Multi-Paradigm Analytical Coverage",
+        "summary": "Expanded engine to all 22 Universal Architecture Patterns: added Data Vault 2.0 raw ingestion (Hubs, Links, Satellites with SHA-256 keys), Graph Property Topology (discrete vertices/edges with recursive CTE AML cycle detection), Real-Time Columnar Streaming (ClickHouse/Pinot wide event streams with HyperLogLog sketches), and AI Dual-Speed Feature Stores (ASOF JOIN point-in-time zero leakage & dense vector embeddings). Promoted 23-case golden baseline.",
+        "citations": "Linstedt & Olschimke (2015); Robinson, Webber & Eifrem (2015); Milovidov et al. (2024); Huyen (2022)",
+        "commit": "`staging`"
     }
 ]
 
@@ -280,6 +333,26 @@ class DecisionTreeGenerator:
         """Introspect NounVerbSemanticParser and extract semantic keyword trigger vectors."""
         # Canonical mappings maintained in sync with NounVerbSemanticParser.infer_parameters_from_business_narrative
         return [
+            ("is_data_vault", "Data Vault 2.0 Ingestion", [
+                "data vault", "data vault 2.0", "hubs and links", "hub, link, satellite",
+                "satellites", "hash key", "sha256", "sha-256", "enterprise raw vault",
+                "point in time table", "pit table"
+            ]),
+            ("is_graph_topology", "Graph Property Topology", [
+                "graph database", "property graph", "vertices and edges", "node and edge",
+                "mule ring", "cycle detection", "recursive traversal", "network topology",
+                "anti-money laundering", "aml fraud ring", "out-degree"
+            ]),
+            ("is_realtime_streaming_olap", "Real-Time Streaming Columnar", [
+                "clickhouse", "apache pinot", "real-time streaming olap", "streaming ingestion",
+                "sub-second latency", "hyperloglog", "approximate count distinct",
+                "ad telemetry", "clickstream mart", "impressions and clicks"
+            ]),
+            ("is_vector_feature_store", "AI Vector & Dual-Speed Feature Store", [
+                "feature store", "feast", "vector embedding", "dense vector",
+                "asof join", "point-in-time join", "data leakage", "training and inference",
+                "real-time feature", "dual-speed feature"
+            ]),
             ("has_multivalued_bridge", "Multi-Valued Bridge Table", [
                 "bridge table", "multi-valued", "multivalued", "weighting factor",
                 "allocation factor", "group bridge", "co-owners", "co-ownership",
@@ -358,7 +431,19 @@ class DecisionTreeGenerator:
         return """```mermaid
 flowchart TD
     Start(["Business Narrative / Intake Prompt"]) --> Parse["NounVerbSemanticParser<br/>(Extracts Semantic Feature Flags)"]
-    Parse --> Q0{"is_factless_event?"}
+    Parse --> Q_dv{"is_data_vault?"}
+
+    Q_dv -- "Yes" --> P_dv["<b>DATA_VAULT_2_RAW</b><br/>Data Vault 2.0 Raw Vault<br/>Hubs, Links & Satellites (SHA-256)<br/><i>(CASE-16)</i>"]
+    Q_dv -- "No" --> Q_graph{"is_graph_topology?"}
+
+    Q_graph -- "Yes" --> P_graph["<b>GRAPH_PROPERTY_TOPOLOGY</b><br/>Graph Adjacency (Nodes & Edges)<br/>Recursive CTE Cycle Detection<br/><i>(CASE-17)</i>"]
+    Q_graph -- "No" --> Q_stream{"is_realtime_streaming_olap?"}
+
+    Q_stream -- "Yes" --> P_stream["<b>REALTIME_STREAMING_OLAP</b><br/>Real-Time Columnar Engine<br/>Sub-Second Ingestion & HLL Sketches<br/><i>(CASE-18)</i>"]
+    Q_stream -- "No" --> Q_vec{"is_vector_feature_store?"}
+
+    Q_vec -- "Yes" --> P_vec["<b>VECTOR_FEATURE_STORE</b><br/>Dual-Speed Feature Store<br/>Dense Vectors & ASOF PIT Joins<br/><i>(CASE-19)</i>"]
+    Q_vec -- "No" --> Q0{"is_factless_event?"}
 
     Q0 -- "Yes" --> P0["<b>FACTLESS_FACT_COVERAGE</b><br/>Kimball Star Schema<br/>Event Attendance / Coverage Matrix<br/><i>(CASE-10)</i>"]
     Q0 -- "No" --> Q0a{"has_semi_additive_balances?"}
@@ -439,7 +524,7 @@ flowchart TD
             "",
             "---",
             "",
-            "## 2. Priority Decision Cascade Matrix (18 Patterns)",
+            "## 2. Priority Decision Cascade Matrix (22 Patterns)",
             "",
             "The Data Model Decision Engine evaluates business requirements through a strict priority cascade. Higher-priority specialized patterns short-circuit standard fallbacks:",
             "",
@@ -483,6 +568,10 @@ flowchart TD
             "",
             "| Textbook Pattern Category | Canonical Reference | Certified Benchmark Case | Verified Invariants |",
             "| :--- | :--- | :--- | :--- |",
+            "| **Data Vault 2.0 Raw Ingestion** | Linstedt & Olschimke (2015) | [`CASE-16`](../benchmarks/catalog/curated/olap/integration/CASE_16_datavault_crm_billing.yaml) | Hubs, Links, and multi-source Satellites with SHA-256 hash keys and PIT queries. |",
+            "| **Graph Property Topology** | Robinson, Webber & Eifrem (2015) | [`CASE-17`](../benchmarks/catalog/curated/olap/fraud/CASE_17_graph_aml_mule_ring.yaml) | Discrete vertex/edge tables, recursive CTE cycle detection, mule ring volume. |",
+            "| **Real-Time Columnar Streaming** | Milovidov et al. (2024) / Apache Pinot | [`CASE-18`](../benchmarks/catalog/curated/olap/telemetry/CASE_18_realtime_streaming_clickhouse.yaml) | Flat wide streaming event table, HyperLogLog approximate distinct counts, sub-second latency. |",
+            "| **AI Vector & Feature Store** | Chip Huyen (2022) | [`CASE-19`](../benchmarks/catalog/curated/olap/ml_feature_store/CASE_19_vector_feature_store_ml.yaml) | Dual-speed entity features, point-in-time ASOF JOIN zero-leakage proof, dense vector embeddings. |",
             "| **Consolidated Junk Dimension** | Kimball Ch 2, pp. 58-60 | [`CASE-14`](../benchmarks/catalog/curated/olap/retail/CASE_14_retail_junk_dimension_consolidation.yaml) | 12 low-cardinality status flags consolidated into 1 surrogate key, zero Cartesian explosion. |",
             "| **Dimension Outrigger** | Kimball Ch 7, pp. 252-254 | [`CASE-15`](../benchmarks/catalog/curated/olap/insurance/CASE_15_insurance_outrigger_dimension.yaml) | Legitimate secondary county demographic dimension at differing grain, snowflake anti-pattern avoided. |",
             "| **Multi-Valued Dimension Bridge** | Kimball Ch 10, pp. 267-294 | [`CASE-02`](../benchmarks/catalog/curated/olap/healthcare/CASE_02_healthcare_admission_bridge.yaml), [`CASE-03`](../benchmarks/catalog/curated/olap/banking/CASE_03_banking_joint_account_coownership.yaml), [`CASE-13`](../benchmarks/catalog/curated/olap/healthcare/CASE_13_clinical_episode_drg_bridge.yaml) | M:N comorbidities and co-ownership with weighting allocation factors ($\\\\sum = 1.0$). |",

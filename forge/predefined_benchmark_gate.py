@@ -279,7 +279,8 @@ class PredefinedBenchmarkGate:
                     tf.close()
                     clean_path = tf.name.replace("\\", "/")
                     if tbl_name in existing_tables:
-                        conn.execute(f"INSERT OR REPLACE INTO {tbl_name} BY NAME SELECT * FROM read_json_auto('{clean_path}')")
+                        conn.execute(f"DELETE FROM {tbl_name}")
+                        conn.execute(f"INSERT INTO {tbl_name} BY NAME SELECT * FROM read_json_auto('{clean_path}')")
                     else:
                         conn.execute(f"CREATE TABLE {tbl_name} AS SELECT * FROM read_json_auto('{clean_path}')")
                 except Exception as e:

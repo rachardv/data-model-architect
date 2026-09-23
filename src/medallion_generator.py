@@ -542,6 +542,54 @@ class MedallionPipelineGenerator:
                 lines.append(f"WHERE NOT EXISTS (SELECT 1 FROM {tname} existing WHERE existing.{pk} = o.{pk});")
                 gold_sql[tname] = "\n".join(lines)
 
+            elif ttype in ["HUB", "LINK", "SATELLITE", "VERTEX", "EDGE", "STREAMING_FACT", "FEATURE_STORE", "OBSERVATION_EVENT"] or tname.startswith(("hub_", "link_", "sat_", "graph_", "stream_", "entity_", "event_")):
+                val_row1 = []
+                val_row2 = []
+                for c in cols:
+                    cn = c["name"].lower()
+                    ct = c.get("type", "").upper()
+                    if "hk" in cn or "hash" in cn:
+                        val_row1.append(f"'sha256_mock_{cn}_001'")
+                        val_row2.append(f"'sha256_mock_{cn}_002'")
+                    elif "dts" in cn or "timestamp" in cn:
+                        val_row1.append("TIMESTAMPTZ '2026-01-01 00:00:00 UTC'")
+                        val_row2.append("TIMESTAMPTZ '2026-01-02 00:00:00 UTC'")
+                    elif "date" in cn:
+                        val_row1.append("20260101")
+                        val_row2.append("20260102")
+                    elif "rec_src" in cn or "source" in cn:
+                        val_row1.append("'SRC_PRIMARY_SYSTEM'")
+                        val_row2.append("'SRC_SECONDARY_SYSTEM'")
+                    elif "embedding" in cn or "array" in ct or "[" in ct:
+                        val_row1.append("[1.0, 0.0, 0.0, 0.0]::FLOAT[4]" if "[" in ct else "[1.0, 0.0, 0.0, 0.0]")
+                        val_row2.append("[0.0, 1.0, 0.0, 0.0]::FLOAT[4]" if "[" in ct else "[0.0, 1.0, 0.0, 0.0]")
+                    elif any(t in ct for t in ["DECIMAL", "NUMERIC", "FLOAT", "DOUBLE", "REAL"]):
+                        is_ratio = any(k in cn for k in ["score", "pct", "rate", "ratio", "factor", "weight"]) or "(5,4)" in ct or "(5, 4)" in ct
+                        val_row1.append("0.5000" if is_ratio else "100.00")
+                        val_row2.append("0.7500" if is_ratio else "200.00")
+                    elif "INT" in ct or "BIGINT" in ct:
+                        val_row1.append("1")
+                        val_row2.append("2")
+                    elif "BOOL" in ct:
+                        val_row1.append("TRUE")
+                        val_row2.append("FALSE")
+                    elif cn.endswith("_id") or cn == pk:
+                        val_row1.append(f"'{cn.upper()}-001'")
+                        val_row2.append(f"'{cn.upper()}-002'")
+                    else:
+                        val_row1.append(f"'SAMPLE_{cn.upper()}_1'")
+                        val_row2.append(f"'SAMPLE_{cn.upper()}_2'")
+                lines = [
+                    f"-- ============================================================================",
+                    f"-- GOLD LAYER: Specialized Architecture Seed Load for `{tname}` ({ttype})",
+                    f"-- ============================================================================",
+                    f"INSERT INTO {tname} ({', '.join(col_names)})",
+                    f"VALUES",
+                    f"    ({', '.join(val_row1)}),",
+                    f"    ({', '.join(val_row2)});"
+                ]
+                gold_sql[tname] = "\n".join(lines)
+
             else:
                 dim_customer_exists = any(tbl.get("name") == f"dim_{domain}_customer_core" for tbl in tables)
                 lines = [

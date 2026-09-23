@@ -1,0 +1,125 @@
+{
+  "case_id": "CASE-19",
+  "domain": "ml_feature_store",
+  "name": "AI Vector Embeddings and Dual-Speed Feature Store for Real-Time Inference and Training",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "An AI-powered e-commerce fraud detection and recommendation platform deploys deep learning models requiring dual-speed feature infrastructure. The machine learning system requires an online key-value store for sub-millisecond real-time scoring, paired with an offline columnar feature store (entity_customer_features) that captures time-versioned customer behavioural features (risk velocity, rolling spend) and dense vector embeddings (affinity_embedding). When generating model training datasets from historical checkout events (event_checkout_observations), data engineering pipelines must execute point-in-time \"as-of\" joins (ASOF JOIN) to join each observation strictly to the feature values that existed at or before the observation timestamp (T_feature <= T_observation). Standard relational inner or left joins introduce catastrophic data leakage (lookahead bias) by inadvertently joining future updated features to historical training events. Per Chip Huyen (2022), we require a dual-speed feature store architecture supporting ASOF joins and native array vector cosine similarity matching.\n",
+  "citation": "Chip Huyen (2022), \"Designing Machine Learning Systems\", O'Reilly Media, Chapter 3 (\"Data Engineering Fundamentals, Feature Stores, and Data Leakage\").\n",
+  "timestamp_utc": "2026-09-23T21:19:55.331345+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "VECTOR_FEATURE_STORE",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": true,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": false,
+      "is_factless_event": false,
+      "has_multivalued_bridge": false,
+      "has_junk_dimension": false,
+      "has_outrigger_dimension": false,
+      "is_data_vault": false,
+      "is_graph_topology": false,
+      "is_realtime_streaming_olap": false,
+      "is_vector_feature_store": true
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "entity_ml_feature_store_customer_features",
+      "type": "FEATURE_STORE",
+      "primary_key": "customer_id, feature_timestamp",
+      "column_count": 5,
+      "columns": [
+        "customer_id",
+        "feature_timestamp",
+        "risk_velocity_30m",
+        "avg_order_value_30d",
+        "affinity_embedding"
+      ]
+    },
+    {
+      "table_name": "event_ml_feature_store_checkout_observations",
+      "type": "OBSERVATION_EVENT",
+      "primary_key": "observation_id",
+      "column_count": 5,
+      "columns": [
+        "observation_id",
+        "customer_id",
+        "observation_timestamp",
+        "actual_fraud_label",
+        "current_query_embedding"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Point-in-Time ASOF Join Zero Feature Leakage Proof",
+      "query": "SELECT CAST(ROUND(f.risk_velocity_30m, 2) AS DOUBLE) FROM event_checkout_observations o ASOF JOIN entity_customer_features f\n  ON o.customer_id = f.customer_id\n AND o.observation_timestamp >= f.feature_timestamp\nWHERE o.observation_id = 'OBS-101';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 0.45,
+      "actual_value": 0.45,
+      "passed": true,
+      "latency_ms": 1.25,
+      "error": null
+    },
+    {
+      "name": "Dense Vector Cosine Similarity Match",
+      "query": "SELECT CAST(ROUND(array_cosine_similarity(o.current_query_embedding::FLOAT[4], f.affinity_embedding::FLOAT[4]), 2) AS DOUBLE) FROM event_checkout_observations o ASOF JOIN entity_customer_features f\n  ON o.customer_id = f.customer_id\n AND o.observation_timestamp >= f.feature_timestamp\nWHERE o.observation_id = 'OBS-102';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 1.0,
+      "actual_value": 1.0,
+      "passed": true,
+      "latency_ms": 1.19,
+      "error": null
+    },
+    {
+      "name": "Historical Time-Versioned Feature Snapshots Count",
+      "query": "SELECT COUNT(*) FROM entity_customer_features WHERE customer_id = 'C-101';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 2,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.33,
+      "error": null
+    },
+    {
+      "name": "Observation Event Feature Completeness",
+      "query": "SELECT COUNT(*) FROM event_checkout_observations o ASOF JOIN entity_customer_features f\n  ON o.customer_id = f.customer_id\n AND o.observation_timestamp >= f.feature_timestamp;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 2,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.87,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 3168.01
+}

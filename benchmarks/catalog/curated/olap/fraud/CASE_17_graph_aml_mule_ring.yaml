@@ -1,0 +1,220 @@
+case_id: CASE-17
+domain: aml_fraud
+workload_type: OLAP
+name: Anti-Money Laundering Financial Transfer Network and Circular Mule Ring Detection
+description: Graph OLAP network topology evaluating account nodes and directed transfer edges to detect closed circular money laundering cycles and high-fan-out structuring hubs via recursive CTE graph traversals.
+citation: >
+  Ian Robinson, Jim Webber & Emil Eifrem (2015), "Graph Databases: New Opportunities for Connected Data" (2nd Edition),
+  O'Reilly Media, Chapters 1, 3 & 6 ("Connected Data in Practice, Path Traversals, and Cycle Detection").
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - fraud
+  - graph_olap
+  - aml
+  - recursive_cte
+  - cycle_detection
+  - olap
+
+prompt: >
+  An AML financial crime investigation unit at a major tier-1 bank monitors wire and instant electronic funds transfers
+  to detect criminal money laundering syndicates and structuring networks. Criminal organizations routinely execute circular money mule rings:
+  illicit funds originate at a source shell account, bounce through multiple intermediary accounts to obfuscate the source of funds,
+  and circulate back to the originating entity or an affiliated beneficiary (e.g. Account 201 -> Account 202 -> Account 203 -> Account 201).
+  Traditional dimensional star schemas fail to detect these closed directed cycles without brittle, pre-specified join chains.
+  Per Robinson, Webber & Eifrem (2015), we require a Graph OLAP network topology comprising an account vertex table (graph_account_nodes)
+  and a directed funds transfer edge table (graph_transfer_edges). Analytical queries must execute recursive path traversal in DuckDB
+  to identify closed cycles (Cycle Depth >= 3), calculate nodal out-degree fan-out ratios, and isolate criminal rings.
+
+business_answers:
+  - "Core business processes: Financial wire transfers, money mule detection, and transaction network graph analysis"
+  - "Grain: One record per account entity in nodes, and one record per directed financial transfer event in edges"
+  - "Workload intent: Graph OLAP network topology with recursive traversal queries for circular fraud and mule ring detection"
+  - "Dimensions: Account nodes with jurisdiction and risk scores, connected by directed weighted transfer edges"
+  - "Temporal policy: Preserving historical transfer timestamps on directed temporal edges with bounded multi-hop recursion"
+  - "Lifecycle funnel: Continuous electronic transfer stream evaluated via recursive path graph traversals"
+  - "Metrics: amount_usd, hop_depth, cycle_count, out_degree"
+
+seed_data:
+  graph_account_nodes:
+    - account_id: "ACCT-101"
+      account_label: "CORPORATE"
+      jurisdiction: "US"
+      risk_score: 0.10
+
+    - account_id: "ACCT-102"
+      account_label: "COMMERCIAL"
+      jurisdiction: "US"
+      risk_score: 0.15
+
+    - account_id: "ACCT-103"
+      account_label: "RETAIL"
+      jurisdiction: "US"
+      risk_score: 0.05
+
+    - account_id: "ACCT-201"
+      account_label: "SHELL_LLC"
+      jurisdiction: "CY"
+      risk_score: 0.92
+
+    - account_id: "ACCT-202"
+      account_label: "INDIVIDUAL_MULE"
+      jurisdiction: "LV"
+      risk_score: 0.88
+
+    - account_id: "ACCT-203"
+      account_label: "CRYPTO_GATEWAY"
+      jurisdiction: "PA"
+      risk_score: 0.95
+
+    - account_id: "ACCT-301"
+      account_label: "INDIVIDUAL_SMURF"
+      jurisdiction: "US"
+      risk_score: 0.75
+
+    - account_id: "ACCT-302"
+      account_label: "MULE_RECEIVER"
+      jurisdiction: "US"
+      risk_score: 0.60
+
+    - account_id: "ACCT-303"
+      account_label: "MULE_RECEIVER"
+      jurisdiction: "US"
+      risk_score: 0.60
+
+    - account_id: "ACCT-304"
+      account_label: "MULE_RECEIVER"
+      jurisdiction: "US"
+      risk_score: 0.60
+
+  graph_transfer_edges:
+    - edge_id: "E-101"
+      source_account_id: "ACCT-101"
+      target_account_id: "ACCT-102"
+      amount_usd: 50000.00
+      transfer_timestamp: "2026-03-01 10:00:00"
+
+    - edge_id: "E-102"
+      source_account_id: "ACCT-102"
+      target_account_id: "ACCT-103"
+      amount_usd: 48000.00
+      transfer_timestamp: "2026-03-01 14:00:00"
+
+    - edge_id: "E-201"
+      source_account_id: "ACCT-201"
+      target_account_id: "ACCT-202"
+      amount_usd: 10000.00
+      transfer_timestamp: "2026-03-02 09:00:00"
+
+    - edge_id: "E-202"
+      source_account_id: "ACCT-202"
+      target_account_id: "ACCT-203"
+      amount_usd: 9800.00
+      transfer_timestamp: "2026-03-02 11:30:00"
+
+    - edge_id: "E-203"
+      source_account_id: "ACCT-203"
+      target_account_id: "ACCT-201"
+      amount_usd: 9500.00
+      transfer_timestamp: "2026-03-02 15:45:00"
+
+    - edge_id: "E-301"
+      source_account_id: "ACCT-301"
+      target_account_id: "ACCT-302"
+      amount_usd: 2500.00
+      transfer_timestamp: "2026-03-03 08:00:00"
+
+    - edge_id: "E-302"
+      source_account_id: "ACCT-301"
+      target_account_id: "ACCT-303"
+      amount_usd: 2500.00
+      transfer_timestamp: "2026-03-03 08:05:00"
+
+    - edge_id: "E-303"
+      source_account_id: "ACCT-301"
+      target_account_id: "ACCT-304"
+      amount_usd: 2500.00
+      transfer_timestamp: "2026-03-03 08:10:00"
+
+verification_queries:
+  - name: Recursive Closed Cycle Detection for Depth 3 Mule Ring
+    query: >
+      WITH RECURSIVE transfer_paths AS (
+          SELECT 
+              source_account_id AS root_node,
+              target_account_id,
+              amount_usd,
+              1 AS hop_depth,
+              [source_account_id, target_account_id] AS path,
+              (source_account_id = target_account_id) AS is_cycle
+          FROM graph_transfer_edges
+          UNION ALL
+          SELECT 
+              p.root_node,
+              e.target_account_id,
+              e.amount_usd,
+              p.hop_depth + 1,
+              list_append(p.path, e.target_account_id),
+              (e.target_account_id = p.root_node) AS is_cycle
+          FROM transfer_paths p
+          JOIN graph_transfer_edges e ON p.target_account_id = e.source_account_id
+          WHERE p.hop_depth < 4
+            AND NOT (list_contains(p.path[2:], e.target_account_id))
+      )
+      SELECT COUNT(DISTINCT root_node)
+      FROM transfer_paths
+      WHERE is_cycle = true AND hop_depth = 3;
+    assertion_type: scalar_eq
+    expected_value: 3
+    failure_message: Expected exactly 3 distinct account root nodes participating in closed circular mule ring
+
+  - name: Total Laundered Volume in Circular Ring
+    query: >
+      SELECT CAST(ROUND(SUM(amount_usd), 2) AS DOUBLE)
+      FROM graph_transfer_edges
+      WHERE source_account_id IN ('ACCT-201', 'ACCT-202', 'ACCT-203')
+        AND target_account_id IN ('ACCT-201', 'ACCT-202', 'ACCT-203');
+    assertion_type: scalar_eq
+    expected_value: 29300.00
+    failure_message: Expected 29300.00 USD total transfer volume in circular mule ring
+
+  - name: High-Fan-Out Structuring Hub Out-Degree
+    query: >
+      SELECT COUNT(DISTINCT target_account_id)
+      FROM graph_transfer_edges
+      WHERE source_account_id = 'ACCT-301';
+    assertion_type: scalar_eq
+    expected_value: 3
+    failure_message: Expected out-degree of 3 outward structuring transfers from ACCT-301
+
+  - name: Linear Legitimate Chain Cycle Immunity
+    query: >
+      WITH RECURSIVE linear_paths AS (
+          SELECT 
+              source_account_id AS root_node,
+              target_account_id,
+              1 AS hop_depth,
+              [source_account_id, target_account_id] AS path,
+              (source_account_id = target_account_id) AS is_cycle
+          FROM graph_transfer_edges
+          WHERE source_account_id = 'ACCT-101'
+          UNION ALL
+          SELECT 
+              p.root_node,
+              e.target_account_id,
+              p.hop_depth + 1,
+              list_append(p.path, e.target_account_id),
+              (e.target_account_id = p.root_node) AS is_cycle
+          FROM linear_paths p
+          JOIN graph_transfer_edges e ON p.target_account_id = e.source_account_id
+          WHERE p.hop_depth < 4
+            AND NOT (list_contains(p.path[2:], e.target_account_id))
+      )
+      SELECT COUNT(*)
+      FROM linear_paths
+      WHERE is_cycle = true;
+    assertion_type: scalar_eq
+    expected_value: 0
+    failure_message: Expected zero cycles detected originating from legitimate account ACCT-101

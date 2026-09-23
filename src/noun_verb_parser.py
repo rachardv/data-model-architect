@@ -253,11 +253,14 @@ class NounVerbSemanticParser:
         ])
 
         # 8. Denormalized One Big Table (OBT) Mart
-        is_denormalized_obt = any(k in text for k in [
-            "one big table", "obt", "single flat table", "denormalized mart",
-            "zero join latency", "sub-second dashboard scan", "flattened reporting",
-            "single denormalized"
-        ])
+        is_denormalized_obt = (
+            bool(re.search(r"\bobt\b", text)) or
+            any(k in text for k in [
+                "one big table", "single flat table", "denormalized mart",
+                "zero join latency", "sub-second dashboard scan", "flattened reporting",
+                "single denormalized"
+            ])
+        )
 
         # 9. Nested & Repeated Columnar Mart (ARRAY<STRUCT>)
         is_nested_columnar = any(k in text for k in [
@@ -313,6 +316,44 @@ class NounVerbSemanticParser:
             "outrigger dimension", "dimension outrigger", "secondary dimension",
             "county demographic outrigger", "demographic outrigger"
         ])
+
+        # 17. Data Vault 2.0 Raw Integration Layer
+        is_data_vault = any(k in text for k in [
+            "data vault", "data vault 2.0", "hubs and links", "hub, link, sat",
+            "raw vault", "hash key", "multi-source integration", "audit trail raw layer",
+            "enterprise data vault", "raw data vault", "hubs, links", "satellite table"
+        ])
+
+        # 18. Graph OLAP Network Topology & Fraud Ring Analysis
+        is_graph_topology = (
+            bool(re.search(r"\bgraphs?\b", text)) or
+            any(k in text for k in [
+                "property graph", "nodes and edges", "vertices and edges", "mule ring",
+                "circular transaction", "network topology", "graph traversal",
+                "fraud ring", "money mule", "shortest path", "connected components",
+                "aml network", "circular transfer", "directed edges", "mule account",
+                "graph olap", "directed graph"
+            ])
+        )
+
+        # 19. Real-Time Columnar Streaming OLAP (ClickHouse / Pinot)
+        is_realtime_streaming_olap = (
+            bool(re.search(r"\bhll\b", text)) or
+            any(k in text for k in [
+                "clickhouse", "pinot", "columnar streaming", "streaming olap",
+                "hyperloglog", "wide flat stream", "approximate count distinct",
+                "roaring bitmap", "ad telemetry", "clickstream", "approx_count_distinct",
+                "approximate distinct", "real-time columnar", "wide denormalized event stream"
+            ])
+        )
+
+        # 20. AI Vector Embeddings & Dual-Speed Feature Stores
+        is_vector_feature_store = any(k in text for k in [
+            "feature store", "asof join", "as-of join", "vector embedding",
+            "pgvector", "feature leakage", "dual-speed", "online store and offline store",
+            "point-in-time feature", "dense vector", "cosine similarity",
+            "training dataset generation"
+        ])
         
         return {
             "is_live_app": is_live_app,
@@ -330,5 +371,9 @@ class NounVerbSemanticParser:
             "is_factless_event": is_factless_event,
             "has_multivalued_bridge": has_multivalued_bridge,
             "has_junk_dimension": has_junk_dimension,
-            "has_outrigger_dimension": has_outrigger_dimension
+            "has_outrigger_dimension": has_outrigger_dimension,
+            "is_data_vault": is_data_vault,
+            "is_graph_topology": is_graph_topology,
+            "is_realtime_streaming_olap": is_realtime_streaming_olap,
+            "is_vector_feature_store": is_vector_feature_store
         }

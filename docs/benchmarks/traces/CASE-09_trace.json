@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise commercial property and casualty insurance carrier managing complex policy endorsements and claims lifecycles. Underwriting endorsements frequently occur retroactively, requiring historical policy timelines to be spliced into strict closed-open intervals without overlapping validity dates. Claims often arrive out-of-order weeks after an incident occurs, referencing policies that have not yet completed ETL ingestion; these must resolve to inferred ghost dimension records with sentinel surrogate keys to prevent catastrophic claim drop-outs. To support executive management and actuarial audits simultaneously, the policy dimension must implement Kimball SCD Type 6 hybrid attributes: preserving historical point-in-time risk tiers and sales territories (as-was) while maintaining current overwritten attributes (as-is) across all version slices.\n",
   "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 5 (\"Slowly Changing Dimension Techniques: Type 6 Hybrid Dimensions & Late-Arriving Data\"), pp. 153-188, and Martin Fowler (2005), \"Bitemporal History\".\n",
-  "timestamp_utc": "2026-09-23T20:43:59.288187+00:00",
+  "timestamp_utc": "2026-09-23T21:19:51.730012+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -32,7 +32,11 @@
       "is_factless_event": false,
       "has_multivalued_bridge": false,
       "has_junk_dimension": false,
-      "has_outrigger_dimension": false
+      "has_outrigger_dimension": false,
+      "is_data_vault": false,
+      "is_graph_topology": false,
+      "is_realtime_streaming_olap": false,
+      "is_vector_feature_store": false
     },
     "resolution_applied": null,
     "disposition_matrix": []
@@ -87,7 +91,7 @@
       "expected_value": 0,
       "actual_value": 0,
       "passed": true,
-      "latency_ms": 0.82,
+      "latency_ms": 0.72,
       "error": null
     },
     {
@@ -97,7 +101,7 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 0.31,
+      "latency_ms": 0.3,
       "error": null
     },
     {
@@ -107,7 +111,7 @@
       "expected_value": 4,
       "actual_value": 4,
       "passed": true,
-      "latency_ms": 0.61,
+      "latency_ms": 0.68,
       "error": null
     },
     {
@@ -117,7 +121,7 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 1.32,
+      "latency_ms": 1.11,
       "error": null
     },
     {
@@ -127,12 +131,12 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 0.98,
+      "latency_ms": 1.32,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 198.71
+  "execution_time_ms": 182.49
 }

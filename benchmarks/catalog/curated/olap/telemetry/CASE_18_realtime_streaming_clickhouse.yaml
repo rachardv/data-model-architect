@@ -1,0 +1,132 @@
+case_id: CASE-18
+domain: telemetry
+workload_type: OLAP
+name: Real-Time Columnar Streaming Ad Telemetry and Clickstream Mart
+description: High-velocity real-time columnar streaming OLAP evaluating wide denormalized event streams, HyperLogLog approximate distinct sketches, and sub-second windowed aggregations without runtime relational joins.
+citation: >
+  Alexey Milovidov et al. (2024), "ClickHouse: Ultra-Fast Analytical DBMS Architecture", ClickHouse Documentation & VLDB.
+  Also Apache Pinot Real-Time Distributed Columnar OLAP Engine (VLDB 2021).
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - telemetry
+  - realtime_streaming
+  - clickhouse
+  - hyperloglog
+  - streaming_olap
+  - olap
+
+prompt: >
+  An ad-tech programmatic bidding platform processes over 100,000 real-time ad impression and click events per second.
+  Marketing analytics teams and automated bidder engines require real-time campaign performance dashboards reporting
+  Return on Ad Spend (ROAS), conversion rates, and unique visitor reach over rolling 5-minute sliding windows with sub-second p99 latency.
+  Traditional normalized star schemas fail under this workload due to foreign key join overhead and write contention on dimension tables.
+  Per Alexey Milovidov et al. (2024) and Apache Pinot architecture standards, we require a Real-Time Columnar Streaming OLAP table
+  (stream_ad_clicks) where all dimensional attributes (campaign, ad placement, visitor, device category, geo country)
+  are denormalized directly into the high-velocity streaming event record at ingestion time.
+  Analytical queries must compute sub-second aggregations, utilize HyperLogLog approximate distinct counting (approx_count_distinct)
+  for visitor reach, and execute with zero joins.
+
+business_answers:
+  - "Core business processes: Real-time ad telemetry, clickstream ingestion, and programmatic conversion tracking"
+  - "Grain: One record per ad click or conversion interaction event"
+  - "Workload intent: Real-time columnar streaming OLAP with wide denormalized event stream and HyperLogLog approximate sketches"
+  - "Dimensions: Flattened dimensions (campaign, ad placement, visitor, device, geo) embedded directly on the streaming event record"
+  - "Temporal policy: Fine-grained event ingestion timestamps (event_timestamp) with rolling time-window aggregations"
+  - "Lifecycle funnel: Continuous streaming event ingestion with sub-second real-time dashboard scans"
+  - "Metrics: bid_cost_usd, revenue_usd, roas, approx_unique_visitors, conversion_rate"
+
+seed_data:
+  stream_ad_clicks:
+    - event_id: "EVT-01"
+      event_timestamp: "2026-04-01 12:00:05"
+      campaign_id: "CMP-901"
+      ad_placement: "SEARCH_TOP"
+      visitor_id: "VIS-101"
+      device_category: "MOBILE"
+      geo_country: "US"
+      bid_cost_usd: 1.50
+      is_converted: true
+      revenue_usd: 15.00
+
+    - event_id: "EVT-02"
+      event_timestamp: "2026-04-01 12:01:20"
+      campaign_id: "CMP-901"
+      ad_placement: "FEED_NATIVE"
+      visitor_id: "VIS-102"
+      device_category: "MOBILE"
+      geo_country: "US"
+      bid_cost_usd: 0.80
+      is_converted: false
+      revenue_usd: 0.00
+
+    - event_id: "EVT-03"
+      event_timestamp: "2026-04-01 12:03:45"
+      campaign_id: "CMP-901"
+      ad_placement: "SEARCH_TOP"
+      visitor_id: "VIS-103"
+      device_category: "DESKTOP"
+      geo_country: "US"
+      bid_cost_usd: 1.70
+      is_converted: false
+      revenue_usd: 0.00
+
+    - event_id: "EVT-04"
+      event_timestamp: "2026-04-01 12:04:10"
+      campaign_id: "CMP-902"
+      ad_placement: "BANNER_SIDE"
+      visitor_id: "VIS-201"
+      device_category: "DESKTOP"
+      geo_country: "DE"
+      bid_cost_usd: 0.50
+      is_converted: true
+      revenue_usd: 5.00
+
+    - event_id: "EVT-05"
+      event_timestamp: "2026-04-01 12:04:55"
+      campaign_id: "CMP-902"
+      ad_placement: "BANNER_SIDE"
+      visitor_id: "VIS-202"
+      device_category: "DESKTOP"
+      geo_country: "UK"
+      bid_cost_usd: 0.50
+      is_converted: false
+      revenue_usd: 0.00
+
+verification_queries:
+  - name: Real-Time Campaign Return on Ad Spend ROAS
+    query: >
+      SELECT CAST(ROUND(SUM(revenue_usd) / SUM(bid_cost_usd), 2) AS DOUBLE)
+      FROM stream_ad_clicks
+      WHERE campaign_id = 'CMP-901';
+    assertion_type: scalar_eq
+    expected_value: 3.75
+    failure_message: Expected ROAS of 3.75 for campaign CMP-901
+
+  - name: HyperLogLog Approximate Unique Visitor Reach
+    query: >
+      SELECT CAST(approx_count_distinct(visitor_id) AS BIGINT)
+      FROM stream_ad_clicks
+      WHERE campaign_id = 'CMP-901';
+    assertion_type: scalar_eq
+    expected_value: 3
+    failure_message: Expected 3 approximate distinct visitors for campaign CMP-901 via HyperLogLog
+
+  - name: Sliding Window Conversion Rate
+    query: >
+      SELECT CAST(ROUND(COUNT(*) FILTER (WHERE is_converted = true) * 1.0 / COUNT(*), 2) AS DOUBLE)
+      FROM stream_ad_clicks
+      WHERE campaign_id = 'CMP-901';
+    assertion_type: scalar_eq
+    expected_value: 0.33
+    failure_message: Expected 0.33 conversion rate for campaign CMP-901 in sliding window
+
+  - name: Total Real-Time Streaming Events Ingested
+    query: >
+      SELECT COUNT(*)
+      FROM stream_ad_clicks;
+    assertion_type: scalar_eq
+    expected_value: 5
+    failure_message: Expected exactly 5 streaming events ingested into flat telemetry table

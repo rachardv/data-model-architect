@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise B2B SaaS platform tracking recurring software subscriptions. For real-time executive dashboarding and cohort churn analysis, our BI teams require sub-second query response times without multi-table join latency. We require a single denormalized One Big Table (OBT) mart capturing subscription renewals, monthly recurring revenue (MRR), customer attributes, plan tiers, and churn indicators in one flat table.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 14: \"Accounting\", pp. 385-412 (\"Subscription Billing, Recurring Revenue, and Denormalized Reporting Marts\").\n",
-  "timestamp_utc": "2026-09-23T20:44:00.048126+00:00",
+  "timestamp_utc": "2026-09-23T21:19:58.882947+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -32,7 +32,11 @@
       "is_factless_event": false,
       "has_multivalued_bridge": false,
       "has_junk_dimension": false,
-      "has_outrigger_dimension": false
+      "has_outrigger_dimension": false,
+      "is_data_vault": false,
+      "is_graph_topology": false,
+      "is_realtime_streaming_olap": false,
+      "is_vector_feature_store": false
     },
     "resolution_applied": null,
     "disposition_matrix": []
@@ -69,7 +73,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.26,
+      "latency_ms": 0.3,
       "error": null
     },
     {
@@ -79,7 +83,7 @@
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.24,
+      "latency_ms": 0.29,
       "error": null
     },
     {
@@ -89,12 +93,12 @@
       "expected_value": 0,
       "actual_value": 1,
       "passed": true,
-      "latency_ms": 0.78,
+      "latency_ms": 0.61,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 3136.71
+  "execution_time_ms": 3232.56
 }

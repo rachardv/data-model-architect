@@ -36,7 +36,183 @@ class DynamicSchemaAuthor:
         temporal_strategy = architecture_decision.get("temporal", "SCD2")
         is_multi_currency = architecture_decision.get("multi_currency_triad", False) or user_request.get("is_multi_currency", False)
 
-        # 2. Check for Factless Fact Table (Event Attendance / Coverage Matrix)
+        # 2a. Check for Data Vault 2.0 Raw Ingestion Layer
+        if pattern == "DATA_VAULT_2_RAW" or inferred_params.get("is_data_vault"):
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "APPEND_ONLY_INSERT_LOAD_DTS",
+                "pattern": "DATA_VAULT_2_RAW",
+                "tables": [
+                    {
+                        "name": "hub_customer",
+                        "type": "HUB",
+                        "description": "Data Vault 2.0 Customer Hub with SHA-256 Hash Key",
+                        "primary_key": "customer_hk",
+                        "columns": [
+                            {"name": "customer_hk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True},
+                            {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "load_dts", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "rec_src", "type": "VARCHAR(64)", "nullable": False}
+                        ]
+                    },
+                    {
+                        "name": "hub_account",
+                        "type": "HUB",
+                        "description": "Data Vault 2.0 Account Hub with SHA-256 Hash Key",
+                        "primary_key": "account_hk",
+                        "columns": [
+                            {"name": "account_hk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True},
+                            {"name": "account_number", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "load_dts", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "rec_src", "type": "VARCHAR(64)", "nullable": False}
+                        ]
+                    },
+                    {
+                        "name": "link_customer_account",
+                        "type": "LINK",
+                        "description": "Data Vault 2.0 Customer-Account Association Link",
+                        "primary_key": "link_cust_account_hk",
+                        "columns": [
+                            {"name": "link_cust_account_hk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True},
+                            {"name": "customer_hk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": "hub_customer.customer_hk"},
+                            {"name": "account_hk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": "hub_account.account_hk"},
+                            {"name": "load_dts", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "rec_src", "type": "VARCHAR(64)", "nullable": False}
+                        ]
+                    },
+                    {
+                        "name": "sat_crm_customer",
+                        "type": "SATELLITE",
+                        "description": "Salesforce CRM Customer Satellite with Hash Diff Change Detection",
+                        "primary_key": "customer_hk, load_dts",
+                        "columns": [
+                            {"name": "customer_hk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": "hub_customer.customer_hk"},
+                            {"name": "load_dts", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "hash_diff", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "customer_name", "type": "VARCHAR(255)", "nullable": False},
+                            {"name": "crm_tier", "type": "VARCHAR(32)", "nullable": False},
+                            {"name": "email", "type": "VARCHAR(255)", "nullable": False},
+                            {"name": "rec_src", "type": "VARCHAR(64)", "nullable": False}
+                        ]
+                    },
+                    {
+                        "name": "sat_billing_customer",
+                        "type": "SATELLITE",
+                        "description": "Stripe/SAP Billing Customer Satellite with Hash Diff",
+                        "primary_key": "customer_hk, load_dts",
+                        "columns": [
+                            {"name": "customer_hk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": "hub_customer.customer_hk"},
+                            {"name": "load_dts", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "hash_diff", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "credit_limit_usd", "type": "DECIMAL(14,2)", "nullable": False},
+                            {"name": "billing_status", "type": "VARCHAR(32)", "nullable": False},
+                            {"name": "rec_src", "type": "VARCHAR(64)", "nullable": False}
+                        ]
+                    }
+                ]
+            }
+
+        # 2b. Check for Graph OLAP Network Topology (Vertices & Directed Weighted Edges)
+        if pattern == "GRAPH_PROPERTY_TOPOLOGY" or inferred_params.get("is_graph_topology"):
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "DIRECTED_TEMPORAL_EDGE",
+                "pattern": "GRAPH_PROPERTY_TOPOLOGY",
+                "tables": [
+                    {
+                        "name": f"graph_{clean_domain}_account_nodes",
+                        "type": "VERTEX",
+                        "description": "Graph OLAP Account Vertices (Nodes) with Risk Attributes",
+                        "primary_key": "account_id",
+                        "columns": [
+                            {"name": "account_id", "type": "VARCHAR(64)", "nullable": False, "primary_key": True},
+                            {"name": "account_label", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "jurisdiction", "type": "VARCHAR(32)", "nullable": False},
+                            {"name": "risk_score", "type": "DECIMAL(5,4)", "nullable": False}
+                        ]
+                    },
+                    {
+                        "name": f"graph_{clean_domain}_transfer_edges",
+                        "type": "EDGE",
+                        "description": "Graph OLAP Directed Weighted Edges with Recursive Traversal Support",
+                        "primary_key": "edge_id",
+                        "columns": [
+                            {"name": "edge_id", "type": "VARCHAR(64)", "nullable": False, "primary_key": True},
+                            {"name": "source_account_id", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"graph_{clean_domain}_account_nodes.account_id"},
+                            {"name": "target_account_id", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"graph_{clean_domain}_account_nodes.account_id"},
+                            {"name": "amount_usd", "type": "DECIMAL(14,2)", "nullable": False},
+                            {"name": "transfer_timestamp", "type": "TIMESTAMPTZ", "nullable": False}
+                        ]
+                    }
+                ]
+            }
+
+        # 2c. Check for Real-Time Columnar Streaming OLAP (ClickHouse / Pinot Wide Event Streams)
+        if pattern == "REALTIME_STREAMING_OLAP" or inferred_params.get("is_realtime_streaming_olap"):
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "STREAMING_INGESTION_TIME",
+                "pattern": "REALTIME_STREAMING_OLAP",
+                "tables": [
+                    {
+                        "name": f"stream_{clean_domain}_clicks",
+                        "type": "STREAMING_FACT",
+                        "description": "Wide Denormalized Streaming Event Table for Sub-Second Columnar Aggregations",
+                        "primary_key": "event_id",
+                        "partition_by": "event_timestamp",
+                        "columns": [
+                            {"name": "event_id", "type": "VARCHAR(64)", "nullable": False, "primary_key": True},
+                            {"name": "event_timestamp", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "campaign_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "ad_placement", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "visitor_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "device_category", "type": "VARCHAR(32)", "nullable": False},
+                            {"name": "geo_country", "type": "VARCHAR(16)", "nullable": False},
+                            {"name": "bid_cost_usd", "type": "DECIMAL(10,4)", "nullable": False},
+                            {"name": "is_converted", "type": "BOOLEAN", "nullable": False},
+                            {"name": "revenue_usd", "type": "DECIMAL(14,2)", "nullable": False}
+                        ]
+                    }
+                ]
+            }
+
+        # 2d. Check for AI Vector Embeddings & Dual-Speed Feature Store (ASOF JOIN & Dense Vectors)
+        if pattern == "VECTOR_FEATURE_STORE" or inferred_params.get("is_vector_feature_store"):
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "POINT_IN_TIME_ASOF_JOIN",
+                "pattern": "VECTOR_FEATURE_STORE",
+                "tables": [
+                    {
+                        "name": f"entity_{clean_domain}_customer_features",
+                        "type": "FEATURE_STORE",
+                        "description": "Offline Time-Versioned Customer Feature Store with Dense Affinity Vector Embeddings",
+                        "primary_key": "customer_id, feature_timestamp",
+                        "columns": [
+                            {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "feature_timestamp", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "risk_velocity_30m", "type": "DOUBLE", "nullable": False},
+                            {"name": "avg_order_value_30d", "type": "DECIMAL(14,2)", "nullable": False},
+                            {"name": "affinity_embedding", "type": "FLOAT[4]", "nullable": False}
+                        ]
+                    },
+                    {
+                        "name": f"event_{clean_domain}_checkout_observations",
+                        "type": "OBSERVATION_EVENT",
+                        "description": "Ground Truth Observation Events for Point-in-Time ASOF Training Set Construction",
+                        "primary_key": "observation_id",
+                        "columns": [
+                            {"name": "observation_id", "type": "VARCHAR(64)", "nullable": False, "primary_key": True},
+                            {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False},
+                            {"name": "observation_timestamp", "type": "TIMESTAMPTZ", "nullable": False},
+                            {"name": "actual_fraud_label", "type": "BOOLEAN", "nullable": False},
+                            {"name": "current_query_embedding", "type": "FLOAT[4]", "nullable": False}
+                        ]
+                    }
+                ]
+            }
+
+        # 2e. Check for Factless Fact Table (Event Attendance / Coverage Matrix)
         if pattern == "FACTLESS_FACT_COVERAGE" or user_request.get("is_factless_event"):
             return {
                 "domain": clean_domain,

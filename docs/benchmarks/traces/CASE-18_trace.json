@@ -1,0 +1,117 @@
+{
+  "case_id": "CASE-18",
+  "domain": "telemetry",
+  "name": "Real-Time Columnar Streaming Ad Telemetry and Clickstream Mart",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "An ad-tech programmatic bidding platform processes over 100,000 real-time ad impression and click events per second. Marketing analytics teams and automated bidder engines require real-time campaign performance dashboards reporting Return on Ad Spend (ROAS), conversion rates, and unique visitor reach over rolling 5-minute sliding windows with sub-second p99 latency. Traditional normalized star schemas fail under this workload due to foreign key join overhead and write contention on dimension tables. Per Alexey Milovidov et al. (2024) and Apache Pinot architecture standards, we require a Real-Time Columnar Streaming OLAP table (stream_ad_clicks) where all dimensional attributes (campaign, ad placement, visitor, device category, geo country) are denormalized directly into the high-velocity streaming event record at ingestion time. Analytical queries must compute sub-second aggregations, utilize HyperLogLog approximate distinct counting (approx_count_distinct) for visitor reach, and execute with zero joins.\n",
+  "citation": "Alexey Milovidov et al. (2024), \"ClickHouse: Ultra-Fast Analytical DBMS Architecture\", ClickHouse Documentation & VLDB. Also Apache Pinot Real-Time Distributed Columnar OLAP Engine (VLDB 2021).\n",
+  "timestamp_utc": "2026-09-23T21:20:02.298777+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "REALTIME_STREAMING_OLAP",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": true,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": false,
+      "is_factless_event": false,
+      "has_multivalued_bridge": false,
+      "has_junk_dimension": false,
+      "has_outrigger_dimension": false,
+      "is_data_vault": false,
+      "is_graph_topology": false,
+      "is_realtime_streaming_olap": true,
+      "is_vector_feature_store": false
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "stream_telemetry_clicks",
+      "type": "STREAMING_FACT",
+      "primary_key": "event_id",
+      "column_count": 10,
+      "columns": [
+        "event_id",
+        "event_timestamp",
+        "campaign_id",
+        "ad_placement",
+        "visitor_id",
+        "device_category",
+        "geo_country",
+        "bid_cost_usd",
+        "is_converted",
+        "revenue_usd"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Real-Time Campaign Return on Ad Spend ROAS",
+      "query": "SELECT CAST(ROUND(SUM(revenue_usd) / SUM(bid_cost_usd), 2) AS DOUBLE) FROM stream_ad_clicks WHERE campaign_id = 'CMP-901';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 3.75,
+      "actual_value": 3.75,
+      "passed": true,
+      "latency_ms": 0.42,
+      "error": null
+    },
+    {
+      "name": "HyperLogLog Approximate Unique Visitor Reach",
+      "query": "SELECT CAST(approx_count_distinct(visitor_id) AS BIGINT) FROM stream_ad_clicks WHERE campaign_id = 'CMP-901';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 3,
+      "actual_value": 3,
+      "passed": true,
+      "latency_ms": 0.31,
+      "error": null
+    },
+    {
+      "name": "Sliding Window Conversion Rate",
+      "query": "SELECT CAST(ROUND(COUNT(*) FILTER (WHERE is_converted = true) * 1.0 / COUNT(*), 2) AS DOUBLE) FROM stream_ad_clicks WHERE campaign_id = 'CMP-901';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 0.33,
+      "actual_value": 0.33,
+      "passed": true,
+      "latency_ms": 0.43,
+      "error": null
+    },
+    {
+      "name": "Total Real-Time Streaming Events Ingested",
+      "query": "SELECT COUNT(*) FROM stream_ad_clicks;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 5,
+      "actual_value": 5,
+      "passed": true,
+      "latency_ms": 0.23,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 3317.42
+}

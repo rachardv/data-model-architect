@@ -26,9 +26,68 @@ class DataModelDecisionEngine:
         has_semi_additive_balances: bool = False,
         has_multivalued_bridge: bool = False,
         has_junk_dimension: bool = False,
-        has_outrigger_dimension: bool = False
+        has_outrigger_dimension: bool = False,
+        is_data_vault: bool = False,
+        is_graph_topology: bool = False,
+        is_realtime_streaming_olap: bool = False,
+        is_vector_feature_store: bool = False
     ) -> Dict[str, Any]:
-        # 0. Factless Fact Table (Event Attendance / Coverage Matrix)
+        # 0. Data Vault 2.0 Raw Ingestion Layer (Hubs, Links, Satellites)
+        if is_data_vault:
+            res = {
+                "pattern": "DATA_VAULT_2_RAW",
+                "storage": "Data Vault 2.0 Raw Vault",
+                "schema_type": "Hubs, Links, and Satellites with SHA-256 Hash Keys",
+                "temporal": "APPEND_ONLY_INSERT_LOAD_DTS",
+                "has_hash_keys": True,
+                "has_multi_source_satellites": True
+            }
+            if is_multi_currency:
+                res["multi_currency_triad"] = True
+            return res
+
+        # 0a. Graph OLAP Network Topology (Vertices & Directed Weighted Edges)
+        if is_graph_topology:
+            res = {
+                "pattern": "GRAPH_PROPERTY_TOPOLOGY",
+                "storage": "Graph Columnar Adjacency (Nodes & Edges)",
+                "schema_type": "Property Graph Topology (Vertices and Directed Edges)",
+                "temporal": "DIRECTED_TEMPORAL_EDGE",
+                "has_recursive_traversal": True
+            }
+            if is_multi_currency:
+                res["multi_currency_triad"] = True
+            return res
+
+        # 0b. Real-Time Columnar Streaming OLAP (ClickHouse / Pinot Wide Event Streams)
+        if is_realtime_streaming_olap:
+            res = {
+                "pattern": "REALTIME_STREAMING_OLAP",
+                "storage": "Real-Time Columnar Streaming Engine (ClickHouse/Pinot)",
+                "schema_type": "Denormalized Streaming Event Table with Approximate HLL Sketches",
+                "temporal": "STREAMING_INGESTION_TIME",
+                "has_approx_sketches": True,
+                "has_zero_join_streams": True
+            }
+            if is_multi_currency:
+                res["multi_currency_triad"] = True
+            return res
+
+        # 0c. AI Vector Embeddings & Dual-Speed Feature Store (ASOF JOIN & Dense Vectors)
+        if is_vector_feature_store:
+            res = {
+                "pattern": "VECTOR_FEATURE_STORE",
+                "storage": "Dual-Speed Feature Store (Online KV + Offline Columnar)",
+                "schema_type": "Time-Versioned Entity Features with Dense Vector Embeddings",
+                "temporal": "POINT_IN_TIME_ASOF_JOIN",
+                "has_vector_embeddings": True,
+                "has_asof_joins": True
+            }
+            if is_multi_currency:
+                res["multi_currency_triad"] = True
+            return res
+
+        # 0d. Factless Fact Table (Event Attendance / Coverage Matrix)
         if is_factless_event:
             return {
                 "pattern": "FACTLESS_FACT_COVERAGE",

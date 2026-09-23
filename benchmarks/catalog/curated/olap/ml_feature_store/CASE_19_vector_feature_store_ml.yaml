@@ -1,0 +1,117 @@
+case_id: CASE-19
+domain: ml_feature_store
+workload_type: OLAP
+name: AI Vector Embeddings and Dual-Speed Feature Store for Real-Time Inference and Training
+description: Dual-speed AI/ML feature store evaluating online entity feature serving, dense vector embeddings, and point-in-time ASOF training joins that mathematically prevent feature leakage and lookahead bias.
+citation: >
+  Chip Huyen (2022), "Designing Machine Learning Systems", O'Reilly Media,
+  Chapter 3 ("Data Engineering Fundamentals, Feature Stores, and Data Leakage").
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - ml_feature_store
+  - feature_store
+  - asof_join
+  - vector_embeddings
+  - data_leakage
+  - olap
+
+prompt: >
+  An AI-powered e-commerce fraud detection and recommendation platform deploys deep learning models requiring dual-speed feature infrastructure.
+  The machine learning system requires an online key-value store for sub-millisecond real-time scoring, paired with an offline columnar
+  feature store (entity_customer_features) that captures time-versioned customer behavioural features (risk velocity, rolling spend)
+  and dense vector embeddings (affinity_embedding). When generating model training datasets from historical checkout events
+  (event_checkout_observations), data engineering pipelines must execute point-in-time "as-of" joins (ASOF JOIN) to join each observation
+  strictly to the feature values that existed at or before the observation timestamp (T_feature <= T_observation).
+  Standard relational inner or left joins introduce catastrophic data leakage (lookahead bias) by inadvertently joining future updated features
+  to historical training events. Per Chip Huyen (2022), we require a dual-speed feature store architecture supporting ASOF joins
+  and native array vector cosine similarity matching.
+
+business_answers:
+  - "Core business processes: Real-time fraud scoring, recommendation embeddings, and point-in-time ML training set generation"
+  - "Grain: One record per entity feature update timestamp in features, and one record per historical observation event"
+  - "Workload intent: Dual-speed feature store with vector embeddings and point-in-time ASOF training joins to eliminate feature leakage"
+  - "Dimensions: Entity customer features with time-versioned updates and dense vector arrays, joined to observation events"
+  - "Temporal policy: Strict point-in-time causality where feature timestamp must precede or equal observation timestamp (ASOF JOIN)"
+  - "Lifecycle funnel: Continuous streaming feature updates paired with batch training set compilations"
+  - "Metrics: risk_velocity_30m, avg_order_value_30d, cosine_similarity, label_accuracy"
+
+seed_data:
+  entity_customer_features:
+    - customer_id: "C-101"
+      feature_timestamp: "2026-05-01 10:00:00"
+      risk_velocity_30m: 0.45
+      avg_order_value_30d: 120.50
+      affinity_embedding: [1.0, 0.0, 0.0, 0.0]
+
+    - customer_id: "C-101"
+      feature_timestamp: "2026-05-01 10:10:00"
+      risk_velocity_30m: 0.95
+      avg_order_value_30d: 150.00
+      affinity_embedding: [0.8, 0.6, 0.0, 0.0]
+
+    - customer_id: "C-102"
+      feature_timestamp: "2026-05-01 10:20:00"
+      risk_velocity_30m: 0.88
+      avg_order_value_30d: 310.00
+      affinity_embedding: [0.0, 1.0, 0.0, 0.0]
+
+  event_checkout_observations:
+    - observation_id: "OBS-101"
+      customer_id: "C-101"
+      observation_timestamp: "2026-05-01 10:05:00"
+      actual_fraud_label: false
+      current_query_embedding: [1.0, 0.0, 0.0, 0.0]
+
+    - observation_id: "OBS-102"
+      customer_id: "C-102"
+      observation_timestamp: "2026-05-01 10:25:00"
+      actual_fraud_label: true
+      current_query_embedding: [0.0, 1.0, 0.0, 0.0]
+
+verification_queries:
+  - name: Point-in-Time ASOF Join Zero Feature Leakage Proof
+    query: >
+      SELECT CAST(ROUND(f.risk_velocity_30m, 2) AS DOUBLE)
+      FROM event_checkout_observations o
+      ASOF JOIN entity_customer_features f
+        ON o.customer_id = f.customer_id
+       AND o.observation_timestamp >= f.feature_timestamp
+      WHERE o.observation_id = 'OBS-101';
+    assertion_type: scalar_eq
+    expected_value: 0.45
+    failure_message: Expected 0.45 risk velocity proving ASOF join matched 10:00 feature and rejected 10:10 future feature leakage
+
+  - name: Dense Vector Cosine Similarity Match
+    query: >
+      SELECT CAST(ROUND(array_cosine_similarity(o.current_query_embedding::FLOAT[4], f.affinity_embedding::FLOAT[4]), 2) AS DOUBLE)
+      FROM event_checkout_observations o
+      ASOF JOIN entity_customer_features f
+        ON o.customer_id = f.customer_id
+       AND o.observation_timestamp >= f.feature_timestamp
+      WHERE o.observation_id = 'OBS-102';
+    assertion_type: scalar_eq
+    expected_value: 1.00
+    failure_message: Expected 1.00 cosine similarity for identical unit vector match in feature store
+
+  - name: Historical Time-Versioned Feature Snapshots Count
+    query: >
+      SELECT COUNT(*)
+      FROM entity_customer_features
+      WHERE customer_id = 'C-101';
+    assertion_type: scalar_eq
+    expected_value: 2
+    failure_message: Expected exactly 2 time-versioned feature updates for customer C-101
+
+  - name: Observation Event Feature Completeness
+    query: >
+      SELECT COUNT(*)
+      FROM event_checkout_observations o
+      ASOF JOIN entity_customer_features f
+        ON o.customer_id = f.customer_id
+       AND o.observation_timestamp >= f.feature_timestamp;
+    assertion_type: scalar_eq
+    expected_value: 2
+    failure_message: Expected all 2 observation events to successfully bind to point-in-time features without nulls

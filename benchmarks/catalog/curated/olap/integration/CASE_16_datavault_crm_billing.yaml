@@ -1,0 +1,186 @@
+case_id: CASE-16
+domain: enterprise_integration
+workload_type: OLAP
+name: Enterprise Multi-Source CRM and Billing Data Vault 2.0 Raw Ingestion Layer
+description: Multi-source enterprise integration evaluating Raw Data Vault 2.0 with Hubs, Links, and isolated source Satellites using deterministic SHA-256 hash keys, append-only load timestamps, and hash diff delta detection.
+citation: >
+  Dan Linstedt & Michael Olschimke (2015), "Building a Scalable Data Warehouse with Data Vault 2.0: Analyzing and Managing Big Data",
+  Morgan Kaufmann / Elsevier, Chapters 3, 4 & 7 ("The Data Vault Architecture, Modeling Hubs, Links, and Satellites").
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - integration
+  - data_vault
+  - raw_vault
+  - hash_keys
+  - olap
+
+prompt: >
+  An enterprise B2B conglomerate acquires customer profile and financial relationship data from two independent operational source systems:
+  a global Salesforce CRM instance (SRC_SALESFORCE_CRM) and a Stripe/SAP Billing ledger (SRC_STRIPE_BILLING).
+  Both systems generate customer natural business keys independently, but customers also possess linked billing accounts.
+  Business analysts and compliance auditors require a single auditable raw integration layer that preserves 100% of historical deltas
+  without destructive overwrites, avoids ETL orchestration deadlocks between CRM and Billing batch windows, and supports reconstructed Point-in-Time (PIT) Customer 360 views.
+  Per Dan Linstedt & Michael Olschimke (2015), we require a Data Vault 2.0 Raw Vault containing Hubs (hub_customer, hub_account),
+  an association Link (link_customer_account), and isolated source-specific Satellites (sat_crm_customer, sat_billing_customer)
+  keyed on deterministic SHA-256 hash keys, append-only load timestamps, and hash diff attributes.
+
+business_answers:
+  - "Core business processes: Enterprise multi-source raw ingestion across CRM and Billing systems"
+  - "Grain: One record per natural business key in Hubs, one record per relationship in Links, and one record per attribute delta in Satellites"
+  - "Workload intent: Data Vault 2.0 raw enterprise integration layer with Hubs, Links, and source-isolated Satellites"
+  - "Dimensions: Core business concepts customer and account, with decoupled relationships and multi-source descriptive satellites"
+  - "Temporal policy: Strict append-only auditability with load timestamps (load_dts) and cryptographic SHA-256 hash diff change detection"
+  - "Lifecycle funnel: Independent parallel asynchronous ingestion pipelines with reconstructed Point-in-Time PIT views"
+  - "Metrics: credit_limit_usd, total_balance_usd"
+
+seed_data:
+  hub_customer:
+    - customer_hk: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      customer_id: "CUST-1001"
+      load_dts: "2026-01-01 00:00:00+00"
+      rec_src: "SRC_SALESFORCE_CRM"
+
+    - customer_hk: "ca978112ca1bbdcafac231b39a23dc4da7860814966f07a9b08f86918809988a"
+      customer_id: "CUST-1002"
+      load_dts: "2026-01-01 00:00:00+00"
+      rec_src: "SRC_STRIPE_BILLING"
+
+    - customer_hk: "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+      customer_id: "CUST-1003"
+      load_dts: "2026-01-02 00:00:00+00"
+      rec_src: "SRC_SALESFORCE_CRM"
+
+  hub_account:
+    - account_hk: "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+      account_number: "ACCT-9001"
+      load_dts: "2026-01-01 00:00:00+00"
+      rec_src: "SRC_STRIPE_BILLING"
+
+    - account_hk: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+      account_number: "ACCT-9002"
+      load_dts: "2026-01-01 00:00:00+00"
+      rec_src: "SRC_STRIPE_BILLING"
+
+  link_customer_account:
+    - link_cust_account_hk: "link_hk_0001_1001_9001_sha256_hash_key_placeholder_value_00000001"
+      customer_hk: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      account_hk: "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+      load_dts: "2026-01-01 00:00:00+00"
+      rec_src: "SRC_STRIPE_BILLING"
+
+    - link_cust_account_hk: "link_hk_0002_1002_9002_sha256_hash_key_placeholder_value_00000002"
+      customer_hk: "ca978112ca1bbdcafac231b39a23dc4da7860814966f07a9b08f86918809988a"
+      account_hk: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+      load_dts: "2026-01-01 00:00:00+00"
+      rec_src: "SRC_STRIPE_BILLING"
+
+  sat_crm_customer:
+    - customer_hk: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      load_dts: "2026-01-01 00:00:00+00"
+      hash_diff: "diff_crm_v1_acme_standard_admin"
+      customer_name: "Acme Corp"
+      crm_tier: "STANDARD"
+      email: "admin@acme.com"
+      rec_src: "SRC_SALESFORCE_CRM"
+
+    - customer_hk: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      load_dts: "2026-01-15 00:00:00+00"
+      hash_diff: "diff_crm_v2_acme_enterprise_admin"
+      customer_name: "Acme Global Corp"
+      crm_tier: "ENTERPRISE"
+      email: "corp@acme.com"
+      rec_src: "SRC_SALESFORCE_CRM"
+
+    - customer_hk: "ca978112ca1bbdcafac231b39a23dc4da7860814966f07a9b08f86918809988a"
+      load_dts: "2026-01-01 00:00:00+00"
+      hash_diff: "diff_crm_v1_beta_standard_ops"
+      customer_name: "Beta Inc"
+      crm_tier: "STANDARD"
+      email: "ops@beta.io"
+      rec_src: "SRC_SALESFORCE_CRM"
+
+  sat_billing_customer:
+    - customer_hk: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      load_dts: "2026-01-01 00:00:00+00"
+      hash_diff: "diff_bill_v1_limit_250k_active"
+      credit_limit_usd: 250000.00
+      billing_status: "ACTIVE"
+      rec_src: "SRC_STRIPE_BILLING"
+
+    - customer_hk: "ca978112ca1bbdcafac231b39a23dc4da7860814966f07a9b08f86918809988a"
+      load_dts: "2026-01-01 00:00:00+00"
+      hash_diff: "diff_bill_v1_limit_50k_active"
+      credit_limit_usd: 50000.00
+      billing_status: "ACTIVE"
+      rec_src: "SRC_STRIPE_BILLING"
+
+    - customer_hk: "ca978112ca1bbdcafac231b39a23dc4da7860814966f07a9b08f86918809988a"
+      load_dts: "2026-01-20 00:00:00+00"
+      hash_diff: "diff_bill_v2_limit_75k_active"
+      credit_limit_usd: 75000.00
+      billing_status: "ACTIVE"
+      rec_src: "SRC_STRIPE_BILLING"
+
+verification_queries:
+  - name: Reconstructed Customer 360 Current Profile Credit Limit for Enterprise Tier
+    query: >
+      WITH latest_crm AS (
+          SELECT customer_hk, customer_name, crm_tier,
+                 ROW_NUMBER() OVER (PARTITION BY customer_hk ORDER BY load_dts DESC) as rn
+          FROM sat_crm_customer
+      ),
+      latest_billing AS (
+          SELECT customer_hk, credit_limit_usd, billing_status,
+                 ROW_NUMBER() OVER (PARTITION BY customer_hk ORDER BY load_dts DESC) as rn
+          FROM sat_billing_customer
+      )
+      SELECT CAST(ROUND(SUM(b.credit_limit_usd), 2) AS DOUBLE)
+      FROM hub_customer h
+      JOIN latest_crm c ON h.customer_hk = c.customer_hk AND c.rn = 1
+      JOIN latest_billing b ON h.customer_hk = b.customer_hk AND b.rn = 1
+      WHERE c.crm_tier = 'ENTERPRISE';
+    assertion_type: scalar_eq
+    expected_value: 250000.00
+    failure_message: Expected total credit limit of 250000.00 USD for current Enterprise tier customer
+
+  - name: Point-in-Time Historical PIT Credit Limit Before Increase
+    query: >
+      WITH pit_billing AS (
+          SELECT customer_hk, credit_limit_usd,
+                 ROW_NUMBER() OVER (PARTITION BY customer_hk ORDER BY load_dts DESC) as rn
+          FROM sat_billing_customer
+          WHERE load_dts <= '2026-01-10 00:00:00+00'
+      )
+      SELECT CAST(ROUND(b.credit_limit_usd, 2) AS DOUBLE)
+      FROM hub_customer h
+      JOIN pit_billing b ON h.customer_hk = b.customer_hk AND b.rn = 1
+      WHERE h.customer_id = 'CUST-1002';
+    assertion_type: scalar_eq
+    expected_value: 50000.00
+    failure_message: Expected PIT credit limit of 50000.00 USD for CUST-1002 as of 2026-01-10 prior to credit increase
+
+  - name: Zero Orphan Foreign Hash Keys in Customer Account Link
+    query: >
+      SELECT COUNT(*)
+      FROM link_customer_account l
+      LEFT JOIN hub_customer c ON l.customer_hk = c.customer_hk
+      LEFT JOIN hub_account a ON l.account_hk = a.account_hk
+      WHERE c.customer_hk IS NULL OR a.account_hk IS NULL;
+    assertion_type: scalar_eq
+    expected_value: 0
+    failure_message: Expected zero orphan foreign keys in link_customer_account
+
+  - name: Multi-Source Satellite System Isolation Distinct Sources
+    query: >
+      SELECT COUNT(DISTINCT rec_src)
+      FROM (
+          SELECT rec_src FROM sat_crm_customer
+          UNION ALL
+          SELECT rec_src FROM sat_billing_customer
+      );
+    assertion_type: scalar_eq
+    expected_value: 2
+    failure_message: Expected exactly 2 distinct source systems isolating CRM and Billing satellites

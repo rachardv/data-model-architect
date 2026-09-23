@@ -1,0 +1,165 @@
+{
+  "case_id": "CASE-16",
+  "domain": "enterprise_integration",
+  "name": "Enterprise Multi-Source CRM and Billing Data Vault 2.0 Raw Ingestion Layer",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "An enterprise B2B conglomerate acquires customer profile and financial relationship data from two independent operational source systems: a global Salesforce CRM instance (SRC_SALESFORCE_CRM) and a Stripe/SAP Billing ledger (SRC_STRIPE_BILLING). Both systems generate customer natural business keys independently, but customers also possess linked billing accounts. Business analysts and compliance auditors require a single auditable raw integration layer that preserves 100% of historical deltas without destructive overwrites, avoids ETL orchestration deadlocks between CRM and Billing batch windows, and supports reconstructed Point-in-Time (PIT) Customer 360 views. Per Dan Linstedt & Michael Olschimke (2015), we require a Data Vault 2.0 Raw Vault containing Hubs (hub_customer, hub_account), an association Link (link_customer_account), and isolated source-specific Satellites (sat_crm_customer, sat_billing_customer) keyed on deterministic SHA-256 hash keys, append-only load timestamps, and hash diff attributes.\n",
+  "citation": "Dan Linstedt & Michael Olschimke (2015), \"Building a Scalable Data Warehouse with Data Vault 2.0: Analyzing and Managing Big Data\", Morgan Kaufmann / Elsevier, Chapters 3, 4 & 7 (\"The Data Vault Architecture, Modeling Hubs, Links, and Satellites\").\n",
+  "timestamp_utc": "2026-09-23T21:19:52.011470+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "DATA_VAULT_2_RAW",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": false,
+      "is_factless_event": false,
+      "has_multivalued_bridge": false,
+      "has_junk_dimension": false,
+      "has_outrigger_dimension": false,
+      "is_data_vault": true,
+      "is_graph_topology": false,
+      "is_realtime_streaming_olap": false,
+      "is_vector_feature_store": false
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "hub_customer",
+      "type": "HUB",
+      "primary_key": "customer_hk",
+      "column_count": 4,
+      "columns": [
+        "customer_hk",
+        "customer_id",
+        "load_dts",
+        "rec_src"
+      ]
+    },
+    {
+      "table_name": "hub_account",
+      "type": "HUB",
+      "primary_key": "account_hk",
+      "column_count": 4,
+      "columns": [
+        "account_hk",
+        "account_number",
+        "load_dts",
+        "rec_src"
+      ]
+    },
+    {
+      "table_name": "link_customer_account",
+      "type": "LINK",
+      "primary_key": "link_cust_account_hk",
+      "column_count": 5,
+      "columns": [
+        "link_cust_account_hk",
+        "customer_hk",
+        "account_hk",
+        "load_dts",
+        "rec_src"
+      ]
+    },
+    {
+      "table_name": "sat_crm_customer",
+      "type": "SATELLITE",
+      "primary_key": "customer_hk, load_dts",
+      "column_count": 7,
+      "columns": [
+        "customer_hk",
+        "load_dts",
+        "hash_diff",
+        "customer_name",
+        "crm_tier",
+        "email",
+        "rec_src"
+      ]
+    },
+    {
+      "table_name": "sat_billing_customer",
+      "type": "SATELLITE",
+      "primary_key": "customer_hk, load_dts",
+      "column_count": 6,
+      "columns": [
+        "customer_hk",
+        "load_dts",
+        "hash_diff",
+        "credit_limit_usd",
+        "billing_status",
+        "rec_src"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Reconstructed Customer 360 Current Profile Credit Limit for Enterprise Tier",
+      "query": "WITH latest_crm AS (\n    SELECT customer_hk, customer_name, crm_tier,\n           ROW_NUMBER() OVER (PARTITION BY customer_hk ORDER BY load_dts DESC) as rn\n    FROM sat_crm_customer\n), latest_billing AS (\n    SELECT customer_hk, credit_limit_usd, billing_status,\n           ROW_NUMBER() OVER (PARTITION BY customer_hk ORDER BY load_dts DESC) as rn\n    FROM sat_billing_customer\n) SELECT CAST(ROUND(SUM(b.credit_limit_usd), 2) AS DOUBLE) FROM hub_customer h JOIN latest_crm c ON h.customer_hk = c.customer_hk AND c.rn = 1 JOIN latest_billing b ON h.customer_hk = b.customer_hk AND b.rn = 1 WHERE c.crm_tier = 'ENTERPRISE';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 250000.0,
+      "actual_value": 250000.0,
+      "passed": true,
+      "latency_ms": 2.56,
+      "error": null
+    },
+    {
+      "name": "Point-in-Time Historical PIT Credit Limit Before Increase",
+      "query": "WITH pit_billing AS (\n    SELECT customer_hk, credit_limit_usd,\n           ROW_NUMBER() OVER (PARTITION BY customer_hk ORDER BY load_dts DESC) as rn\n    FROM sat_billing_customer\n    WHERE load_dts <= '2026-01-10 00:00:00+00'\n) SELECT CAST(ROUND(b.credit_limit_usd, 2) AS DOUBLE) FROM hub_customer h JOIN pit_billing b ON h.customer_hk = b.customer_hk AND b.rn = 1 WHERE h.customer_id = 'CUST-1002';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 50000.0,
+      "actual_value": 50000.0,
+      "passed": true,
+      "latency_ms": 1.13,
+      "error": null
+    },
+    {
+      "name": "Zero Orphan Foreign Hash Keys in Customer Account Link",
+      "query": "SELECT COUNT(*) FROM link_customer_account l LEFT JOIN hub_customer c ON l.customer_hk = c.customer_hk LEFT JOIN hub_account a ON l.account_hk = a.account_hk WHERE c.customer_hk IS NULL OR a.account_hk IS NULL;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 0,
+      "actual_value": 0,
+      "passed": true,
+      "latency_ms": 0.7,
+      "error": null
+    },
+    {
+      "name": "Multi-Source Satellite System Isolation Distinct Sources",
+      "query": "SELECT COUNT(DISTINCT rec_src) FROM (\n    SELECT rec_src FROM sat_crm_customer\n    UNION ALL\n    SELECT rec_src FROM sat_billing_customer\n);\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 2,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.55,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 3221.34
+}
