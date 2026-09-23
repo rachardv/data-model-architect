@@ -168,7 +168,9 @@ class PredefinedBenchmarkGate:
                 "execution_time_ms": tracer.trace.execution_time_ms,
                 "queries_executed": len(case.verification_queries),
                 "queries_passed": sum(1 for q in tracer.trace.verification_queries_trace if q.passed),
-                "trace_files": saved_paths
+                "trace_files": saved_paths,
+                "schema_decisions": tracer.trace.schema_decisions,
+                "queries_trace": [q.model_dump() for q in tracer.trace.verification_queries_trace]
             }
 
         finally:

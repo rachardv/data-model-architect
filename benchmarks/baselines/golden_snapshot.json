@@ -1,0 +1,311 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-09-23T05:41:39.098541+00:00",
+  "total_cases": 8,
+  "cases": {
+    "CASE-01": {
+      "case_id": "CASE-01",
+      "name": "Enterprise Retail Kimball Star Mart",
+      "domain": "retail",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 130.96,
+      "tables": {
+        "dim_retail_customer_core": {
+          "table_name": "dim_retail_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current"
+          ]
+        },
+        "fact_retail_orders": {
+          "table_name": "fact_retail_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Customer Dimension Active Records",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.3
+        },
+        {
+          "name": "Orders Fact Grain Row Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.25
+        },
+        {
+          "name": "Positive Metric Revenue Total",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.22
+        }
+      ]
+    },
+    "CASE-02": {
+      "case_id": "CASE-02",
+      "name": "Healthcare Encounter & Diagnosis Bridge",
+      "domain": "healthcare",
+      "hazard_category": "BRIDGE_CO_OWNERSHIP",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 71.16,
+      "tables": {
+        "dim_healthcare_customer_core": {
+          "table_name": "dim_healthcare_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current"
+          ]
+        },
+        "fact_healthcare_orders": {
+          "table_name": "fact_healthcare_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Active SCD2 Patients Check",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.33
+        },
+        {
+          "name": "Admissions Fact Grain Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.3
+        },
+        {
+          "name": "Total Admission Cost Sum",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.28
+        }
+      ]
+    },
+    "CASE-03": {
+      "case_id": "CASE-03",
+      "name": "Banking Multi-Owner Joint Account Co-Ownership",
+      "domain": "banking",
+      "hazard_category": "BRIDGE_CO_OWNERSHIP",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 70.89,
+      "tables": {
+        "dim_banking_customer_core": {
+          "table_name": "dim_banking_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current"
+          ]
+        },
+        "fact_banking_orders": {
+          "table_name": "fact_banking_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Active SCD2 Customers Check",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.25
+        },
+        {
+          "name": "Transactions Fact Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.26
+        },
+        {
+          "name": "Total Transaction Amount Sum",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.23
+        }
+      ]
+    },
+    "CASE-04": {
+      "case_id": "CASE-04",
+      "name": "Retail Inventory Periodic Daily Snapshot",
+      "domain": "inventory",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 76.66,
+      "tables": {
+        "dim_inventory_customer_core": {
+          "table_name": "dim_inventory_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current"
+          ]
+        },
+        "fact_inventory_orders": {
+          "table_name": "fact_inventory_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Active Products Dimension Check",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.25
+        },
+        {
+          "name": "Periodic Snapshot Fact Grain Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.22
+        },
+        {
+          "name": "Total Inventory Valuation Sum",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.26
+        }
+      ]
+    },
+    "TRAP-01": {
+      "case_id": "TRAP-01",
+      "name": "Contradiction Guardrail Trap",
+      "domain": "highfreq",
+      "hazard_category": "CONTRADICTION_HALT",
+      "is_intentional_trap": true,
+      "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "verdict": "PASS",
+      "execution_time_ms": 7.8,
+      "tables": {},
+      "queries": []
+    },
+    "TRAP-02": {
+      "case_id": "TRAP-02",
+      "name": "Multi-Fact Chasm Trap Fanout Multiplicity Conflict",
+      "domain": "sales_fulfillment",
+      "hazard_category": "CHASM_TRAP_FANOUT",
+      "is_intentional_trap": true,
+      "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "verdict": "PASS",
+      "execution_time_ms": 7.85,
+      "tables": {},
+      "queries": []
+    },
+    "TRAP-03": {
+      "case_id": "TRAP-03",
+      "name": "Cyclic Foreign Key Dependency Loop",
+      "domain": "organization",
+      "hazard_category": "CYCLIC_FK_GRAPH",
+      "is_intentional_trap": true,
+      "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "verdict": "PASS",
+      "execution_time_ms": 7.87,
+      "tables": {},
+      "queries": []
+    },
+    "TRAP-04": {
+      "case_id": "TRAP-04",
+      "name": "SCD2 Historical Amnesia Point-in-Time Trap",
+      "domain": "telecom",
+      "hazard_category": "SCD2_HISTORICAL_AMNESIA",
+      "is_intentional_trap": true,
+      "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
+      "verdict": "PASS",
+      "execution_time_ms": 7.98,
+      "tables": {},
+      "queries": []
+    }
+  }
+}

@@ -240,7 +240,25 @@ Production CTE transformation query extracting, transforming, and loading the ta
 
 | Test Suite | Coverage | Status | Latency |
 | :--- | :--- | :---: | :---: |
-| **Full Pytest Suite (`tests/`)** | 126 Unit & Integration Tests across all micro-agents, intake scorers, STTM generators, declarative catalog loaders, and DuckDB runner | 🟢 **126/126 PASSED (100.0%)** | `31.09s` |
+| **Full Pytest Suite (`tests/`)** | 134 Unit & Integration Tests across all micro-agents, intake scorers, STTM generators, declarative catalog loaders, snapshot & regression diffing engine, and DuckDB runner | 🟢 **134/134 PASSED (100.0%)** | `31.25s` |
 | **DuckDB In-Memory Execution Battery** | Bronze → Silver Quarantine → Gold SCD2 Merges | 🟢 **100% PASSED** | `0.08s` |
-| **Layer 3 Predefined Benchmark Gate** | Declarative YAML/JSON Catalog (`benchmarks/catalog/`) with seed SQL/data injection & decision traces | 🟢 **100% PASSED** | `0.15s` |
+| **Layer 3 Predefined Benchmark Gate** | Declarative YAML/JSON Catalog (`benchmarks/catalog/`) with seed SQL/data injection, decision traces & golden snapshot diffing | 🟢 **100% PASSED** | `0.40s` |
 | **Strict 100% Hard Gate Tests** | Gibberish rejection, contradiction detection, 20%-80% hard blocks | 🟢 **100% PASSED** | `0.02s` |
+
+---
+
+## 6. Golden Snapshot & Regression Diffing Engine (Phase 2 Standard)
+
+The Studio incorporates an autonomous regression prevention engine (`src/snapshot_engine.py`) ensuring certified architectural ground truth is maintained across codebase iterations:
+
+1. **Certified Baseline Fingerprinting (`--snapshot`):**
+   - Captures table entities, primary keys, and column sets.
+   - Records verification query latencies, expected values, actual values, and pass/fail states.
+   - Serializes into `benchmarks/baselines/golden_snapshot.json`.
+
+2. **Multi-Vector Regression Diffing (`--diff`):**
+   - **Schema Drift:** Detects added/dropped tables, added/dropped columns, and altered primary keys.
+   - **Status & Verdict Flipping:** Flags when an expected status or pass/fail verdict deviates from the golden baseline.
+   - **Latency Regression Alerting:** Flags physical queries whose runtime spikes by $> 100\%$ (2x baseline) with an absolute delta $\ge 1.0\text{ms}$.
+   - **Strict Enforcement Mode (`--strict-drift`):** Exits with code 1 if schema drift or status deviations are detected, halting CI/CD deployment pipelines immediately.
+

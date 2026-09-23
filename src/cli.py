@@ -80,6 +80,11 @@ def main():
     parser.add_argument("--benchmark-case", type=str, default=None, help="Execute single Predefined Benchmark Case by ID (e.g. CASE-01)")
     parser.add_argument("--catalog-path", type=str, default="benchmarks/catalog", help="Directory path to scan for declarative YAML/JSON benchmark cases (default: benchmarks/catalog)")
     parser.add_argument("--list-cases", action="store_true", help="Discover and list all declarative benchmark cases in the catalog")
+    parser.add_argument("--snapshot", action="store_true", help="Capture certified golden baseline snapshot of benchmark gate run")
+    parser.add_argument("--diff", action="store_true", help="Compare benchmark gate run against certified golden baseline snapshot")
+    parser.add_argument("--strict-drift", action="store_true", help="Fail execution with exit code 1 if schema drift or status deviations are detected")
+    parser.add_argument("--baseline-path", type=str, default="benchmarks/baselines/golden_snapshot.json", help="Path to golden baseline snapshot file (default: benchmarks/baselines/golden_snapshot.json)")
+    parser.add_argument("--latency-threshold", type=float, default=100.0, help="Query latency regression threshold percentage (default: 100.0%%)")
     parser.add_argument("--forge", action="store_true", help="Execute 🛠️ Forge Workflow engine certification battery (Predefined Gate + Industry Standards)")
     parser.add_argument("--industry-benchmark", action="store_true", help="Execute Industry Standards Benchmark Suite (TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider)")
     
@@ -117,7 +122,7 @@ def main():
         print("-" * 105)
         return
 
-    if args.benchmark_gate or args.benchmark_case:
+    if args.benchmark_gate or args.benchmark_case or args.snapshot or args.diff:
         from src.predefined_benchmark_gate import PredefinedBenchmarkGate
         from src.benchmark_catalog import get_predefined_benchmark_catalog
         from src.catalog_loader import BenchmarkCatalogLoader
@@ -159,6 +164,31 @@ def main():
             for c_res in scorecard['cases']:
                 badge = "PASS" if c_res['verdict'] == "PASS" else "FAIL"
                 print(f"  • [{badge}] {c_res['case_id']}: {c_res['name']} ({c_res['execution_time_ms']}ms)")
+
+        # Handle Phase 2 Golden Snapshot Capture
+        if args.snapshot:
+            from src.snapshot_engine import GoldenSnapshotEngine
+            snap = GoldenSnapshotEngine.capture_snapshot(scorecard["cases"], args.baseline_path)
+            print(f"\n📸 [SNAPSHOT CAPTURED] Golden baseline saved to: {args.baseline_path} ({len(snap['cases'])} cases)")
+
+        # Handle Phase 2 Regression Diffing
+        if args.diff:
+            from src.snapshot_engine import GoldenSnapshotEngine
+            baseline = GoldenSnapshotEngine.load_snapshot(args.baseline_path)
+            if not baseline:
+                print(f"\n⚠️  Cannot diff: No golden baseline found at '{args.baseline_path}'. Run with --snapshot first.")
+                if args.strict_drift:
+                    sys.exit(1)
+                return
+            diff_res = GoldenSnapshotEngine.compare_run_to_snapshot(
+                live_results=scorecard["cases"],
+                snapshot=baseline,
+                latency_threshold_pct=args.latency_threshold
+            )
+            print(GoldenSnapshotEngine.format_diff_terminal_report(diff_res))
+            if args.strict_drift and diff_res["has_drift"]:
+                print(f"\n❌ [STRICT DRIFT GATE FAILED] Schema drift or status deviations detected.")
+                sys.exit(1)
         return
 
     if args.mega_benchmark:

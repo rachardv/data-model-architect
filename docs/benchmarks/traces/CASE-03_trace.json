@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "Consumer retail banking managing checking and savings accounts. Accounts can be jointly owned by multiple customers (primary and secondary account holders) using weighting factor splits. Transactions track deposits, withdrawals, and balances. Customer address and status changes are tracked historically using SCD Type 2.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 11: \"Financial Services\", pp. 295-326 (\"Joint Accounts and Co-Owners with Weighting Factors\").\n",
-  "timestamp_utc": "2026-09-23T05:33:34.784022+00:00",
+  "timestamp_utc": "2026-09-23T05:43:14.373220+00:00",
   "intake_decisions": {
     "status": "CERTIFIED_PRODUCTION_READY",
     "completeness_score": null,
@@ -71,7 +71,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.36,
+      "latency_ms": 0.28,
       "error": null
     },
     {
@@ -81,7 +81,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.27,
+      "latency_ms": 0.26,
       "error": null
     },
     {
@@ -91,12 +91,12 @@
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.3,
+      "latency_ms": 0.29,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 76.9
+  "execution_time_ms": 74.35
 }
