@@ -1,0 +1,119 @@
+{
+  "case_id": "CASE-13",
+  "domain": "clinical_healthcare",
+  "name": "Clinical Inpatient Episode DRG Comorbidity Bridge & Attending Allocation",
+  "hazard_category": "BRIDGE_CO_OWNERSHIP",
+  "is_intentional_trap": false,
+  "prompt": "We operate an acute care regional hospital network tracking clinical inpatient episodes of care. When a patient is admitted, they receive clinical treatments overseen by a team of attending, admitting, and consulting physicians. Furthermore, each inpatient hospitalization is assigned to a Medicare Severity Diagnosis Related Group (DRG) based on a primary admitting diagnosis combined with multiple secondary comorbid conditions and surgical complications. Per Kimball Chapter 11, multiple physicians participating in an episode cannot be forced into a single foreign key without misrepresenting clinical responsibility. We require a multi-valued physician treatment bridge table with explicit allocation weighting factors (e.g., 70% attending, 30% consulting) such that each episode's physician weights sum strictly to 1.0 (100.0%), enabling both weighted revenue attribution and unweighted clinical team participation analysis. Similarly, comorbidity diagnoses must link through a clinical diagnosis bridge preserving primary vs secondary diagnosis flags and present-on-admission indicators without triggering Cartesian row multiplication in episode charge totals.\n",
+  "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 11 (\"Healthcare: Clinical Inpatient Episodes of Care, DRG Comorbidity Grouping & Multi-Valued Treatment Bridge\"), pp. 325-356.\n",
+  "timestamp_utc": "2026-09-23T20:17:37.128823+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": false,
+      "is_factless_event": false
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_clinical_healthcare_customer_core",
+      "type": "DIMENSION",
+      "primary_key": "customer_sk",
+      "column_count": 7,
+      "columns": [
+        "customer_sk",
+        "customer_id",
+        "customer_name",
+        "scd_valid_from",
+        "scd_valid_to",
+        "is_current",
+        "is_inferred"
+      ]
+    },
+    {
+      "table_name": "fact_clinical_healthcare_orders",
+      "type": "FACT",
+      "primary_key": "order_id",
+      "column_count": 4,
+      "columns": [
+        "order_id",
+        "customer_sk",
+        "total_amount_usd",
+        "estimated_delivery_days"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Physician Bridge Allocation Weight Completeness",
+      "query": "SELECT CAST(ROUND(SUM(allocation_weight), 2) AS DOUBLE) FROM bridge_episode_physician GROUP BY episode_id ORDER BY episode_id LIMIT 1;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 1.0,
+      "actual_value": 1.0,
+      "passed": true,
+      "latency_ms": 1.25,
+      "error": null
+    },
+    {
+      "name": "Total Inpatient Hospital Charges Reconciliation",
+      "query": "SELECT CAST(ROUND(SUM(total_charges_usd), 2) AS DOUBLE) FROM fact_clinical_inpatient_episodes;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 80000.0,
+      "actual_value": 80000.0,
+      "passed": true,
+      "latency_ms": 0.32,
+      "error": null
+    },
+    {
+      "name": "Weighted Attending Revenue Attribution Without Double Counting",
+      "query": "SELECT CAST(ROUND(SUM(f.total_charges_usd * b.allocation_weight), 2) AS DOUBLE) FROM fact_clinical_inpatient_episodes f JOIN bridge_episode_physician b ON f.episode_id = b.episode_id WHERE b.physician_sk = 'DOC-CARD-01';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 24500.0,
+      "actual_value": 24500.0,
+      "passed": true,
+      "latency_ms": 0.68,
+      "error": null
+    },
+    {
+      "name": "Comorbid Secondary Diagnoses Count Per Episode",
+      "query": "SELECT COUNT(*) FROM bridge_episode_diagnosis WHERE episode_id = 'EP-5001' AND diagnosis_type = 'SECONDARY_COMORBIDITY';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 2,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.3,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 99.37
+}

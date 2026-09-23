@@ -1,0 +1,191 @@
+case_id: CASE-13
+domain: clinical_healthcare
+workload_type: OLAP
+name: Clinical Inpatient Episode DRG Comorbidity Bridge & Attending Allocation
+description: Hospital clinical inpatient episode dimensional model evaluating acute care hospitalizations, Diagnostic Related Group (DRG) comorbidity groups, attending physician weighting bridges, and allocation factor parity (100.0%) without Cartesian explosion.
+citation: >
+  Ralph Kimball & Margy Ross (2013), "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling" (3rd Edition),
+  Chapter 11 ("Healthcare: Clinical Inpatient Episodes of Care, DRG Comorbidity Grouping & Multi-Valued Treatment Bridge"), pp. 325-356.
+hazard_category: BRIDGE_CO_OWNERSHIP
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - healthcare
+  - clinical
+  - drg
+  - bridge
+  - allocation_factor
+  - multi_valued_dimension
+  - kimball
+
+prompt: >
+  We operate an acute care regional hospital network tracking clinical inpatient episodes of care.
+  When a patient is admitted, they receive clinical treatments overseen by a team of attending, admitting, and consulting physicians.
+  Furthermore, each inpatient hospitalization is assigned to a Medicare Severity Diagnosis Related Group (DRG) based on a primary admitting diagnosis combined with multiple secondary comorbid conditions and surgical complications.
+  Per Kimball Chapter 11, multiple physicians participating in an episode cannot be forced into a single foreign key without
+  misrepresenting clinical responsibility.
+  We require a multi-valued physician treatment bridge table with explicit allocation weighting factors (e.g., 70% attending, 30% consulting)
+  such that each episode's physician weights sum strictly to 1.0 (100.0%), enabling both weighted revenue attribution and unweighted
+  clinical team participation analysis.
+  Similarly, comorbidity diagnoses must link through a clinical diagnosis bridge preserving primary vs secondary diagnosis flags
+  and present-on-admission indicators without triggering Cartesian row multiplication in episode charge totals.
+
+business_answers:
+  - "Core business processes: Clinical hospital inpatient episodes, DRG comorbidity assignment, and multi-physician care team attribution"
+  - "Grain: One record per acute inpatient admission episode of care"
+  - "Workload intent: Clinical dimensional model with multi-valued physician treatment bridge and diagnosis comorbidity bridge"
+  - "Dimensions: Conformed clinical patients with SCD2, attending/consulting physicians, DRG groups, and ICD-10 diagnoses"
+  - "Temporal policy: SCD Type 2 for patients, with admit and discharge date keys on the episode fact"
+  - "Lifecycle funnel: Patient admission, clinical stay with DRG classification, physician consultations, and discharge billing"
+  - "Metrics: total_charges_usd, reimbursement_amount_usd, length_of_stay_days, physician_allocation_weight"
+
+seed_data:
+  dim_patient_clinical:
+    - patient_sk: "PAT-001"
+      patient_id: "MRN-101"
+      patient_name: "Eleanor Vance"
+      birth_year: 1965
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+    - patient_sk: "PAT-002"
+      patient_id: "MRN-102"
+      patient_name: "Arthur Pendelton"
+      birth_year: 1952
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+  dim_physician_core:
+    - physician_sk: "DOC-CARD-01"
+      physician_npi: "NPI-11111"
+      physician_name: "Dr. Sarah Chen"
+      specialty: "Cardiology"
+
+    - physician_sk: "DOC-SURG-01"
+      physician_npi: "NPI-22222"
+      physician_name: "Dr. Marcus Vance"
+      specialty: "Cardiothoracic Surgery"
+
+    - physician_sk: "DOC-HOSP-01"
+      physician_npi: "NPI-33333"
+      physician_name: "Dr. Emily Taylor"
+      specialty: "Hospitalist"
+
+  dim_drg_core:
+    - drg_sk: "DRG-291"
+      drg_code: "291"
+      drg_description: "Heart Failure & Shock with Major Complication"
+      case_weight: 1.4820
+
+    - drg_sk: "DRG-470"
+      drg_code: "470"
+      drg_description: "Major Hip and Knee Joint Replacement"
+      case_weight: 1.9540
+
+  bridge_episode_physician:
+    - episode_id: "EP-5001"
+      physician_sk: "DOC-CARD-01"
+      role: "ATTENDING"
+      allocation_weight: 0.70
+
+    - episode_id: "EP-5001"
+      physician_sk: "DOC-HOSP-01"
+      role: "CONSULTING"
+      allocation_weight: 0.30
+
+    - episode_id: "EP-5002"
+      physician_sk: "DOC-SURG-01"
+      role: "ATTENDING"
+      allocation_weight: 0.80
+
+    - episode_id: "EP-5002"
+      physician_sk: "DOC-HOSP-01"
+      role: "CONSULTING"
+      allocation_weight: 0.20
+
+  bridge_episode_diagnosis:
+    - episode_id: "EP-5001"
+      icd10_code: "I50.9"
+      diagnosis_type: "PRIMARY"
+      is_present_on_admission: true
+
+    - episode_id: "EP-5001"
+      icd10_code: "E11.9"
+      diagnosis_type: "SECONDARY_COMORBIDITY"
+      is_present_on_admission: true
+
+    - episode_id: "EP-5001"
+      icd10_code: "N18.3"
+      diagnosis_type: "SECONDARY_COMORBIDITY"
+      is_present_on_admission: true
+
+    - episode_id: "EP-5002"
+      icd10_code: "M16.11"
+      diagnosis_type: "PRIMARY"
+      is_present_on_admission: true
+
+    - episode_id: "EP-5002"
+      icd10_code: "I10"
+      diagnosis_type: "SECONDARY_COMORBIDITY"
+      is_present_on_admission: true
+
+  fact_clinical_inpatient_episodes:
+    - episode_id: "EP-5001"
+      patient_sk: "PAT-001"
+      drg_sk: "DRG-291"
+      admit_date_key: 20260110
+      discharge_date_key: 20260115
+      length_of_stay_days: 5
+      total_charges_usd: 35000.00
+      reimbursement_amount_usd: 28000.00
+
+    - episode_id: "EP-5002"
+      patient_sk: "PAT-002"
+      drg_sk: "DRG-470"
+      admit_date_key: 20260112
+      discharge_date_key: 20260116
+      length_of_stay_days: 4
+      total_charges_usd: 45000.00
+      reimbursement_amount_usd: 38000.00
+
+verification_queries:
+  - name: Physician Bridge Allocation Weight Completeness
+    query: >
+      SELECT CAST(ROUND(SUM(allocation_weight), 2) AS DOUBLE)
+      FROM bridge_episode_physician
+      GROUP BY episode_id
+      ORDER BY episode_id
+      LIMIT 1;
+    assertion_type: scalar_eq
+    expected_value: 1.0
+    failure_message: Expected total care team physician allocation weight to equal 1.0 (100.0%)
+
+  - name: Total Inpatient Hospital Charges Reconciliation
+    query: >
+      SELECT CAST(ROUND(SUM(total_charges_usd), 2) AS DOUBLE)
+      FROM fact_clinical_inpatient_episodes;
+    assertion_type: scalar_eq
+    expected_value: 80000.00
+    failure_message: Expected total hospital charges of 80000.00 USD across all episodes
+
+  - name: Weighted Attending Revenue Attribution Without Double Counting
+    query: >
+      SELECT CAST(ROUND(SUM(f.total_charges_usd * b.allocation_weight), 2) AS DOUBLE)
+      FROM fact_clinical_inpatient_episodes f
+      JOIN bridge_episode_physician b ON f.episode_id = b.episode_id
+      WHERE b.physician_sk = 'DOC-CARD-01';
+    assertion_type: scalar_eq
+    expected_value: 24500.00
+    failure_message: Expected Dr. Sarah Chen weighted revenue attribution of 24500.00 USD (70% of EP-5001)
+
+  - name: Comorbid Secondary Diagnoses Count Per Episode
+    query: >
+      SELECT COUNT(*)
+      FROM bridge_episode_diagnosis
+      WHERE episode_id = 'EP-5001' AND diagnosis_type = 'SECONDARY_COMORBIDITY';
+    assertion_type: scalar_eq
+    expected_value: 2
+    failure_message: Expected exactly 2 secondary comorbidity diagnoses for episode EP-5001

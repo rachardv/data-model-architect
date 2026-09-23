@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-08 — Distributed MPP Telematics Clustering & Partition Pruning
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `81.88ms`
-> **Timestamp (UTC):** `2026-09-23T19:56:53.668781+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `80.63ms`
+> **Timestamp (UTC):** `2026-09-23T20:17:41.195874+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `telematics_mpp`
@@ -31,10 +31,10 @@ We operate an enterprise fleet IoT telematics platform capturing 500 million pin
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Fact Telematics Row Count | `scalar_gt` | `0` | `4` | `0.3ms` | ✅ PASS |
-| Fleet Vehicle Dimension Exists | `scalar_gt` | `0` | `2` | `0.27ms` | ✅ PASS |
-| Partition Pruning Single Date Filter | `scalar_gt` | `0` | `2` | `0.26ms` | ✅ PASS |
-| Co-located Cluster Join Vehicle Telemetry | `scalar_gt` | `0` | `2` | `1.17ms` | ✅ PASS |
+| Fact Telematics Row Count | `scalar_gt` | `0` | `4` | `0.32ms` | ✅ PASS |
+| Fleet Vehicle Dimension Exists | `scalar_gt` | `0` | `2` | `0.28ms` | ✅ PASS |
+| Partition Pruning Single Date Filter | `scalar_gt` | `0` | `2` | `0.29ms` | ✅ PASS |
+| Co-located Cluster Join Vehicle Telemetry | `scalar_gt` | `0` | `2` | `0.94ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Fact Telematics Row Count

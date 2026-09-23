@@ -21,7 +21,7 @@ def clean_catalog():
 
 def test_load_single_case_yaml():
     """Validates loading a single YAML benchmark case from disk."""
-    case_path = os.path.join("benchmarks", "catalog", "curated", "CASE_01_retail_kimball_star.yaml")
+    case_path = os.path.join("benchmarks", "catalog", "curated", "olap", "retail", "CASE_01_retail_kimball_star.yaml")
     assert os.path.exists(case_path), f"Expected reference case to exist at {case_path}"
     
     case = BenchmarkCatalogLoader.load_case_file(case_path)
@@ -83,7 +83,7 @@ def test_invalid_case_schema_raises_error():
         assert "validation error" in str(exc_info.value).lower()
 
 def test_filter_cases_by_tag_and_hazard():
-    """Validates filtering benchmark cases by tags, hazard categories, and IDs."""
+    """Validates filtering benchmark cases by tags, hazard categories, workload types, domains, and IDs."""
     cases = BenchmarkCatalogLoader.load_from_directory("benchmarks/catalog", register=False)
     
     # Filter by tag
@@ -100,6 +100,16 @@ def test_filter_cases_by_tag_and_hazard():
     contradiction_cases = BenchmarkCatalogLoader.filter_cases(cases, hazard_category="CONTRADICTION_HALT")
     assert len(contradiction_cases) >= 1
     assert contradiction_cases[0].case_id == "TRAP-01"
+
+    # Filter by workload_type
+    olap_cases = BenchmarkCatalogLoader.filter_cases(cases, workload_type="OLAP")
+    assert len(olap_cases) >= 10
+    assert all(c.workload_type == "OLAP" for c in olap_cases)
+
+    # Filter by domain
+    banking_cases = BenchmarkCatalogLoader.filter_cases(cases, domain="banking")
+    assert len(banking_cases) >= 2
+    assert all("banking" in c.domain.lower() for c in banking_cases)
 
 def test_seed_sql_injection_in_duckdb():
     """Validates that seed_sql executes in DuckDB and verification queries can assert on seeded tables."""

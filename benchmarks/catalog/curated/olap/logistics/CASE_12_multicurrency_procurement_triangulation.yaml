@@ -1,0 +1,178 @@
+case_id: CASE-12
+domain: global_procurement
+workload_type: OLAP
+name: Multi-Currency Global Procurement Spot Rate Triangulation
+description: Global supply chain procurement model tracking international purchase orders across multiple local transaction currencies (EUR, GBP, JPY), daily spot exchange rates, triangulation into corporate reporting currency (USD), and realized foreign exchange gain/loss.
+citation: >
+  Ralph Kimball & Margy Ross (2013), "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling" (3rd Edition),
+  Chapter 8 ("Procurement & Global Logistics: Multi-Currency Fact Tables, Daily Spot Rates & Corporate Reporting Currency Triangulation"), pp. 275-304.
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - logistics
+  - procurement
+  - multi_currency
+  - spot_rates
+  - currency_triangulation
+  - realized_variance
+  - kimball
+
+prompt: >
+  We operate an international supply chain and manufacturing enterprise procuring components from global suppliers across Europe, Japan, and the Americas.
+  Purchase orders are negotiated and transacted in distinct local currencies (EUR, GBP, JPY), while corporate headquarters requires consolidated financial
+  reporting in US Dollars (USD).
+  Per Kimball Chapter 8, multi-currency fact tables must preserve both the original local transaction currency amount and the converted corporate reporting
+  currency amount on every fact record to support both operational vendor management and corporate financial rollups simultaneously.
+  Currency conversions must be linked to a conformed daily currency exchange rate dimension capturing spot rates.
+  When goods are received and invoices are paid on later dates, fluctuations between the order spot rate and payment settlement spot rate produce realized
+  foreign exchange (FX) variance (gain/loss), which must be tracked and reconciled with zero floating-point drift.
+
+business_answers:
+  - "Core business processes: Global multi-currency procurement purchase orders, currency spot conversions, and realized FX variance"
+  - "Grain: One record per purchase order item line with dual-currency measures"
+  - "Workload intent: Multi-currency dimensional model with conformed spot exchange rate triangulation and realized variance tracking"
+  - "Dimensions: Conformed suppliers, parts/commodities, currency dimension, and daily exchange rates"
+  - "Temporal policy: Daily spot rates tied to calendar date keys with historical conversion preservation"
+  - "Lifecycle funnel: Purchase order creation, receipt of goods, and invoice payment with currency spot fluctuations"
+  - "Metrics: local_currency_amount, reporting_usd_amount, paid_usd_amount, realized_fx_gain_loss_usd"
+
+seed_data:
+  dim_currency_core:
+    - currency_code: "EUR"
+      currency_name: "Euro"
+      currency_symbol: "€"
+
+    - currency_code: "GBP"
+      currency_name: "British Pound"
+      currency_symbol: "£"
+
+    - currency_code: "JPY"
+      currency_name: "Japanese Yen"
+      currency_symbol: "¥"
+
+    - currency_code: "USD"
+      currency_name: "US Dollar"
+      currency_symbol: "$"
+
+  dim_supplier_global:
+    - supplier_sk: "SUP-EU-01"
+      supplier_name: "Bavaria Precision Parts"
+      country: "Germany"
+      default_currency: "EUR"
+
+    - supplier_sk: "SUP-UK-01"
+      supplier_name: "Thames Industrial Supply"
+      country: "United Kingdom"
+      default_currency: "GBP"
+
+    - supplier_sk: "SUP-JP-01"
+      supplier_name: "Kyoto Robotics Ltd"
+      country: "Japan"
+      default_currency: "JPY"
+
+  dim_currency_exchange_rates_daily:
+    - rate_date_key: 20260115
+      from_currency: "EUR"
+      to_currency: "USD"
+      spot_rate: 1.0800
+
+    - rate_date_key: 20260115
+      from_currency: "GBP"
+      to_currency: "USD"
+      spot_rate: 1.2800
+
+    - rate_date_key: 20260115
+      from_currency: "JPY"
+      to_currency: "USD"
+      spot_rate: 0.0065
+
+    - rate_date_key: 20260215
+      from_currency: "EUR"
+      to_currency: "USD"
+      spot_rate: 1.1000
+
+    - rate_date_key: 20260215
+      from_currency: "GBP"
+      to_currency: "USD"
+      spot_rate: 1.2600
+
+    - rate_date_key: 20260215
+      from_currency: "JPY"
+      to_currency: "USD"
+      spot_rate: 0.0068
+
+  fact_procurement_orders:
+    - po_id: "PO-1001"
+      po_date_key: 20260115
+      payment_date_key: 20260215
+      supplier_sk: "SUP-EU-01"
+      currency_code: "EUR"
+      order_quantity: 100
+      local_amount: 10000.00
+      order_spot_rate: 1.0800
+      reporting_usd_amount: 10800.00
+      payment_spot_rate: 1.1000
+      paid_usd_amount: 11000.00
+      realized_fx_variance_usd: 200.00
+
+    - po_id: "PO-1002"
+      po_date_key: 20260115
+      payment_date_key: 20260215
+      supplier_sk: "SUP-UK-01"
+      currency_code: "GBP"
+      order_quantity: 50
+      local_amount: 5000.00
+      order_spot_rate: 1.2800
+      reporting_usd_amount: 6400.00
+      payment_spot_rate: 1.2600
+      paid_usd_amount: 6300.00
+      realized_fx_variance_usd: -100.00
+
+    - po_id: "PO-1003"
+      po_date_key: 20260115
+      payment_date_key: 20260215
+      supplier_sk: "SUP-JP-01"
+      currency_code: "JPY"
+      order_quantity: 1000
+      local_amount: 1000000.00
+      order_spot_rate: 0.0065
+      reporting_usd_amount: 6500.00
+      payment_spot_rate: 0.0068
+      paid_usd_amount: 6800.00
+      realized_fx_variance_usd: 300.00
+
+verification_queries:
+  - name: Consolidated Corporate USD Reporting Spend
+    query: >
+      SELECT CAST(ROUND(SUM(reporting_usd_amount), 2) AS DOUBLE)
+      FROM fact_procurement_orders;
+    assertion_type: scalar_eq
+    expected_value: 23700.00
+    failure_message: Expected total corporate spend of 23700.00 USD across all purchase orders
+
+  - name: Net Realized Foreign Exchange Variance Reconciled
+    query: >
+      SELECT CAST(ROUND(SUM(realized_fx_variance_usd), 2) AS DOUBLE)
+      FROM fact_procurement_orders;
+    assertion_type: scalar_eq
+    expected_value: 400.00
+    failure_message: Expected net realized FX variance of 400.00 USD without metric drift
+
+  - name: Spot Rate Triangulation Invariance Verification
+    query: >
+      SELECT CAST(ROUND(SUM(local_amount * order_spot_rate - reporting_usd_amount), 4) AS DOUBLE)
+      FROM fact_procurement_orders;
+    assertion_type: zero_drift
+    expected_value: 0.0
+    failure_message: Expected zero drift in spot rate conversion from local currency to USD
+
+  - name: Supplier Local vs Corporate Spend Breakdown
+    query: >
+      SELECT CAST(ROUND(SUM(reporting_usd_amount), 2) AS DOUBLE)
+      FROM fact_procurement_orders
+      WHERE supplier_sk = 'SUP-EU-01';
+    assertion_type: scalar_eq
+    expected_value: 10800.00
+    failure_message: Expected Bavaria Precision Parts corporate spend of 10800.00 USD

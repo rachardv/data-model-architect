@@ -1,0 +1,163 @@
+case_id: CASE-11
+domain: saas_subscription
+workload_type: OLAP
+name: SaaS Subscription Funnel Accumulating Snapshot & Milestone Lag
+description: Enterprise B2B SaaS recurring subscription lifecycle model evaluating an accumulating snapshot fact table tracking milestone timestamps (lead, trial, activation, first renewal, expansion, cancellation), milestone lag days, cohort churn rates, and zero metric drift in DuckDB.
+citation: >
+  Ralph Kimball & Margy Ross (2013), "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling" (3rd Edition),
+  Chapter 14 ("Accounting & Subscription Services: Accumulating Snapshot Fact Tables for Multi-Stage Lifecycle Funnels & Cohort Churn"), pp. 385-412.
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - saas
+  - subscription
+  - accumulating_snapshot
+  - milestone_lag
+  - cohort_churn
+  - kimball
+
+prompt: >
+  We operate an enterprise B2B SaaS platform delivering cloud-based subscription software.
+  Our go-to-market and customer success teams require visibility across the entire multi-stage customer lifecycle:
+  from marketing lead generation, self-serve trial sign-up, paid contract activation, tier upgrades, annual renewal,
+  through to eventual churn or cancellation.
+  Because subscriptions evolve over time across well-defined operational milestones with variable duration between steps,
+  standard transaction facts fail to answer funnel velocity questions efficiently.
+  We require an accumulating snapshot fact table where each record represents a single subscription lifecycle journey.
+  As a customer transitions across milestones, their accumulating snapshot record is progressively updated with milestone date keys
+  and lag metrics (days from lead to trial, days from trial to activation, and total subscription lifetime days).
+  BI dashboards must query milestone lag distributions, cohort conversion rates, active Monthly Recurring Revenue (MRR),
+  and churn rates with zero Cartesian fan-out or temporal metric inflation.
+
+business_answers:
+  - "Core business processes: SaaS subscription lifecycle funnel tracking, milestone conversions, and churn analysis"
+  - "Grain: One record per subscription contract lifecycle journey (accumulating snapshot fact)"
+  - "Workload intent: Accumulating snapshot dimensional mart with milestone lag metrics and progressive timestamp updates"
+  - "Dimensions: Conformed customer accounts with SCD2 history, subscription product plans, and role-playing date milestones"
+  - "Temporal policy: SCD Type 2 for customer accounts and plan tiers, with accumulating milestone dates on the subscription fact"
+  - "Lifecycle funnel: Accumulating snapshot with milestones: lead_date, trial_date, activation_date, renewal_date, churn_date"
+  - "Metrics: mrr_amount_usd, arr_amount_usd, lead_to_trial_days, trial_to_activation_days, subscription_lifetime_days"
+
+seed_data:
+  dim_saas_customer_core:
+    - customer_sk: "CUST-SAAS-01"
+      customer_id: "C-201"
+      customer_name: "Apex Global"
+      industry: "Fintech"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+    - customer_sk: "CUST-SAAS-02"
+      customer_id: "C-202"
+      customer_name: "Beacon Health"
+      industry: "Healthcare"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+    - customer_sk: "CUST-SAAS-03"
+      customer_id: "C-203"
+      customer_name: "Crestview Media"
+      industry: "Entertainment"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+  dim_saas_plan_core:
+    - plan_sk: "PLAN-STARTER"
+      plan_code: "STARTER"
+      plan_tier: "TIER-1"
+      base_mrr_usd: 500.00
+
+    - plan_sk: "PLAN-ENTERPRISE"
+      plan_code: "ENTERPRISE"
+      plan_tier: "TIER-3"
+      base_mrr_usd: 5000.00
+
+  fact_subscription_funnel_accumulating:
+    - subscription_id: "SUB-101"
+      customer_sk: "CUST-SAAS-01"
+      plan_sk: "PLAN-ENTERPRISE"
+      lead_date_key: 20250101
+      trial_date_key: 20250110
+      activation_date_key: 20250125
+      renewal_date_key: 20260125
+      churn_date_key: null
+      is_active: true
+      is_churned: false
+      mrr_amount_usd: 5000.00
+      arr_amount_usd: 60000.00
+      lead_to_trial_days: 9
+      trial_to_activation_days: 15
+      lifetime_days: 390
+
+    - subscription_id: "SUB-102"
+      customer_sk: "CUST-SAAS-02"
+      plan_sk: "PLAN-ENTERPRISE"
+      lead_date_key: 20250201
+      trial_date_key: 20250210
+      activation_date_key: 20250228
+      renewal_date_key: null
+      churn_date_key: 20250831
+      is_active: false
+      is_churned: true
+      mrr_amount_usd: 5000.00
+      arr_amount_usd: 60000.00
+      lead_to_trial_days: 9
+      trial_to_activation_days: 18
+      lifetime_days: 184
+
+    - subscription_id: "SUB-103"
+      customer_sk: "CUST-SAAS-03"
+      plan_sk: "PLAN-STARTER"
+      lead_date_key: 20250301
+      trial_date_key: 20250305
+      activation_date_key: null
+      renewal_date_key: null
+      churn_date_key: 20250320
+      is_active: false
+      is_churned: true
+      mrr_amount_usd: 0.00
+      arr_amount_usd: 0.00
+      lead_to_trial_days: 4
+      trial_to_activation_days: null
+      lifetime_days: 19
+
+verification_queries:
+  - name: Active Enterprise MRR Sum
+    query: >
+      SELECT CAST(ROUND(SUM(mrr_amount_usd), 2) AS DOUBLE)
+      FROM fact_subscription_funnel_accumulating
+      WHERE is_active = true;
+    assertion_type: scalar_eq
+    expected_value: 5000.00
+    failure_message: Expected active subscription MRR sum to match 5000.00
+
+  - name: Trial-to-Activation Conversion Rate
+    query: >
+      SELECT CAST(ROUND(CAST(COUNT(activation_date_key) AS DOUBLE) / COUNT(trial_date_key) * 100.0, 1) AS DOUBLE)
+      FROM fact_subscription_funnel_accumulating;
+    assertion_type: scalar_eq
+    expected_value: 66.7
+    failure_message: Expected trial to activation conversion rate of 66.7%
+
+  - name: Average Days from Trial to Activation for Activated Subscriptions
+    query: >
+      SELECT CAST(ROUND(AVG(trial_to_activation_days), 1) AS DOUBLE)
+      FROM fact_subscription_funnel_accumulating
+      WHERE activation_date_key IS NOT NULL;
+    assertion_type: scalar_eq
+    expected_value: 16.5
+    failure_message: Expected average trial-to-activation lag of 16.5 days
+
+  - name: Churn Cohort Count
+    query: >
+      SELECT COUNT(*)
+      FROM fact_subscription_funnel_accumulating
+      WHERE is_churned = true;
+    assertion_type: scalar_eq
+    expected_value: 2
+    failure_message: Expected exactly 2 churned subscription records

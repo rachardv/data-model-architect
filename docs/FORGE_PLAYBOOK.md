@@ -55,7 +55,7 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 
 | Functional Layer | File / Directory Path | Key Procedures & Classes | Responsibility |
 | :--- | :--- | :--- | :--- |
-| **A. Declarative Catalogs** | [`benchmarks/catalog/curated/`](file:///C:/Coding/VSCode/data-model-architect/benchmarks/catalog/curated) | `CASE_01..04.yaml`, `TRAP_01..04.yaml` | Declarative, human-readable YAML benchmark scenarios and intentional traps with citations. |
+| **A. Declarative Catalogs** | [`benchmarks/catalog/curated/`](file:///C:/Coding/VSCode/data-model-architect/benchmarks/catalog/curated) | `CASE_01..13.yaml`, `TRAP_01..04.yaml` | Hierarchically organized by `<workload>/<domain>/` (`olap/`, `traps/`). Filterable via `--workload` and `--domain`. |
 | **B. Catalog Loader & Parser** | [`forge/catalog_loader.py`](file:///C:/Coding/VSCode/data-model-architect/forge/catalog_loader.py) | `BenchmarkCatalogLoader.load_from_directory()` | Discovers, parses, validates YAML/JSON against Pydantic models, and registers cases. |
 | **C. Risk Council & Taxonomy** | [`forge/risk_engine.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_engine.py) | `ValidationStrategyEngine.evaluate()`, `ValidationTier`, `RiskSeverity` | Inspects synthesized models for architectural hazards across 4 tiers (`RSK-01` to `RSK-08`). |
 | **D. Risk-to-Test Dispatcher** | [`forge/risk_dispatcher.py`](file:///C:/Coding/VSCode/data-model-architect/forge/risk_dispatcher.py) | `RiskToTestDispatcher.evaluate_and_certify()` | Maps detected risks to targeted physical stress test batteries in DuckDB and awards `CERTIFIED_PRODUCTION_READY`. |
@@ -77,15 +77,17 @@ Every procedure, benchmark, risk rule, and artifact in The Forge has a dedicated
 
 ### Process A: Adding Standardized Benchmarks & Scenarios (Domain Coverage Risk)
 *Protects against:* **Category 1: Domain Coverage & Semantic Competence Risk** (e.g. paradigm blindness, grain misattribution, contradictory requirements).
-*Scope:* All **schema-specific** benchmarks (curated YAML cases in `benchmarks/catalog/curated/` + standardized suites like TPC-DS, TPC-DI, SSB, TPC-H, BIRD-SQL).
+*Scope:* All **schema-specific** benchmarks (curated YAML cases in `benchmarks/catalog/curated/<workload>/<domain>/` + standardized suites like TPC-DS, TPC-DI, SSB, TPC-H, BIRD-SQL).
 
-1. **Anti-Bloat Check:** Confirm that the business domain, entity topology, or grain pattern is not already covered by `CASE-01` through `CASE-06` or `TRAP-01` through `TRAP-04`.
-2. **Create the YAML Case File:**
-   - Add `benchmarks/catalog/curated/CASE_XX_<slug>.yaml` (for clean baselines) or `TRAP_XX_<slug>.yaml` (for intentional defensive halts).
-   - Author standard schema with mandatory `citation`, `prompt`, `business_answers`, and `verification_queries`.
-3. **Execute Single-Case Verification:**
+1. **Anti-Bloat Check:** Confirm that the business domain, entity topology, or grain pattern is not already covered by `CASE-01` through `CASE-13` or `TRAP-01` through `TRAP-04`.
+2. **Create the YAML Case File in Nested Directory:**
+   - Add `benchmarks/catalog/curated/<workload>/<domain>/CASE_XX_<slug>.yaml` (for clean baselines) or `benchmarks/catalog/curated/traps/<domain>/TRAP_XX_<slug>.yaml` (for intentional defensive halts).
+   - Author standard schema with mandatory `citation`, `workload_type`, `prompt`, `business_answers`, and `verification_queries`.
+3. **Execute Single-Case Verification & Filtering:**
    ```powershell
    .\forge.ps1 test CASE-XX
+   .\forge.ps1 list -Workload olap -Domain saas
+   py -3.14 -m forge.cli --list-cases --workload olap --domain retail
    ```
 4. **Inspect Regression Diff & Promote Golden Baseline:**
    ```powershell

@@ -38,6 +38,8 @@ Examples:
     parser.add_argument("--forge", action="store_true", help="Execute 🛠️ Forge Workflow engine certification battery (Predefined Gate + Industry Standards)")
     parser.add_argument("--benchmark-gate", action="store_true", help="Execute Predefined Benchmark Validation Gate 1-by-1 across all cases")
     parser.add_argument("--benchmark-case", type=str, default=None, help="Execute single Predefined Benchmark Case by ID (e.g. CASE-01)")
+    parser.add_argument("--workload", type=str, default=None, choices=["olap", "oltp", "streaming", "lakehouse", "traps", "trap", "all"], help="Filter benchmark cases by workload type (olap, oltp, streaming, traps)")
+    parser.add_argument("--domain", type=str, default=None, help="Filter benchmark cases by domain (e.g. retail, banking, saas, healthcare, logistics)")
     parser.add_argument("--catalog-path", type=str, default="benchmarks/catalog", help="Directory path to scan for declarative YAML/JSON benchmark cases (default: benchmarks/catalog)")
     parser.add_argument("--list-cases", action="store_true", help="Discover and list all declarative benchmark cases in the catalog")
     parser.add_argument("--snapshot", action="store_true", help="Capture certified golden baseline snapshot of benchmark gate run")
@@ -56,6 +58,9 @@ Examples:
     if args.log_level:
         from src.logger import configure_logging
         configure_logging(level=args.log_level.upper())
+
+    # Normalize workload flag
+    filter_workload = None if (not args.workload or args.workload.lower() == "all") else args.workload
 
     # Default action if no arguments provided: print help
     if not any([args.forge, args.benchmark_gate, args.benchmark_case, args.list_cases, 
@@ -83,18 +88,29 @@ Examples:
     if args.list_cases:
         BenchmarkCatalogLoader.load_from_directory(args.catalog_path, register=True, clear_existing=True)
         cases = get_predefined_benchmark_catalog()
-        print(f"\n=== 📚 PREDEFINED BENCHMARK CATALOG ({len(cases)} cases discovered in '{args.catalog_path}') ===")
+        if filter_workload or args.domain:
+            cases = BenchmarkCatalogLoader.filter_cases(cases, workload_type=filter_workload, domain=args.domain)
+        print(f"\n=== 📚 PREDEFINED BENCHMARK CATALOG ({len(cases)} cases matching criteria in '{args.catalog_path}') ===")
         if not cases:
-            print("  No benchmark cases found. Add .yaml or .json case definitions to benchmarks/catalog/")
+            print("  No benchmark cases found matching specified filters.")
             return
-        print(f"{'CASE ID':<10} {'NAME':<34} {'HAZARD CATEGORY':<22} {'TRAP?':<6} {'STATUS':<28}")
-        print("-" * 105)
+
+        # Group cases by workload_type and domain
+        grouped = {}
         for c in cases:
-            is_trap = "YES" if c.is_intentional_trap else "NO"
-            print(f"{c.case_id:<10} {c.name[:32]:<34} {c.hazard_category[:20]:<22} {is_trap:<6} {c.expected_status[:26]:<28}")
-            if c.citation:
-                print(f"  └─ 📚 Source: {c.citation.strip()}")
-        print("-" * 105)
+            key = f"{c.workload_type.upper()} / {c.domain.upper()}"
+            grouped.setdefault(key, []).append(c)
+
+        for group_name, group_cases in sorted(grouped.items()):
+            print(f"\n📁 [{group_name}] ({len(group_cases)} cases)")
+            print(f"{'CASE ID':<10} {'NAME':<34} {'HAZARD CATEGORY':<22} {'TRAP?':<6} {'STATUS':<28}")
+            print("-" * 105)
+            for c in group_cases:
+                is_trap = "YES" if c.is_intentional_trap else "NO"
+                print(f"{c.case_id:<10} {c.name[:32]:<34} {c.hazard_category[:20]:<22} {is_trap:<6} {c.expected_status[:26]:<28}")
+                if c.citation:
+                    print(f"  └─ 📚 Source: {c.citation.strip()}")
+            print("-" * 105)
         return
 
     # 4. Benchmark Gate / Single Case / Snapshot / Diff
@@ -103,6 +119,9 @@ Examples:
         if not catalog and os.path.exists(args.catalog_path):
             BenchmarkCatalogLoader.load_from_directory(args.catalog_path, register=True)
             catalog = get_predefined_benchmark_catalog()
+
+        if filter_workload or args.domain:
+            catalog = BenchmarkCatalogLoader.filter_cases(catalog, workload_type=filter_workload, domain=args.domain)
 
         gate = PredefinedBenchmarkGate()
 
@@ -128,7 +147,7 @@ Examples:
             return
 
         # Run All Cases
-        scorecard = gate.run_all_cases()
+        scorecard = gate.run_all_cases(catalog=catalog)
         print(f"\n=== 🎯 PREDEFINED BENCHMARK GATE SCORECARD ===")
         print(f"Status:            {scorecard['status']} ({scorecard['passed_cases']}/{scorecard['total_cases']} cases passed, {scorecard['pass_rate_pct']}%)")
         print(f"Execution Time:    {scorecard['execution_time_ms']}ms")

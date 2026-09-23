@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-06 — E-Commerce Orders with Nested Repeated Line Items
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3241.86ms`
-> **Timestamp (UTC):** `2026-09-23T19:56:50.280469+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3182.63ms`
+> **Timestamp (UTC):** `2026-09-23T20:17:33.860910+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `ecommerce`
@@ -31,10 +31,10 @@ We operate a high-scale global e-commerce marketplace. Each customer order conta
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Active SCD2 Customers Dimension Count | `scalar_gt` | `0` | `2` | `0.27ms` | ✅ PASS |
-| Nested Mart Orders Count | `scalar_gt` | `0` | `2` | `0.24ms` | ✅ PASS |
-| Unnested Line Items Projection Count | `row_count_gt` | `0` | `4` | `0.44ms` | ✅ PASS |
-| Total Revenue from Unnested Line Items | `scalar_gt` | `0.0` | `299.00` | `0.45ms` | ✅ PASS |
+| Active SCD2 Customers Dimension Count | `scalar_gt` | `0` | `2` | `0.37ms` | ✅ PASS |
+| Nested Mart Orders Count | `scalar_gt` | `0` | `2` | `0.3ms` | ✅ PASS |
+| Unnested Line Items Projection Count | `row_count_gt` | `0` | `4` | `0.38ms` | ✅ PASS |
+| Total Revenue from Unnested Line Items | `scalar_gt` | `0.0` | `299.00` | `0.41ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Active SCD2 Customers Dimension Count

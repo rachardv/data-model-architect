@@ -50,6 +50,19 @@ class BenchmarkCatalogLoader:
             raise ValueError(f"Invalid benchmark case structure in '{file_path}': Expected a dictionary, got {type(raw_data).__name__}")
 
         raw_data["source_file"] = os.path.abspath(file_path)
+        
+        # Auto-infer workload_type from file path / trap flag if not explicitly declared
+        if "workload_type" not in raw_data:
+            if raw_data.get("is_intentional_trap") or "trap" in file_path.lower() or "guardrail" in file_path.lower():
+                raw_data["workload_type"] = "TRAP"
+            elif "oltp" in file_path.lower():
+                raw_data["workload_type"] = "OLTP"
+            elif "streaming" in file_path.lower():
+                raw_data["workload_type"] = "STREAMING"
+            elif "lakehouse" in file_path.lower():
+                raw_data["workload_type"] = "LAKEHOUSE"
+            else:
+                raw_data["workload_type"] = "OLAP"
 
         try:
             case = PredefinedBenchmarkCase(**raw_data)
@@ -110,17 +123,28 @@ class BenchmarkCatalogLoader:
         cases: List[PredefinedBenchmarkCase],
         tags: Optional[List[str]] = None,
         hazard_category: Optional[str] = None,
-        case_ids: Optional[List[str]] = None
+        case_ids: Optional[List[str]] = None,
+        workload_type: Optional[str] = None,
+        domain: Optional[str] = None
     ) -> List[PredefinedBenchmarkCase]:
         """
-        Filters a list of benchmark cases by tags, hazard category, or case IDs.
+        Filters a list of benchmark cases by tags, hazard category, case IDs, workload type, or domain.
         """
         filtered = cases
         if case_ids:
-            target_ids = set(case_ids)
-            filtered = [c for c in filtered if c.case_id in target_ids]
+            target_ids = set(c.upper() for c in case_ids)
+            filtered = [c for c in filtered if c.case_id.upper() in target_ids]
         if hazard_category:
             filtered = [c for c in filtered if c.hazard_category.upper() == hazard_category.upper()]
+        if workload_type:
+            target_workload = workload_type.strip().upper()
+            if target_workload in ["TRAP", "TRAPS"]:
+                filtered = [c for c in filtered if c.is_intentional_trap or c.workload_type.upper() in ["TRAP", "TRAPS"]]
+            else:
+                filtered = [c for c in filtered if c.workload_type.upper() == target_workload]
+        if domain:
+            target_domain = domain.strip().lower()
+            filtered = [c for c in filtered if c.domain.lower() == target_domain or target_domain in c.domain.lower()]
         if tags:
             req_tags = set(t.lower() for t in tags)
             filtered = [c for c in filtered if req_tags.issubset(set(t.lower() for t in c.tags))]
@@ -138,6 +162,7 @@ class BenchmarkCatalogLoader:
                 "case_id": c.case_id,
                 "name": c.name,
                 "domain": c.domain,
+                "workload_type": c.workload_type,
                 "hazard_category": c.hazard_category,
                 "is_intentional_trap": c.is_intentional_trap,
                 "expected_status": c.expected_status,

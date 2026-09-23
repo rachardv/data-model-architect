@@ -1,0 +1,119 @@
+{
+  "case_id": "CASE-11",
+  "domain": "saas_subscription",
+  "name": "SaaS Subscription Funnel Accumulating Snapshot & Milestone Lag",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "We operate an enterprise B2B SaaS platform delivering cloud-based subscription software. Our go-to-market and customer success teams require visibility across the entire multi-stage customer lifecycle: from marketing lead generation, self-serve trial sign-up, paid contract activation, tier upgrades, annual renewal, through to eventual churn or cancellation. Because subscriptions evolve over time across well-defined operational milestones with variable duration between steps, standard transaction facts fail to answer funnel velocity questions efficiently. We require an accumulating snapshot fact table where each record represents a single subscription lifecycle journey. As a customer transitions across milestones, their accumulating snapshot record is progressively updated with milestone date keys and lag metrics (days from lead to trial, days from trial to activation, and total subscription lifetime days). BI dashboards must query milestone lag distributions, cohort conversion rates, active Monthly Recurring Revenue (MRR), and churn rates with zero Cartesian fan-out or temporal metric inflation.\n",
+  "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 14 (\"Accounting & Subscription Services: Accumulating Snapshot Fact Tables for Multi-Stage Lifecycle Funnels & Cohort Churn\"), pp. 385-412.\n",
+  "timestamp_utc": "2026-09-23T20:17:41.103145+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": true,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": false,
+      "is_factless_event": false
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_saas_subscription_customer_core",
+      "type": "DIMENSION",
+      "primary_key": "customer_sk",
+      "column_count": 7,
+      "columns": [
+        "customer_sk",
+        "customer_id",
+        "customer_name",
+        "scd_valid_from",
+        "scd_valid_to",
+        "is_current",
+        "is_inferred"
+      ]
+    },
+    {
+      "table_name": "fact_saas_subscription_orders",
+      "type": "FACT",
+      "primary_key": "order_id",
+      "column_count": 4,
+      "columns": [
+        "order_id",
+        "customer_sk",
+        "total_amount_usd",
+        "estimated_delivery_days"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Active Enterprise MRR Sum",
+      "query": "SELECT CAST(ROUND(SUM(mrr_amount_usd), 2) AS DOUBLE) FROM fact_subscription_funnel_accumulating WHERE is_active = true;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 5000.0,
+      "actual_value": 5000.0,
+      "passed": true,
+      "latency_ms": 0.38,
+      "error": null
+    },
+    {
+      "name": "Trial-to-Activation Conversion Rate",
+      "query": "SELECT CAST(ROUND(CAST(COUNT(activation_date_key) AS DOUBLE) / COUNT(trial_date_key) * 100.0, 1) AS DOUBLE) FROM fact_subscription_funnel_accumulating;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 66.7,
+      "actual_value": 66.7,
+      "passed": true,
+      "latency_ms": 0.38,
+      "error": null
+    },
+    {
+      "name": "Average Days from Trial to Activation for Activated Subscriptions",
+      "query": "SELECT CAST(ROUND(AVG(trial_to_activation_days), 1) AS DOUBLE) FROM fact_subscription_funnel_accumulating WHERE activation_date_key IS NOT NULL;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 16.5,
+      "actual_value": 16.5,
+      "passed": true,
+      "latency_ms": 0.34,
+      "error": null
+    },
+    {
+      "name": "Churn Cohort Count",
+      "query": "SELECT COUNT(*) FROM fact_subscription_funnel_accumulating WHERE is_churned = true;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 2,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.28,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 88.77
+}

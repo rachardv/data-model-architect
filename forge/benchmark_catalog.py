@@ -33,6 +33,7 @@ class PredefinedBenchmarkCase(BaseModel):
         ...,
         description="Hazard or trap type: CLEAN_BASELINE, CHASM_TRAP_FANOUT, CYCLIC_FK_GRAPH, CONTRADICTION_HALT, SCD2_HISTORICAL_AMNESIA, BRIDGE_CO_OWNERSHIP, GRAIN_MISMATCH"
     )
+    workload_type: str = Field("OLAP", description="Workload classification: OLAP, OLTP, STREAMING, LAKEHOUSE, TRAP")
     is_intentional_trap: bool = Field(False, description="True if case is designed to test defense guardrails by provoking a halt")
     prompt: str = Field(..., description="Initial business narrative with complete information")
     business_answers: List[str] = Field(default_factory=list, description="Plain-English answers to satisfy Gate 0 intake vectors")

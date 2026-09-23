@@ -1,136 +1,8 @@
 {
   "version": "1.0",
-  "generated_at": "2026-09-23T19:33:24.743327+00:00",
-  "total_cases": 14,
+  "generated_at": "2026-09-23T20:16:41.435305+00:00",
+  "total_cases": 17,
   "cases": {
-    "CASE-01": {
-      "case_id": "CASE-01",
-      "name": "Enterprise Retail Kimball Star Mart",
-      "domain": "retail",
-      "hazard_category": "CLEAN_BASELINE",
-      "is_intentional_trap": false,
-      "expected_status": "CERTIFIED_PRODUCTION_READY",
-      "observed_status": "CERTIFIED_PRODUCTION_READY",
-      "verdict": "PASS",
-      "execution_time_ms": 142.14,
-      "tables": {
-        "dim_retail_customer_core": {
-          "table_name": "dim_retail_customer_core",
-          "type": "DIMENSION",
-          "primary_key": "customer_sk",
-          "columns": [
-            "customer_sk",
-            "customer_id",
-            "customer_name",
-            "scd_valid_from",
-            "scd_valid_to",
-            "is_current",
-            "is_inferred"
-          ]
-        },
-        "fact_retail_orders": {
-          "table_name": "fact_retail_orders",
-          "type": "FACT",
-          "primary_key": "order_id",
-          "columns": [
-            "order_id",
-            "customer_sk",
-            "total_amount_usd",
-            "estimated_delivery_days"
-          ]
-        }
-      },
-      "queries": [
-        {
-          "name": "Customer Dimension Active Records",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 2,
-          "passed": true,
-          "latency_ms": 0.31
-        },
-        {
-          "name": "Orders Fact Grain Row Count",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 2,
-          "passed": true,
-          "latency_ms": 0.39
-        },
-        {
-          "name": "Positive Metric Revenue Total",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0.0,
-          "actual_value": 238.5,
-          "passed": true,
-          "latency_ms": 0.3
-        }
-      ]
-    },
-    "CASE-02": {
-      "case_id": "CASE-02",
-      "name": "Healthcare Encounter & Diagnosis Bridge",
-      "domain": "healthcare",
-      "hazard_category": "BRIDGE_CO_OWNERSHIP",
-      "is_intentional_trap": false,
-      "expected_status": "CERTIFIED_PRODUCTION_READY",
-      "observed_status": "CERTIFIED_PRODUCTION_READY",
-      "verdict": "PASS",
-      "execution_time_ms": 77.21,
-      "tables": {
-        "dim_healthcare_customer_core": {
-          "table_name": "dim_healthcare_customer_core",
-          "type": "DIMENSION",
-          "primary_key": "customer_sk",
-          "columns": [
-            "customer_sk",
-            "customer_id",
-            "customer_name",
-            "scd_valid_from",
-            "scd_valid_to",
-            "is_current",
-            "is_inferred"
-          ]
-        },
-        "fact_healthcare_orders": {
-          "table_name": "fact_healthcare_orders",
-          "type": "FACT",
-          "primary_key": "order_id",
-          "columns": [
-            "order_id",
-            "customer_sk",
-            "total_amount_usd",
-            "estimated_delivery_days"
-          ]
-        }
-      },
-      "queries": [
-        {
-          "name": "Active SCD2 Patients Check",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 2,
-          "passed": true,
-          "latency_ms": 0.33
-        },
-        {
-          "name": "Admissions Fact Grain Count",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 2,
-          "passed": true,
-          "latency_ms": 0.26
-        },
-        {
-          "name": "Total Admission Cost Sum",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0.0,
-          "actual_value": 238.5,
-          "passed": true,
-          "latency_ms": 0.24
-        }
-      ]
-    },
     "CASE-03": {
       "case_id": "CASE-03",
       "name": "Banking Multi-Owner Joint Account Co-Ownership",
@@ -140,7 +12,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 80.98,
+      "execution_time_ms": 143.49,
       "tables": {
         "dim_banking_customer_core": {
           "table_name": "dim_banking_customer_core",
@@ -175,7 +47,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.42
+          "latency_ms": 0.35
         },
         {
           "name": "Transactions Fact Count",
@@ -183,7 +55,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.28
+          "latency_ms": 0.29
         },
         {
           "name": "Total Transaction Amount Sum",
@@ -191,124 +63,92 @@
           "expected_value": 0.0,
           "actual_value": 238.5,
           "passed": true,
-          "latency_ms": 0.22
+          "latency_ms": 0.3
         }
       ]
     },
-    "CASE-04": {
-      "case_id": "CASE-04",
-      "name": "Retail Inventory Periodic Daily Snapshot",
-      "domain": "inventory",
+    "CASE-10": {
+      "case_id": "CASE-10",
+      "name": "Retail Banking Semi-Additive Balances, Factless Events & Rollup Navigation",
+      "domain": "retail_banking",
       "hazard_category": "CLEAN_BASELINE",
       "is_intentional_trap": false,
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 77.74,
+      "execution_time_ms": 3127.09,
       "tables": {
-        "dim_inventory_customer_core": {
-          "table_name": "dim_inventory_customer_core",
+        "dim_retail_banking_attendee": {
+          "table_name": "dim_retail_banking_attendee",
           "type": "DIMENSION",
-          "primary_key": "customer_sk",
+          "primary_key": "attendee_sk",
           "columns": [
-            "customer_sk",
-            "customer_id",
-            "customer_name",
-            "scd_valid_from",
-            "scd_valid_to",
-            "is_current",
-            "is_inferred"
+            "attendee_sk",
+            "attendee_id",
+            "attendee_name"
           ]
         },
-        "fact_inventory_orders": {
-          "table_name": "fact_inventory_orders",
-          "type": "FACT",
-          "primary_key": "order_id",
+        "dim_retail_banking_event": {
+          "table_name": "dim_retail_banking_event",
+          "type": "DIMENSION",
+          "primary_key": "event_sk",
           "columns": [
-            "order_id",
-            "customer_sk",
-            "total_amount_usd",
-            "estimated_delivery_days"
+            "event_sk",
+            "event_id",
+            "event_title"
           ]
-        }
-      },
-      "queries": [
-        {
-          "name": "Active Products Dimension Check",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 2,
-          "passed": true,
-          "latency_ms": 0.27
         },
-        {
-          "name": "Periodic Snapshot Fact Grain Count",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 2,
-          "passed": true,
-          "latency_ms": 0.23
-        },
-        {
-          "name": "Total Inventory Valuation Sum",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0.0,
-          "actual_value": 238.5,
-          "passed": true,
-          "latency_ms": 0.23
-        }
-      ]
-    },
-    "CASE-05": {
-      "case_id": "CASE-05",
-      "name": "Enterprise SaaS Subscription Cohort OBT",
-      "domain": "saas",
-      "hazard_category": "CLEAN_BASELINE",
-      "is_intentional_trap": false,
-      "expected_status": "CERTIFIED_PRODUCTION_READY",
-      "observed_status": "CERTIFIED_PRODUCTION_READY",
-      "verdict": "PASS",
-      "execution_time_ms": 3125.52,
-      "tables": {
-        "obt_saas_subscriptions": {
-          "table_name": "obt_saas_subscriptions",
-          "type": "FACT",
-          "primary_key": "subscription_id",
+        "fact_retail_banking_attendance_coverage": {
+          "table_name": "fact_retail_banking_attendance_coverage",
+          "type": "FACTLESS_FACT",
+          "primary_key": "attendee_sk, event_sk, date_sk",
           "columns": [
-            "subscription_id",
-            "customer_id",
-            "customer_name",
-            "email",
-            "plan_tier",
-            "mrr_amount_usd",
-            "contract_duration_months"
+            "attendee_sk",
+            "event_sk",
+            "date_sk"
           ]
         }
       },
       "queries": [
         {
-          "name": "OBT Table Subscriptions Positive MRR Count",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 2,
+          "name": "Semi-Additive Point-in-Time Monthly Closing Balance",
+          "assertion_type": "scalar_eq",
+          "expected_value": 3300.0,
+          "actual_value": 3300.0,
+          "passed": true,
+          "latency_ms": 1.94
+        },
+        {
+          "name": "Cross-Sectional Dimensional Additivity",
+          "assertion_type": "scalar_eq",
+          "expected_value": 8800.0,
+          "actual_value": 8800.0,
           "passed": true,
           "latency_ms": 0.37
         },
         {
-          "name": "Total Recurring Revenue MRR Sum",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0.0,
-          "actual_value": 238.5,
+          "name": "Factless Security Event Exact Occurrence Count",
+          "assertion_type": "scalar_eq",
+          "expected_value": 2,
+          "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.35
+          "latency_ms": 0.63
         },
         {
-          "name": "Zero Join Flat Cohort Aggregation",
-          "assertion_type": "row_count_gt",
-          "expected_value": 0,
-          "actual_value": 1,
+          "name": "Aggregate Rollup Parity Against Base Fact Closing Balance",
+          "assertion_type": "scalar_eq",
+          "expected_value": 8800.0,
+          "actual_value": 8800.0,
           "passed": true,
-          "latency_ms": 0.86
+          "latency_ms": 0.33
+        },
+        {
+          "name": "Non-Additive Derived Ratio Component Derivation",
+          "assertion_type": "scalar_eq",
+          "expected_value": 1650.0,
+          "actual_value": 1650.0,
+          "passed": true,
+          "latency_ms": 0.33
         }
       ]
     },
@@ -321,7 +161,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 3182.41,
+      "execution_time_ms": 3155.49,
       "tables": {
         "dim_ecommerce_customer_core": {
           "table_name": "dim_ecommerce_customer_core",
@@ -356,7 +196,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.33
+          "latency_ms": 0.28
         },
         {
           "name": "Nested Mart Orders Count",
@@ -364,7 +204,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.38
+          "latency_ms": 0.25
         },
         {
           "name": "Unnested Line Items Projection Count",
@@ -372,7 +212,7 @@
           "expected_value": 0,
           "actual_value": 4,
           "passed": true,
-          "latency_ms": 0.42
+          "latency_ms": 0.39
         },
         {
           "name": "Total Revenue from Unnested Line Items",
@@ -380,7 +220,301 @@
           "expected_value": 0.0,
           "actual_value": 299,
           "passed": true,
-          "latency_ms": 0.49
+          "latency_ms": 0.43
+        }
+      ]
+    },
+    "CASE-02": {
+      "case_id": "CASE-02",
+      "name": "Healthcare Encounter & Diagnosis Bridge",
+      "domain": "healthcare",
+      "hazard_category": "BRIDGE_CO_OWNERSHIP",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 80.79,
+      "tables": {
+        "dim_healthcare_customer_core": {
+          "table_name": "dim_healthcare_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "is_inferred"
+          ]
+        },
+        "fact_healthcare_orders": {
+          "table_name": "fact_healthcare_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Active SCD2 Patients Check",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.27
+        },
+        {
+          "name": "Admissions Fact Grain Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.27
+        },
+        {
+          "name": "Total Admission Cost Sum",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.33
+        }
+      ]
+    },
+    "CASE-13": {
+      "case_id": "CASE-13",
+      "name": "Clinical Inpatient Episode DRG Comorbidity Bridge & Attending Allocation",
+      "domain": "clinical_healthcare",
+      "hazard_category": "BRIDGE_CO_OWNERSHIP",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 99.28,
+      "tables": {
+        "dim_clinical_healthcare_customer_core": {
+          "table_name": "dim_clinical_healthcare_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "is_inferred"
+          ]
+        },
+        "fact_clinical_healthcare_orders": {
+          "table_name": "fact_clinical_healthcare_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Physician Bridge Allocation Weight Completeness",
+          "assertion_type": "scalar_eq",
+          "expected_value": 1.0,
+          "actual_value": 1.0,
+          "passed": true,
+          "latency_ms": 1.74
+        },
+        {
+          "name": "Total Inpatient Hospital Charges Reconciliation",
+          "assertion_type": "scalar_eq",
+          "expected_value": 80000.0,
+          "actual_value": 80000.0,
+          "passed": true,
+          "latency_ms": 0.32
+        },
+        {
+          "name": "Weighted Attending Revenue Attribution Without Double Counting",
+          "assertion_type": "scalar_eq",
+          "expected_value": 24500.0,
+          "actual_value": 24500.0,
+          "passed": true,
+          "latency_ms": 0.69
+        },
+        {
+          "name": "Comorbid Secondary Diagnoses Count Per Episode",
+          "assertion_type": "scalar_eq",
+          "expected_value": 2,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.32
+        }
+      ]
+    },
+    "CASE-09": {
+      "case_id": "CASE-09",
+      "name": "Bitemporal Insurance Policy & SCD6 Splicing Lifecycle",
+      "domain": "insurance_policy",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 204.78,
+      "tables": {
+        "dim_insurance_policy_scd6": {
+          "table_name": "dim_insurance_policy_scd6",
+          "type": "DIMENSION",
+          "primary_key": "policy_sk",
+          "columns": [
+            "policy_sk",
+            "policy_id",
+            "policyholder_name",
+            "historical_risk_tier",
+            "current_risk_tier",
+            "historical_agent_region",
+            "current_agent_region",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "version_number",
+            "is_inferred"
+          ]
+        },
+        "fact_insurance_policy_claims": {
+          "table_name": "fact_insurance_policy_claims",
+          "type": "FACT",
+          "primary_key": "claim_id",
+          "columns": [
+            "claim_id",
+            "policy_sk",
+            "claim_date_key",
+            "claim_amount",
+            "claim_status"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Zero Interval Overlap in Policy Dimension",
+          "assertion_type": "scalar_eq",
+          "expected_value": 0,
+          "actual_value": 0,
+          "passed": true,
+          "latency_ms": 0.88
+        },
+        {
+          "name": "Late Arriving Ghost Policy Exists",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 1,
+          "passed": true,
+          "latency_ms": 0.38
+        },
+        {
+          "name": "Zero Dropped Claims With Ghost Key Joins",
+          "assertion_type": "scalar_eq",
+          "expected_value": 4,
+          "actual_value": 4,
+          "passed": true,
+          "latency_ms": 0.74
+        },
+        {
+          "name": "Historical Point In Time Risk Tier Aggregation",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 1,
+          "passed": true,
+          "latency_ms": 1.3
+        },
+        {
+          "name": "Current Perspective Risk Tier Aggregation",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 1,
+          "passed": true,
+          "latency_ms": 1.3
+        }
+      ]
+    },
+    "CASE-12": {
+      "case_id": "CASE-12",
+      "name": "Multi-Currency Global Procurement Spot Rate Triangulation",
+      "domain": "global_procurement",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 92.03,
+      "tables": {
+        "dim_global_procurement_customer_core": {
+          "table_name": "dim_global_procurement_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "is_inferred"
+          ]
+        },
+        "fact_global_procurement_orders": {
+          "table_name": "fact_global_procurement_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Consolidated Corporate USD Reporting Spend",
+          "assertion_type": "scalar_eq",
+          "expected_value": 23700.0,
+          "actual_value": 23700.0,
+          "passed": true,
+          "latency_ms": 0.36
+        },
+        {
+          "name": "Net Realized Foreign Exchange Variance Reconciled",
+          "assertion_type": "scalar_eq",
+          "expected_value": 400.0,
+          "actual_value": 400.0,
+          "passed": true,
+          "latency_ms": 0.34
+        },
+        {
+          "name": "Spot Rate Triangulation Invariance Verification",
+          "assertion_type": "zero_drift",
+          "expected_value": 0.0,
+          "actual_value": 0.0,
+          "passed": true,
+          "latency_ms": 0.35
+        },
+        {
+          "name": "Supplier Local vs Corporate Spend Breakdown",
+          "assertion_type": "scalar_eq",
+          "expected_value": 10800.0,
+          "actual_value": 10800.0,
+          "passed": true,
+          "latency_ms": 0.3
         }
       ]
     },
@@ -393,7 +527,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 141.34,
+      "execution_time_ms": 129.49,
       "tables": {
         "dim_order_to_cash_customer_core": {
           "table_name": "dim_order_to_cash_customer_core",
@@ -482,7 +616,7 @@
           "expected_value": 0,
           "actual_value": 4,
           "passed": true,
-          "latency_ms": 0.32
+          "latency_ms": 0.4
         },
         {
           "name": "Shipments Distinct Carriers Count",
@@ -490,7 +624,7 @@
           "expected_value": 0,
           "actual_value": 3,
           "passed": true,
-          "latency_ms": 0.48
+          "latency_ms": 0.65
         },
         {
           "name": "Settled Payment Revenue Total",
@@ -498,7 +632,7 @@
           "expected_value": 0.0,
           "actual_value": 2038.5,
           "passed": true,
-          "latency_ms": 0.36
+          "latency_ms": 0.39
         },
         {
           "name": "Cross-Process Drill-Across Revenue Reconciliation",
@@ -506,7 +640,260 @@
           "expected_value": 0,
           "actual_value": 4,
           "passed": true,
-          "latency_ms": 1.35
+          "latency_ms": 1.57
+        }
+      ]
+    },
+    "CASE-01": {
+      "case_id": "CASE-01",
+      "name": "Enterprise Retail Kimball Star Mart",
+      "domain": "retail",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 80.52,
+      "tables": {
+        "dim_retail_customer_core": {
+          "table_name": "dim_retail_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "is_inferred"
+          ]
+        },
+        "fact_retail_orders": {
+          "table_name": "fact_retail_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Customer Dimension Active Records",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.4
+        },
+        {
+          "name": "Orders Fact Grain Row Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.29
+        },
+        {
+          "name": "Positive Metric Revenue Total",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.24
+        }
+      ]
+    },
+    "CASE-04": {
+      "case_id": "CASE-04",
+      "name": "Retail Inventory Periodic Daily Snapshot",
+      "domain": "inventory",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 84.32,
+      "tables": {
+        "dim_inventory_customer_core": {
+          "table_name": "dim_inventory_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "is_inferred"
+          ]
+        },
+        "fact_inventory_orders": {
+          "table_name": "fact_inventory_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Active Products Dimension Check",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.38
+        },
+        {
+          "name": "Periodic Snapshot Fact Grain Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.38
+        },
+        {
+          "name": "Total Inventory Valuation Sum",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.35
+        }
+      ]
+    },
+    "CASE-05": {
+      "case_id": "CASE-05",
+      "name": "Enterprise SaaS Subscription Cohort OBT",
+      "domain": "saas",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 3159.18,
+      "tables": {
+        "obt_saas_subscriptions": {
+          "table_name": "obt_saas_subscriptions",
+          "type": "FACT",
+          "primary_key": "subscription_id",
+          "columns": [
+            "subscription_id",
+            "customer_id",
+            "customer_name",
+            "email",
+            "plan_tier",
+            "mrr_amount_usd",
+            "contract_duration_months"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "OBT Table Subscriptions Positive MRR Count",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.27
+        },
+        {
+          "name": "Total Recurring Revenue MRR Sum",
+          "assertion_type": "scalar_gt",
+          "expected_value": 0.0,
+          "actual_value": 238.5,
+          "passed": true,
+          "latency_ms": 0.24
+        },
+        {
+          "name": "Zero Join Flat Cohort Aggregation",
+          "assertion_type": "row_count_gt",
+          "expected_value": 0,
+          "actual_value": 1,
+          "passed": true,
+          "latency_ms": 0.64
+        }
+      ]
+    },
+    "CASE-11": {
+      "case_id": "CASE-11",
+      "name": "SaaS Subscription Funnel Accumulating Snapshot & Milestone Lag",
+      "domain": "saas_subscription",
+      "hazard_category": "CLEAN_BASELINE",
+      "is_intentional_trap": false,
+      "expected_status": "CERTIFIED_PRODUCTION_READY",
+      "observed_status": "CERTIFIED_PRODUCTION_READY",
+      "verdict": "PASS",
+      "execution_time_ms": 89.61,
+      "tables": {
+        "dim_saas_subscription_customer_core": {
+          "table_name": "dim_saas_subscription_customer_core",
+          "type": "DIMENSION",
+          "primary_key": "customer_sk",
+          "columns": [
+            "customer_sk",
+            "customer_id",
+            "customer_name",
+            "scd_valid_from",
+            "scd_valid_to",
+            "is_current",
+            "is_inferred"
+          ]
+        },
+        "fact_saas_subscription_orders": {
+          "table_name": "fact_saas_subscription_orders",
+          "type": "FACT",
+          "primary_key": "order_id",
+          "columns": [
+            "order_id",
+            "customer_sk",
+            "total_amount_usd",
+            "estimated_delivery_days"
+          ]
+        }
+      },
+      "queries": [
+        {
+          "name": "Active Enterprise MRR Sum",
+          "assertion_type": "scalar_eq",
+          "expected_value": 5000.0,
+          "actual_value": 5000.0,
+          "passed": true,
+          "latency_ms": 0.4
+        },
+        {
+          "name": "Trial-to-Activation Conversion Rate",
+          "assertion_type": "scalar_eq",
+          "expected_value": 66.7,
+          "actual_value": 66.7,
+          "passed": true,
+          "latency_ms": 0.41
+        },
+        {
+          "name": "Average Days from Trial to Activation for Activated Subscriptions",
+          "assertion_type": "scalar_eq",
+          "expected_value": 16.5,
+          "actual_value": 16.5,
+          "passed": true,
+          "latency_ms": 0.41
+        },
+        {
+          "name": "Churn Cohort Count",
+          "assertion_type": "scalar_eq",
+          "expected_value": 2,
+          "actual_value": 2,
+          "passed": true,
+          "latency_ms": 0.28
         }
       ]
     },
@@ -519,7 +906,7 @@
       "expected_status": "CERTIFIED_PRODUCTION_READY",
       "observed_status": "CERTIFIED_PRODUCTION_READY",
       "verdict": "PASS",
-      "execution_time_ms": 84.72,
+      "execution_time_ms": 78.94,
       "tables": {
         "dim_telematics_mpp_customer_core": {
           "table_name": "dim_telematics_mpp_customer_core",
@@ -550,7 +937,7 @@
           "expected_value": 0,
           "actual_value": 4,
           "passed": true,
-          "latency_ms": 0.32
+          "latency_ms": 0.31
         },
         {
           "name": "Fleet Vehicle Dimension Exists",
@@ -558,7 +945,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.37
+          "latency_ms": 0.28
         },
         {
           "name": "Partition Pruning Single Date Filter",
@@ -566,7 +953,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 0.35
+          "latency_ms": 0.27
         },
         {
           "name": "Co-located Cluster Join Vehicle Telemetry",
@@ -574,178 +961,7 @@
           "expected_value": 0,
           "actual_value": 2,
           "passed": true,
-          "latency_ms": 1.13
-        }
-      ]
-    },
-    "CASE-09": {
-      "case_id": "CASE-09",
-      "name": "Bitemporal Insurance Policy & SCD6 Splicing Lifecycle",
-      "domain": "insurance_policy",
-      "hazard_category": "CLEAN_BASELINE",
-      "is_intentional_trap": false,
-      "expected_status": "CERTIFIED_PRODUCTION_READY",
-      "observed_status": "CERTIFIED_PRODUCTION_READY",
-      "verdict": "PASS",
-      "execution_time_ms": 197.2,
-      "tables": {
-        "dim_insurance_policy_scd6": {
-          "table_name": "dim_insurance_policy_scd6",
-          "type": "DIMENSION",
-          "primary_key": "policy_sk",
-          "columns": [
-            "policy_sk",
-            "policy_id",
-            "policyholder_name",
-            "historical_risk_tier",
-            "current_risk_tier",
-            "historical_agent_region",
-            "current_agent_region",
-            "scd_valid_from",
-            "scd_valid_to",
-            "is_current",
-            "version_number",
-            "is_inferred"
-          ]
-        },
-        "fact_insurance_policy_claims": {
-          "table_name": "fact_insurance_policy_claims",
-          "type": "FACT",
-          "primary_key": "claim_id",
-          "columns": [
-            "claim_id",
-            "policy_sk",
-            "claim_date_key",
-            "claim_amount",
-            "claim_status"
-          ]
-        }
-      },
-      "queries": [
-        {
-          "name": "Zero Interval Overlap in Policy Dimension",
-          "assertion_type": "scalar_eq",
-          "expected_value": 0,
-          "actual_value": 0,
-          "passed": true,
-          "latency_ms": 0.82
-        },
-        {
-          "name": "Late Arriving Ghost Policy Exists",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 1,
-          "passed": true,
-          "latency_ms": 0.29
-        },
-        {
-          "name": "Zero Dropped Claims With Ghost Key Joins",
-          "assertion_type": "scalar_eq",
-          "expected_value": 4,
-          "actual_value": 4,
-          "passed": true,
-          "latency_ms": 0.57
-        },
-        {
-          "name": "Historical Point In Time Risk Tier Aggregation",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 1,
-          "passed": true,
-          "latency_ms": 1.05
-        },
-        {
-          "name": "Current Perspective Risk Tier Aggregation",
-          "assertion_type": "scalar_gt",
-          "expected_value": 0,
-          "actual_value": 1,
-          "passed": true,
-          "latency_ms": 1.28
-        }
-      ]
-    },
-    "CASE-10": {
-      "case_id": "CASE-10",
-      "name": "Retail Banking Semi-Additive Balances, Factless Events & Rollup Navigation",
-      "domain": "retail_banking",
-      "hazard_category": "CLEAN_BASELINE",
-      "is_intentional_trap": false,
-      "expected_status": "CERTIFIED_PRODUCTION_READY",
-      "observed_status": "CERTIFIED_PRODUCTION_READY",
-      "verdict": "PASS",
-      "execution_time_ms": 3231.11,
-      "tables": {
-        "dim_retail_banking_attendee": {
-          "table_name": "dim_retail_banking_attendee",
-          "type": "DIMENSION",
-          "primary_key": "attendee_sk",
-          "columns": [
-            "attendee_sk",
-            "attendee_id",
-            "attendee_name"
-          ]
-        },
-        "dim_retail_banking_event": {
-          "table_name": "dim_retail_banking_event",
-          "type": "DIMENSION",
-          "primary_key": "event_sk",
-          "columns": [
-            "event_sk",
-            "event_id",
-            "event_title"
-          ]
-        },
-        "fact_retail_banking_attendance_coverage": {
-          "table_name": "fact_retail_banking_attendance_coverage",
-          "type": "FACTLESS_FACT",
-          "primary_key": "attendee_sk, event_sk, date_sk",
-          "columns": [
-            "attendee_sk",
-            "event_sk",
-            "date_sk"
-          ]
-        }
-      },
-      "queries": [
-        {
-          "name": "Semi-Additive Point-in-Time Monthly Closing Balance",
-          "assertion_type": "scalar_eq",
-          "expected_value": 3300.0,
-          "actual_value": 3300.0,
-          "passed": true,
-          "latency_ms": 1.5
-        },
-        {
-          "name": "Cross-Sectional Dimensional Additivity",
-          "assertion_type": "scalar_eq",
-          "expected_value": 8800.0,
-          "actual_value": 8800.0,
-          "passed": true,
-          "latency_ms": 0.33
-        },
-        {
-          "name": "Factless Security Event Exact Occurrence Count",
-          "assertion_type": "scalar_eq",
-          "expected_value": 2,
-          "actual_value": 2,
-          "passed": true,
-          "latency_ms": 0.53
-        },
-        {
-          "name": "Aggregate Rollup Parity Against Base Fact Closing Balance",
-          "assertion_type": "scalar_eq",
-          "expected_value": 8800.0,
-          "actual_value": 8800.0,
-          "passed": true,
-          "latency_ms": 0.34
-        },
-        {
-          "name": "Non-Additive Derived Ratio Component Derivation",
-          "assertion_type": "scalar_eq",
-          "expected_value": 1650.0,
-          "actual_value": 1650.0,
-          "passed": true,
-          "latency_ms": 0.38
+          "latency_ms": 0.99
         }
       ]
     },
@@ -758,7 +974,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 8.81,
+      "execution_time_ms": 7.75,
       "tables": {},
       "queries": []
     },
@@ -771,7 +987,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 8.39,
+      "execution_time_ms": 10.1,
       "tables": {},
       "queries": []
     },
@@ -784,7 +1000,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 8.75,
+      "execution_time_ms": 8.26,
       "tables": {},
       "queries": []
     },
@@ -797,7 +1013,7 @@
       "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "observed_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
       "verdict": "PASS",
-      "execution_time_ms": 8.99,
+      "execution_time_ms": 7.64,
       "tables": {},
       "queries": []
     }

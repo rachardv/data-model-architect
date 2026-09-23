@@ -1,7 +1,7 @@
 # Decision Trace Report: TRAP-02 — Multi-Fact Chasm Trap Fanout Multiplicity Conflict
 
-> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `11.17ms`
-> **Timestamp (UTC):** `2026-09-23T19:56:57.289847+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `6.95ms`
+> **Timestamp (UTC):** `2026-09-23T20:17:41.289859+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `sales_fulfillment`

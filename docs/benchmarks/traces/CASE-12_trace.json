@@ -1,0 +1,119 @@
+{
+  "case_id": "CASE-12",
+  "domain": "global_procurement",
+  "name": "Multi-Currency Global Procurement Spot Rate Triangulation",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "We operate an international supply chain and manufacturing enterprise procuring components from global suppliers across Europe, Japan, and the Americas. Purchase orders are negotiated and transacted in distinct local currencies (EUR, GBP, JPY), while corporate headquarters requires consolidated financial reporting in US Dollars (USD). Per Kimball Chapter 8, multi-currency fact tables must preserve both the original local transaction currency amount and the converted corporate reporting currency amount on every fact record to support both operational vendor management and corporate financial rollups simultaneously. Currency conversions must be linked to a conformed daily currency exchange rate dimension capturing spot rates. When goods are received and invoices are paid on later dates, fluctuations between the order spot rate and payment settlement spot rate produce realized foreign exchange (FX) variance (gain/loss), which must be tracked and reconciled with zero floating-point drift.\n",
+  "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 8 (\"Procurement & Global Logistics: Multi-Currency Fact Tables, Daily Spot Rates & Corporate Reporting Currency Triangulation\"), pp. 275-304.\n",
+  "timestamp_utc": "2026-09-23T20:17:37.438598+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "ACCUMULATING_SNAPSHOT_FACT",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": false,
+      "is_factless_event": false
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_global_procurement_customer_core",
+      "type": "DIMENSION",
+      "primary_key": "customer_sk",
+      "column_count": 7,
+      "columns": [
+        "customer_sk",
+        "customer_id",
+        "customer_name",
+        "scd_valid_from",
+        "scd_valid_to",
+        "is_current",
+        "is_inferred"
+      ]
+    },
+    {
+      "table_name": "fact_global_procurement_orders",
+      "type": "FACT",
+      "primary_key": "order_id",
+      "column_count": 4,
+      "columns": [
+        "order_id",
+        "customer_sk",
+        "total_amount_usd",
+        "estimated_delivery_days"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Consolidated Corporate USD Reporting Spend",
+      "query": "SELECT CAST(ROUND(SUM(reporting_usd_amount), 2) AS DOUBLE) FROM fact_procurement_orders;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 23700.0,
+      "actual_value": 23700.0,
+      "passed": true,
+      "latency_ms": 0.36,
+      "error": null
+    },
+    {
+      "name": "Net Realized Foreign Exchange Variance Reconciled",
+      "query": "SELECT CAST(ROUND(SUM(realized_fx_variance_usd), 2) AS DOUBLE) FROM fact_procurement_orders;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 400.0,
+      "actual_value": 400.0,
+      "passed": true,
+      "latency_ms": 0.29,
+      "error": null
+    },
+    {
+      "name": "Spot Rate Triangulation Invariance Verification",
+      "query": "SELECT CAST(ROUND(SUM(local_amount * order_spot_rate - reporting_usd_amount), 4) AS DOUBLE) FROM fact_procurement_orders;\n",
+      "assertion_type": "zero_drift",
+      "expected_value": 0.0,
+      "actual_value": 0.0,
+      "passed": true,
+      "latency_ms": 0.37,
+      "error": null
+    },
+    {
+      "name": "Supplier Local vs Corporate Spend Breakdown",
+      "query": "SELECT CAST(ROUND(SUM(reporting_usd_amount), 2) AS DOUBLE) FROM fact_procurement_orders WHERE supplier_sk = 'SUP-EU-01';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 10800.0,
+      "actual_value": 10800.0,
+      "passed": true,
+      "latency_ms": 0.33,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 89.52
+}

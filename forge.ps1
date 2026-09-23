@@ -22,6 +22,12 @@ param (
     [string]$TargetCase = "",
 
     [Parameter()]
+    [string]$Workload = "",
+
+    [Parameter()]
+    [string]$Domain = "",
+
+    [Parameter()]
     [Alias("v")]
     [switch]$VerboseMode
 )
@@ -50,6 +56,11 @@ if ($CurrentBranch -eq "staging") {
 }
 Write-Host "==================================================" -ForegroundColor DarkGray
 
+# 3. Optional Filter Flags for CLI
+$FilterArgs = ""
+if ($Workload) { $FilterArgs += " --workload $Workload" }
+if ($Domain) { $FilterArgs += " --domain $Domain" }
+
 function Run-PyCommand {
     param(
         [string]$Cmd,
@@ -70,7 +81,7 @@ function Run-PyCommand {
 
 switch ($Command) {
     "list" {
-        Run-PyCommand "-m forge.cli --list-cases"
+        Run-PyCommand "-m forge.cli --list-cases$FilterArgs"
     }
 
     "fast" {
@@ -81,27 +92,27 @@ switch ($Command) {
         Write-Host "`n[Step 1/2] Core Strategy & Schema Generators (0.8s)..." -ForegroundColor Yellow
         Run-PyCommand "-m pytest tests/test_risk_taxonomy_sync.py tests/test_catalog_loader.py tests/test_semantic_benchmarks.py tests/test_vector_conflict_guardrail.py tests/test_dynamic_intake_questions.py tests/test_sttm_generator.py tests/test_dbt_generator.py tests/test_medallion_pipeline.py -q --tb=short"
         
-        Write-Host "`n[Step 2/2] 14-Case Golden Baseline Strict Diff (~9s)..." -ForegroundColor Yellow
+        Write-Host "`n[Step 2/2] Golden Baseline Strict Diff (~9s)..." -ForegroundColor Yellow
         Run-PyCommand "-m forge.cli --benchmark-gate --diff --strict-drift"
         
-        Write-Host "`n✨ FAST INNER LOOP PASSED: Zero schema drift or regressions across core engine and 14 cases!" -ForegroundColor Green
+        Write-Host "`n✨ FAST INNER LOOP PASSED: Zero schema drift or regressions across core engine and benchmark catalog!" -ForegroundColor Green
     }
 
     "test" {
         if (-not $TargetCase) {
             Write-Host "Please specify a case ID, e.g.: .\forge.ps1 test CASE-10" -ForegroundColor Yellow
-            Run-PyCommand "-m forge.cli --list-cases"
+            Run-PyCommand "-m forge.cli --list-cases$FilterArgs"
             exit 1
         }
         Run-PyCommand "-m forge.cli --benchmark-case $TargetCase"
     }
 
     "diff" {
-        Run-PyCommand "-m forge.cli --benchmark-gate --diff"
+        Run-PyCommand "-m forge.cli --benchmark-gate --diff$FilterArgs"
     }
 
     "strict-diff" {
-        Run-PyCommand "-m forge.cli --benchmark-gate --diff --strict-drift"
+        Run-PyCommand "-m forge.cli --benchmark-gate --diff --strict-drift$FilterArgs"
     }
 
     "certify" {
