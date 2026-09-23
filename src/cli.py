@@ -78,6 +78,8 @@ def main():
     parser.add_argument("--dialect", type=str, default=None, choices=["duckdb", "snowflake", "bigquery", "postgres", "databricks", "all"], help="Transpile Medallion SQL models to target warehouse dialect")
     parser.add_argument("--benchmark-gate", action="store_true", help="Execute Predefined Benchmark Validation Gate 1-by-1 across all cases")
     parser.add_argument("--benchmark-case", type=str, default=None, help="Execute single Predefined Benchmark Case by ID (e.g. CASE-01)")
+    parser.add_argument("--catalog-path", type=str, default="benchmarks/catalog", help="Directory path to scan for declarative YAML/JSON benchmark cases (default: benchmarks/catalog)")
+    parser.add_argument("--list-cases", action="store_true", help="Discover and list all declarative benchmark cases in the catalog")
     parser.add_argument("--forge", action="store_true", help="Execute 🛠️ Forge Workflow engine certification battery (Predefined Gate + Industry Standards)")
     parser.add_argument("--industry-benchmark", action="store_true", help="Execute Industry Standards Benchmark Suite (TPC-DI, TPC-H, SSB, TPC-DS, BIRD-SQL, Spider)")
     
@@ -95,12 +97,36 @@ def main():
         ForgeEngineRunner.print_forge_scorecard(sc)
         return
 
+    if args.list_cases:
+        from src.catalog_loader import BenchmarkCatalogLoader
+        from src.benchmark_catalog import get_predefined_benchmark_catalog
+        
+        discovered = BenchmarkCatalogLoader.load_from_directory(args.catalog_path, register=True, clear_existing=True)
+        cases = get_predefined_benchmark_catalog()
+        print(f"\n=== 📚 PREDEFINED BENCHMARK CATALOG ({len(cases)} cases discovered in '{args.catalog_path}') ===")
+        if not cases:
+            print("  No benchmark cases found. Add .yaml or .json case definitions to benchmarks/catalog/")
+            return
+        print(f"{'CASE ID':<12} {'NAME':<36} {'HAZARD CATEGORY':<24} {'TRAP?':<7} {'STATUS':<32}")
+        print("-" * 115)
+        for c in cases:
+            is_trap = "YES" if c.is_intentional_trap else "NO"
+            print(f"{c.case_id:<12} {c.name[:34]:<36} {c.hazard_category[:22]:<24} {is_trap:<7} {c.expected_status[:30]:<32}")
+        print("-" * 115)
+        return
+
     if args.benchmark_gate or args.benchmark_case:
         from src.predefined_benchmark_gate import PredefinedBenchmarkGate
         from src.benchmark_catalog import get_predefined_benchmark_catalog
+        from src.catalog_loader import BenchmarkCatalogLoader
         
-        gate = PredefinedBenchmarkGate()
+        # Auto-load declarative cases from catalog path if catalog is empty
         catalog = get_predefined_benchmark_catalog()
+        if not catalog and os.path.exists(args.catalog_path):
+            BenchmarkCatalogLoader.load_from_directory(args.catalog_path, register=True)
+            catalog = get_predefined_benchmark_catalog()
+
+        gate = PredefinedBenchmarkGate()
         
         if args.benchmark_case:
             target_case = next((c for c in catalog if c.case_id.upper() == args.benchmark_case.upper()), None)

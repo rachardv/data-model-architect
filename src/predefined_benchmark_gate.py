@@ -1,4 +1,7 @@
+import os
+import json
 import time
+import tempfile
 import duckdb
 from typing import Dict, Any, List, Optional
 from src.benchmark_catalog import PredefinedBenchmarkCase, VerificationQuery, get_predefined_benchmark_catalog
@@ -90,7 +93,10 @@ class PredefinedBenchmarkGate:
                 except Exception as e:
                     logger.warning(f"Pipeline pre-execution in case_db encountered: {e}")
 
-            # 4. Evaluate Custom Verification Queries against DuckDB
+            # 4. Inject Optional Benchmark Seed Data (SQL, inline records, or external files)
+            self._inject_seed_data(case_db, case)
+
+            # 5. Evaluate Custom Verification Queries against DuckDB
             for vq in case.verification_queries:
                 q_start = time.perf_counter()
                 actual_val = None
@@ -219,3 +225,68 @@ class PredefinedBenchmarkGate:
             "execution_time_ms": total_time,
             "cases": results
         }
+
+    def _inject_seed_data(self, conn: duckdb.DuckDBPyConnection, case: PredefinedBenchmarkCase) -> None:
+        """
+        Injects optional seed data into the DuckDB instance before executing verification queries.
+        Supports:
+          1. seed_sql: Raw SQL statements (DDL/DML).
+          2. seed_data: Dictionary mapping table names to row records (list of dicts).
+          3. seed_files: List of file paths to CSV or Parquet files.
+        """
+        # 1. Seed SQL
+        if case.seed_sql:
+            for stmt in case.seed_sql.split(";"):
+                trimmed = stmt.strip()
+                if trimmed:
+                    try:
+                        conn.execute(trimmed)
+                    except Exception as e:
+                        logger.warning(f"Error executing seed_sql for case [{case.case_id}]: {e}")
+
+        # 2. Seed Data (inline dicts)
+        if case.seed_data:
+            existing_tables = set(r[0] for r in conn.execute("SHOW TABLES").fetchall())
+            for tbl_name, rows in case.seed_data.items():
+                if not rows:
+                    continue
+                tf = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+                try:
+                    json.dump(rows, tf)
+                    tf.close()
+                    clean_path = tf.name.replace("\\", "/")
+                    if tbl_name in existing_tables:
+                        conn.execute(f"INSERT INTO {tbl_name} BY NAME SELECT * FROM read_json_auto('{clean_path}')")
+                    else:
+                        conn.execute(f"CREATE TABLE {tbl_name} AS SELECT * FROM read_json_auto('{clean_path}')")
+                except Exception as e:
+                    logger.warning(f"Error injecting seed_data for table '{tbl_name}' in case [{case.case_id}]: {e}")
+                finally:
+                    if os.path.exists(tf.name):
+                        os.unlink(tf.name)
+
+        # 3. Seed Files (CSV or Parquet)
+        if case.seed_files:
+            existing_tables = set(r[0] for r in conn.execute("SHOW TABLES").fetchall())
+            for fpath in case.seed_files:
+                resolved_path = fpath
+                if not os.path.isabs(fpath) and case.source_file:
+                    resolved_path = os.path.join(os.path.dirname(case.source_file), fpath)
+                if not os.path.exists(resolved_path):
+                    logger.warning(f"Seed file not found for case [{case.case_id}]: {fpath} (resolved: {resolved_path})")
+                    continue
+                tbl_name = os.path.splitext(os.path.basename(fpath))[0]
+                clean_path = resolved_path.replace("\\", "/")
+                try:
+                    if fpath.lower().endswith(".csv"):
+                        if tbl_name in existing_tables:
+                            conn.execute(f"INSERT INTO {tbl_name} BY NAME SELECT * FROM read_csv_auto('{clean_path}')")
+                        else:
+                            conn.execute(f"CREATE TABLE {tbl_name} AS SELECT * FROM read_csv_auto('{clean_path}')")
+                    elif fpath.lower().endswith((".parquet", ".pq")):
+                        if tbl_name in existing_tables:
+                            conn.execute(f"INSERT INTO {tbl_name} BY NAME SELECT * FROM read_parquet('{clean_path}')")
+                        else:
+                            conn.execute(f"CREATE TABLE {tbl_name} AS SELECT * FROM read_parquet('{clean_path}')")
+                except Exception as e:
+                    logger.warning(f"Error loading seed file '{fpath}' for case [{case.case_id}]: {e}")

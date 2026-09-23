@@ -9,7 +9,7 @@
 2. [Phase 0 Intake Squad & Strict 100% Information Gate](#2-phase-0-intake-squad--strict-100-information-gate)
 3. [The Unified Mandatory Audit Funnel with Human-in-the-Loop (HITL) Gates](#3-the-unified-mandatory-audit-funnel-with-human-in-the-loop-hitl-gates)
 4. [Standardized 5-Section Source-to-Target Mapping (STTM) Specification](#4-standardized-5-section-source-to-target-mapping-sttm-specification)
-5. [Industry Benchmark Verification Scores (118/118 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
+5. [Industry Benchmark Verification Scores (126/126 Tests - 100% Pass)](#5-industry-benchmark-verification-scores)
 
 ---
 
@@ -112,8 +112,8 @@ To guarantee zero documentation drift and zero execution bloat, the architecture
 ### 2. 🛠️ Forge Workflow (Engine Evolution & Industry Certification)
 - **Scope:** Modifying, refactoring, or certifying the modeling engine itself (`src/`).
 - **Active Validation:**
-  - **The 118-Test Regression Suite** (`py -3.14 -m pytest`).
-  - **Layer 3:** Predefined Benchmark Gate (`--benchmark-gate` 1-by-1 isolated DuckDB execution).
+  - **The 126-Test Regression Suite** (`py -3.14 -m pytest`).
+  - **Layer 3:** Predefined Benchmark Gate (`--benchmark-gate` 1-by-1 isolated DuckDB execution over declarative YAML catalog `benchmarks/catalog/`).
   - **🏛️ The Industry Standards Benchmark Gate (Moved here from Studio):**
     - **TPC-DI:** Full 3-batch sequential lifecycle (initial load, SCD2 history update, dirty data quarantine).
     - **TPC-H:** Line-item vs order decision support & fanout stress testing (22 queries).
@@ -240,6 +240,7 @@ Production CTE transformation query extracting, transforming, and loading the ta
 
 | Test Suite | Coverage | Status | Latency |
 | :--- | :--- | :---: | :---: |
-| **Full Pytest Suite (`tests/`)** | 37 Unit Tests across all micro-agents, intake scorers, STTM generators, and DuckDB runner | 🟢 **37/37 PASSED (100.0%)** | `0.55s` |
+| **Full Pytest Suite (`tests/`)** | 126 Unit & Integration Tests across all micro-agents, intake scorers, STTM generators, declarative catalog loaders, and DuckDB runner | 🟢 **126/126 PASSED (100.0%)** | `31.09s` |
 | **DuckDB In-Memory Execution Battery** | Bronze → Silver Quarantine → Gold SCD2 Merges | 🟢 **100% PASSED** | `0.08s` |
+| **Layer 3 Predefined Benchmark Gate** | Declarative YAML/JSON Catalog (`benchmarks/catalog/`) with seed SQL/data injection & decision traces | 🟢 **100% PASSED** | `0.15s` |
 | **Strict 100% Hard Gate Tests** | Gibberish rejection, contradiction detection, 20%-80% hard blocks | 🟢 **100% PASSED** | `0.02s` |

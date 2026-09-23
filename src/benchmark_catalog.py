@@ -45,6 +45,26 @@ class PredefinedBenchmarkCase(BaseModel):
         default_factory=list,
         description="SQL queries that assert the modeler modeled the domain correctly in DuckDB"
     )
+    seed_sql: Optional[str] = Field(
+        default=None,
+        description="Optional raw DDL/DML SQL statements to seed the DuckDB instance before running verification queries"
+    )
+    seed_data: Optional[Dict[str, List[Dict[str, Any]]]] = Field(
+        default=None,
+        description="Optional inline dictionaries mapping table names to row records for DuckDB seeding"
+    )
+    seed_files: Optional[List[str]] = Field(
+        default=None,
+        description="Optional list of relative paths to CSV or Parquet files to load into DuckDB tables"
+    )
+    tags: List[str] = Field(
+        default_factory=list,
+        description="Categorization tags, e.g. ['curated', 'retail', 'baseline'] or ['synthetic', 'trap']"
+    )
+    source_file: Optional[str] = Field(
+        default=None,
+        description="Path to the originating YAML/JSON specification file"
+    )
 
 # Mutable runtime registry for dynamically or externally loaded cases
 _REGISTERED_CASES: List[PredefinedBenchmarkCase] = []

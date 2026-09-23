@@ -1,0 +1,31 @@
+case_id: TRAP-01
+domain: highfreq
+name: Contradiction Guardrail Trap
+description: Intentional trap testing Gate 0 conflict detection between low-latency OLTP intent and massive OLAP analytics.
+hazard_category: CONTRADICTION_HALT
+is_intentional_trap: true
+expected_status: AWAITING_ARCHITECTURAL_CONFIRMATION
+tags:
+  - curated
+  - trap
+  - defense
+  - guardrail
+
+prompt: >
+  Financial trading desk requiring sub-millisecond row locks for live OLTP transactions.
+
+business_answers:
+  - "Processes: high frequency order execution and reporting"
+  - "Grain: One record per tick transaction"
+  - "Dimensions: Instrument and Trader"
+  - "Metrics: tick_price, volume"
+
+baseline_vectors:
+  workload_intent: OLTP
+
+rules:
+  - description: Multi-year analytical reporting and 10-year trend analysis over a billion row dataset
+    enforcement: Hard Database CHECK
+    definition: row_count >= 1000000000
+
+verification_queries: []

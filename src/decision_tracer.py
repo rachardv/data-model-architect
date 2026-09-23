@@ -153,7 +153,7 @@ class DecisionTracer:
 
         # 1. Overwrite JSON Trace
         with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(self.trace.model_dump(), f, indent=2)
+            f.write(self.trace.model_dump_json(indent=2))
 
         # 2. Overwrite Markdown Report
         md_content = self._generate_markdown_report()
