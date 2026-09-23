@@ -180,3 +180,28 @@ Before submitting a Pull Request that adds anything to The Forge:
 4. [ ] **Performance SLA:** Does your addition execute in under $<500\text{ms}$ in DuckDB in-memory?
 5. [ ] **Snapshot Promotion:** If adding a valid new benchmark case in Process A, did you run `.\forge.ps1 snapshot` to update the certified golden baseline?
 6. [ ] **Two-Tier Branch Lifecycle:** Are you working on the `staging` branch using `.\forge.ps1 fast` (<10s) before executing `.\forge.ps1 promote` to `main`? (See `docs/FORGE_PLAYBOOK.md` Section 6).
+
+---
+
+## ⏳ 5. Candidate & Backlogged Architectural Risks (Roadmap)
+
+Per the **Zero-Lost Bugs & Features Protocol**, future architectural risks identified during senior expert reviews that are deferred for future milestones are formally documented below and tracked in [`implementation_plans/00_ACTIVE_BACKLOG.md`](file:///C:/Coding/VSCode/data-model-architect/implementation_plans/00_ACTIVE_BACKLOG.md):
+
+### 1. `RSK-15` (Candidate): Semantic Metric Ambiguity & Multi-Stakeholder Truth Linter
+* **Target Quadrant:** Category 2 (Structural Defect & Semantic Governance, Process B) & Category 3 (Process C)
+* **The Hazard:** Conflicting business definitions of the same core business concept across departments (e.g. Sales, Product, and Finance defining *"Active Customer"* with mutually incompatible criteria).
+* **The Blast Radius:**
+  - *Metric Collision ("War of Metrics"):* Inconsistent figures across executive dashboards, leading to loss of trust in the central data warehouse.
+  - *Dimension Fragmentation Trap:* Creating duplicate disjoint dimensions (`dim_sales_customer`, `dim_finance_customer`) that destroy Kimball conformed cross-functional reporting.
+* **Candidate Remediation:**
+  - **Perspective-Aware Conformed Modeling:** Retain a single conformed dimension (`dim_customer_core`) with explicit perspective attributes (`is_active_sales_contract`, `is_active_product_user`, `is_active_finance_billed`).
+  - **dbt Semantic Layer Compilation:** Compile `models/metrics.yml` with formal certified metric formulas, grains, and department owners.
+  - **Validation Battery M:** Verify cross-perspective SQL drill-across parity in DuckDB (`CASE-11`).
+
+### 2. High-Cardinality Key Performance (Candidate: 64-Bit Integer Surrogate Hashing)
+* **Target Quadrant:** Category 2 (Structural Defect / Physical Layout, Process B)
+* **The Hazard:** Using 32-character string UUID or MD5 hashes for surrogate keys on multi-billion row tables.
+* **The Blast Radius:** String-based hash joins degrade CPU cache locality, increase memory consumption by $2\times - 3\times$, and slow down analytical query execution.
+* **Candidate Remediation:**
+  - Compile 64-bit integer surrogate hashes (`xxHash64`, BigQuery `FARM_FINGERPRINT()`, or Snowflake `HASH()`) across dimensions and facts for hardware-optimized register joins.
+

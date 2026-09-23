@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-03 — Banking Multi-Owner Joint Account Co-Ownership
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `77.18ms`
-> **Timestamp (UTC):** `2026-09-23T19:50:55.899618+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `72.91ms`
+> **Timestamp (UTC):** `2026-09-23T19:56:46.947895+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `banking`
@@ -31,9 +31,9 @@ Consumer retail banking managing checking and savings accounts. Accounts can be 
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Active SCD2 Customers Check | `scalar_gt` | `0` | `2` | `0.29ms` | ✅ PASS |
-| Transactions Fact Count | `scalar_gt` | `0` | `2` | `0.25ms` | ✅ PASS |
-| Total Transaction Amount Sum | `scalar_gt` | `0.0` | `238.50` | `0.33ms` | ✅ PASS |
+| Active SCD2 Customers Check | `scalar_gt` | `0` | `2` | `0.25ms` | ✅ PASS |
+| Transactions Fact Count | `scalar_gt` | `0` | `2` | `0.24ms` | ✅ PASS |
+| Total Transaction Amount Sum | `scalar_gt` | `0.0` | `238.50` | `0.24ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Active SCD2 Customers Check
