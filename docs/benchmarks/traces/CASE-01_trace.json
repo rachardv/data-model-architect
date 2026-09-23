@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an omnichannel retail business where customers place merchandise orders. Orders have order status, total sales amount, and estimated delivery dates. Customer address and status changes must be tracked historically using SCD Type 2.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 2: \"Retail Sales\", pp. 37-78 (\"Kimball Star Schema & SCD Type 2 Customer Tracking\").\n",
-  "timestamp_utc": "2026-09-23T05:43:14.159842+00:00",
+  "timestamp_utc": "2026-09-23T05:53:57.928513+00:00",
   "intake_decisions": {
     "status": "CERTIFIED_PRODUCTION_READY",
     "completeness_score": null,
@@ -71,7 +71,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.35,
+      "latency_ms": 0.32,
       "error": null
     },
     {
@@ -81,7 +81,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.26,
+      "latency_ms": 0.41,
       "error": null
     },
     {
@@ -91,12 +91,12 @@
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.24,
+      "latency_ms": 0.31,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 134.88
+  "execution_time_ms": 127.57
 }

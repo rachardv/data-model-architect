@@ -1,7 +1,7 @@
 # Decision Trace Report: TRAP-04 — SCD2 Historical Amnesia Point-in-Time Trap
 
-> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `7.87ms`
-> **Timestamp (UTC):** `2026-09-23T05:43:14.562720+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `7.67ms`
+> **Timestamp (UTC):** `2026-09-23T05:53:58.316035+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `telecom`
