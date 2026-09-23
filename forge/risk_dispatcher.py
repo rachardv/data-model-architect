@@ -189,6 +189,17 @@ class RiskToTestDispatcher:
                     "details": temporal_scd_risk.get("details", "Bi-temporal interval non-overlap, ghost key sentinels, and SCD6 consistency verified.")
                 })
 
+            # Battery L: Aggregate Navigation & Metric Additivity (RSK-14)
+            additivity_risk = next((r for r in risk_scorecard.get("results", []) if r.get("risk_id") == "RSK-14"), None)
+            if additivity_risk:
+                battery_l_status = "FAIL" if additivity_risk.get("status") in ["FAIL", "HALT"] else "PASS"
+                executed_batteries.append({
+                    "battery": "AGGREGATE_NAVIGATION_AND_METRIC_ADDITIVITY_BATTERY",
+                    "triggered_by_risk": "RSK-14",
+                    "status": battery_l_status,
+                    "details": additivity_risk.get("details", "Semi-additive temporal reductions, factless grain purity, and aggregate rollup consistency verified.")
+                })
+
             # 5. Check Custom Case Verification Queries (if provided)
             custom_queries_passed = True
             if custom_verification_results is not None:

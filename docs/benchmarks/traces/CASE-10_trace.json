@@ -1,0 +1,135 @@
+{
+  "case_id": "CASE-10",
+  "domain": "retail_banking",
+  "name": "Retail Banking Semi-Additive Balances, Factless Events & Rollup Navigation",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "We operate an enterprise retail banking platform managing retail checking and savings accounts across national branch networks. Every night, a nightly snapshot captures account ending balances and available balances; these metrics are strictly semi-additive (additive across accounts, customers, and branches, but strictly non-additive across time, requiring point-in-time closing balance reductions). Additionally, security authentication and fraud monitoring requires tracking customer security events (logins, password resets, MFA challenges) as a pure factless fact table with zero numeric measures, where the grain is defined solely by the composite dimension foreign keys. To accelerate high-throughput executive branch dashboards without scanning multi-billion row daily snapshots, the warehouse maintains a companion monthly branch rollup aggregate table with navigation routing that mathematically reconciles with base fact closing balances.\n",
+  "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 7 (\"Financial Services: Periodic Snapshot Fact Tables, Semi-Additive Metrics & Factless Facts\"), pp. 241-274, and Chapter 19 (\"Aggregate Navigation and Materialized Summary Tables\"), pp. 493-512.\n",
+  "timestamp_utc": "2026-09-23T19:34:15.630416+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "FACTLESS_FACT_COVERAGE",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": true,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false,
+      "has_scd6_hybrid": false,
+      "has_semi_additive_balances": true,
+      "is_factless_event": true
+    },
+    "resolution_applied": null,
+    "disposition_matrix": []
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_retail_banking_attendee",
+      "type": "DIMENSION",
+      "primary_key": "attendee_sk",
+      "column_count": 3,
+      "columns": [
+        "attendee_sk",
+        "attendee_id",
+        "attendee_name"
+      ]
+    },
+    {
+      "table_name": "dim_retail_banking_event",
+      "type": "DIMENSION",
+      "primary_key": "event_sk",
+      "column_count": 3,
+      "columns": [
+        "event_sk",
+        "event_id",
+        "event_title"
+      ]
+    },
+    {
+      "table_name": "fact_retail_banking_attendance_coverage",
+      "type": "FACTLESS_FACT",
+      "primary_key": "attendee_sk, event_sk, date_sk",
+      "column_count": 3,
+      "columns": [
+        "attendee_sk",
+        "event_sk",
+        "date_sk"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Semi-Additive Point-in-Time Monthly Closing Balance",
+      "query": "WITH ranked_balances AS (\n  SELECT \n    b.branch_sk,\n    f.account_sk,\n    f.ending_balance,\n    ROW_NUMBER() OVER (\n      PARTITION BY f.account_sk \n      ORDER BY d.calendar_date DESC\n    ) AS rn\n  FROM fact_daily_account_balances f\n  JOIN dim_retail_banking_branch_core b ON f.branch_sk = b.branch_sk\n  JOIN dim_date d ON f.snapshot_date_key = d.date_sk\n  WHERE d.calendar_year = 2026 AND d.calendar_month = 1\n) SELECT CAST(ROUND(SUM(ending_balance), 2) AS DOUBLE) FROM ranked_balances WHERE rn = 1 AND branch_sk = 'BR-DOWNTOWN';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 3300.0,
+      "actual_value": 3300.0,
+      "passed": true,
+      "latency_ms": 1.92,
+      "error": null
+    },
+    {
+      "name": "Cross-Sectional Dimensional Additivity",
+      "query": "SELECT CAST(ROUND(SUM(ending_balance), 2) AS DOUBLE) FROM fact_daily_account_balances WHERE snapshot_date_key = 20260131;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 8800.0,
+      "actual_value": 8800.0,
+      "passed": true,
+      "latency_ms": 0.36,
+      "error": null
+    },
+    {
+      "name": "Factless Security Event Exact Occurrence Count",
+      "query": "SELECT COUNT(*) FROM fact_customer_security_events e JOIN dim_retail_banking_customer_core c ON e.customer_sk = c.customer_sk WHERE c.customer_id = 'C-1001';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 2,
+      "actual_value": 2,
+      "passed": true,
+      "latency_ms": 0.61,
+      "error": null
+    },
+    {
+      "name": "Aggregate Rollup Parity Against Base Fact Closing Balance",
+      "query": "SELECT CAST(ROUND(SUM(total_closing_balance), 2) AS DOUBLE) FROM agg_monthly_branch_balances WHERE calendar_year = 2026 AND calendar_month = 1;\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 8800.0,
+      "actual_value": 8800.0,
+      "passed": true,
+      "latency_ms": 0.35,
+      "error": null
+    },
+    {
+      "name": "Non-Additive Derived Ratio Component Derivation",
+      "query": "SELECT CAST(ROUND(total_closing_balance / total_accounts_count, 2) AS DOUBLE) FROM agg_monthly_branch_balances WHERE calendar_year = 2026 AND calendar_month = 1 AND branch_sk = 'BR-DOWNTOWN';\n",
+      "assertion_type": "scalar_eq",
+      "expected_value": 1650.0,
+      "actual_value": 1650.0,
+      "passed": true,
+      "latency_ms": 0.37,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 3337.09
+}

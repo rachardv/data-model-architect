@@ -1,0 +1,298 @@
+case_id: CASE-10
+domain: retail_banking
+name: Retail Banking Semi-Additive Balances, Factless Events & Rollup Navigation
+description: Enterprise retail banking dimensional model managing daily account balance periodic snapshots (semi-additive balance governance across time and entities), factless customer security event logs, and companion monthly branch rollup aggregate navigation routing.
+citation: >
+  Ralph Kimball & Margy Ross (2013), "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling" (3rd Edition),
+  Chapter 7 ("Financial Services: Periodic Snapshot Fact Tables, Semi-Additive Metrics & Factless Facts"), pp. 241-274,
+  and Chapter 19 ("Aggregate Navigation and Materialized Summary Tables"), pp. 493-512.
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - banking
+  - semi_additive
+  - factless_fact
+  - aggregate_navigation
+  - rollup_summary
+  - closing_balance
+
+prompt: >
+  We operate an enterprise retail banking platform managing retail checking and savings accounts across national branch networks.
+  Every night, a nightly snapshot captures account ending balances and available balances; these metrics are strictly semi-additive
+  (additive across accounts, customers, and branches, but strictly non-additive across time, requiring point-in-time closing balance reductions).
+  Additionally, security authentication and fraud monitoring requires tracking customer security events (logins, password resets, MFA challenges)
+  as a pure factless fact table with zero numeric measures, where the grain is defined solely by the composite dimension foreign keys.
+  To accelerate high-throughput executive branch dashboards without scanning multi-billion row daily snapshots, the warehouse maintains
+  a companion monthly branch rollup aggregate table with navigation routing that mathematically reconciles with base fact closing balances.
+
+business_answers:
+  - "Core business processes: Retail banking account balances, security audit logs, and branch monthly reporting"
+  - "Grain: Daily ending balance per account snapshot and discrete security event per customer"
+  - "Workload intent: Periodic snapshot fact with semi-additive balances and aggregate rollup navigation"
+  - "Dimensions: Conformed customers, accounts, branches, and calendar date"
+  - "Temporal policy: SCD Type 2 for customers and accounts with daily periodic balance snapshots"
+  - "Lifecycle funnel: Daily balance state snapshot and factless security audit log"
+  - "Metrics: ending_balance, available_balance, total_closing_balance"
+
+seed_data:
+  dim_retail_banking_customer_core:
+    - customer_sk: "CUST-001"
+      customer_id: "C-1001"
+      customer_name: "Alice Financial"
+      customer_tier: "PREMIER"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+      is_inferred: false
+
+    - customer_sk: "CUST-002"
+      customer_id: "C-1002"
+      customer_name: "Bob Enterprise"
+      customer_tier: "STANDARD"
+      scd_valid_from: "2025-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+      is_inferred: false
+
+  dim_retail_banking_account_core:
+    - account_sk: "ACC-001"
+      account_id: "A-5001"
+      account_number: "CHK-1001-A"
+      account_type: "CHECKING"
+      account_status: "ACTIVE"
+      customer_sk: "CUST-001"
+
+    - account_sk: "ACC-002"
+      account_id: "A-5002"
+      account_number: "SAV-1001-B"
+      account_type: "SAVINGS"
+      account_status: "ACTIVE"
+      customer_sk: "CUST-001"
+
+    - account_sk: "ACC-003"
+      account_id: "A-5003"
+      account_number: "CHK-2001-C"
+      account_type: "CHECKING"
+      account_status: "ACTIVE"
+      customer_sk: "CUST-002"
+
+  dim_retail_banking_branch_core:
+    - branch_sk: "BR-DOWNTOWN"
+      branch_id: "B-101"
+      branch_name: "Downtown Financial Center"
+      branch_city: "New York"
+      branch_state: "NY"
+      region: "NORTH_AMERICA"
+
+    - branch_sk: "BR-MIDTOWN"
+      branch_id: "B-102"
+      branch_name: "Midtown Commercial Center"
+      branch_city: "New York"
+      branch_state: "NY"
+      region: "NORTH_AMERICA"
+
+  dim_date:
+    - date_sk: 20260130
+      calendar_date: "2026-01-30"
+      calendar_year: 2026
+      calendar_month: 1
+      calendar_quarter: 1
+      day_of_week: "Friday"
+
+    - date_sk: 20260131
+      calendar_date: "2026-01-31"
+      calendar_year: 2026
+      calendar_month: 1
+      calendar_quarter: 1
+      day_of_week: "Saturday"
+
+    - date_sk: 20260201
+      calendar_date: "2026-02-01"
+      calendar_year: 2026
+      calendar_month: 2
+      calendar_quarter: 1
+      day_of_week: "Sunday"
+
+  fact_daily_account_balances:
+    - snapshot_id: 10001
+      account_sk: "ACC-001"
+      customer_sk: "CUST-001"
+      branch_sk: "BR-DOWNTOWN"
+      snapshot_date_key: 20260130
+      ending_balance: 1000.00
+      available_balance: 950.00
+      interest_rate_pct: 0.0150
+
+    - snapshot_id: 10002
+      account_sk: "ACC-001"
+      customer_sk: "CUST-001"
+      branch_sk: "BR-DOWNTOWN"
+      snapshot_date_key: 20260131
+      ending_balance: 1200.00
+      available_balance: 1150.00
+      interest_rate_pct: 0.0150
+
+    - snapshot_id: 10003
+      account_sk: "ACC-001"
+      customer_sk: "CUST-001"
+      branch_sk: "BR-DOWNTOWN"
+      snapshot_date_key: 20260201
+      ending_balance: 1250.00
+      available_balance: 1200.00
+      interest_rate_pct: 0.0150
+
+    - snapshot_id: 10004
+      account_sk: "ACC-002"
+      customer_sk: "CUST-001"
+      branch_sk: "BR-DOWNTOWN"
+      snapshot_date_key: 20260130
+      ending_balance: 2000.00
+      available_balance: 2000.00
+      interest_rate_pct: 0.0400
+
+    - snapshot_id: 10005
+      account_sk: "ACC-002"
+      customer_sk: "CUST-001"
+      branch_sk: "BR-DOWNTOWN"
+      snapshot_date_key: 20260131
+      ending_balance: 2100.00
+      available_balance: 2100.00
+      interest_rate_pct: 0.0400
+
+    - snapshot_id: 10006
+      account_sk: "ACC-002"
+      customer_sk: "CUST-001"
+      branch_sk: "BR-DOWNTOWN"
+      snapshot_date_key: 20260201
+      ending_balance: 2100.00
+      available_balance: 2100.00
+      interest_rate_pct: 0.0400
+
+    - snapshot_id: 10007
+      account_sk: "ACC-003"
+      customer_sk: "CUST-002"
+      branch_sk: "BR-MIDTOWN"
+      snapshot_date_key: 20260130
+      ending_balance: 5000.00
+      available_balance: 4900.00
+      interest_rate_pct: 0.0200
+
+    - snapshot_id: 10008
+      account_sk: "ACC-003"
+      customer_sk: "CUST-002"
+      branch_sk: "BR-MIDTOWN"
+      snapshot_date_key: 20260131
+      ending_balance: 5500.00
+      available_balance: 5400.00
+      interest_rate_pct: 0.0200
+
+    - snapshot_id: 10009
+      account_sk: "ACC-003"
+      customer_sk: "CUST-002"
+      branch_sk: "BR-MIDTOWN"
+      snapshot_date_key: 20260201
+      ending_balance: 5400.00
+      available_balance: 5300.00
+      interest_rate_pct: 0.0200
+
+  fact_customer_security_events:
+    - event_sk: "EVT-SEC-001"
+      customer_sk: "CUST-001"
+      event_type: "LOGIN_SUCCESS"
+      device_id: "DEV-IPHONE-14"
+      event_date_key: 20260130
+      event_timestamp: "2026-01-30 08:30:00+00"
+
+    - event_sk: "EVT-SEC-002"
+      customer_sk: "CUST-001"
+      event_type: "PASSWORD_RESET"
+      device_id: "DEV-IPHONE-14"
+      event_date_key: 20260131
+      event_timestamp: "2026-01-31 14:15:00+00"
+
+    - event_sk: "EVT-SEC-003"
+      customer_sk: "CUST-002"
+      event_type: "MFA_CHALLENGE"
+      device_id: "DEV-CHROMEBOOK"
+      event_date_key: 20260131
+      event_timestamp: "2026-01-31 19:45:00+00"
+
+  agg_monthly_branch_balances:
+    - rollup_id: 501
+      branch_sk: "BR-DOWNTOWN"
+      calendar_year: 2026
+      calendar_month: 1
+      month_end_date_key: 20260131
+      total_closing_balance: 3300.00
+      total_accounts_count: 2
+
+    - rollup_id: 502
+      branch_sk: "BR-MIDTOWN"
+      calendar_year: 2026
+      calendar_month: 1
+      month_end_date_key: 20260131
+      total_closing_balance: 5500.00
+      total_accounts_count: 1
+
+verification_queries:
+  - name: Semi-Additive Point-in-Time Monthly Closing Balance
+    query: >
+      WITH ranked_balances AS (
+        SELECT 
+          b.branch_sk,
+          f.account_sk,
+          f.ending_balance,
+          ROW_NUMBER() OVER (
+            PARTITION BY f.account_sk 
+            ORDER BY d.calendar_date DESC
+          ) AS rn
+        FROM fact_daily_account_balances f
+        JOIN dim_retail_banking_branch_core b ON f.branch_sk = b.branch_sk
+        JOIN dim_date d ON f.snapshot_date_key = d.date_sk
+        WHERE d.calendar_year = 2026 AND d.calendar_month = 1
+      )
+      SELECT CAST(ROUND(SUM(ending_balance), 2) AS DOUBLE)
+      FROM ranked_balances
+      WHERE rn = 1 AND branch_sk = 'BR-DOWNTOWN';
+    assertion_type: scalar_eq
+    expected_value: 3300.00
+    failure_message: Expected Downtown Jan 2026 closing balance of 3300.00 without temporal inflation
+
+  - name: Cross-Sectional Dimensional Additivity
+    query: >
+      SELECT CAST(ROUND(SUM(ending_balance), 2) AS DOUBLE)
+      FROM fact_daily_account_balances
+      WHERE snapshot_date_key = 20260131;
+    assertion_type: scalar_eq
+    expected_value: 8800.00
+    failure_message: Expected total network cross-sectional balance of 8800.00 on 2026-01-31
+
+  - name: Factless Security Event Exact Occurrence Count
+    query: >
+      SELECT COUNT(*)
+      FROM fact_customer_security_events e
+      JOIN dim_retail_banking_customer_core c ON e.customer_sk = c.customer_sk
+      WHERE c.customer_id = 'C-1001';
+    assertion_type: scalar_eq
+    expected_value: 2
+    failure_message: Expected exactly 2 factless security events logged for customer C-1001
+
+  - name: Aggregate Rollup Parity Against Base Fact Closing Balance
+    query: >
+      SELECT CAST(ROUND(SUM(total_closing_balance), 2) AS DOUBLE)
+      FROM agg_monthly_branch_balances
+      WHERE calendar_year = 2026 AND calendar_month = 1;
+    assertion_type: scalar_eq
+    expected_value: 8800.00
+    failure_message: Expected monthly aggregate rollup sum to match base fact closing balance of 8800.00
+
+  - name: Non-Additive Derived Ratio Component Derivation
+    query: >
+      SELECT CAST(ROUND(total_closing_balance / total_accounts_count, 2) AS DOUBLE)
+      FROM agg_monthly_branch_balances
+      WHERE calendar_year = 2026 AND calendar_month = 1 AND branch_sk = 'BR-DOWNTOWN';
+    assertion_type: scalar_eq
+    expected_value: 1650.00
+    failure_message: Expected Downtown branch average balance per account of 1650.00

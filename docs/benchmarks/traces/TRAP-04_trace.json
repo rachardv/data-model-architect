@@ -6,7 +6,7 @@
   "is_intentional_trap": true,
   "prompt": "Mobile telecommunications billing network where subscribers change rate plans over time. Historical calls from prior billing cycles are joined to current active rate plans instead of the plan effective at the time the call took place.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 6: \"Customer Relationship Management\", pp. 165-182 (\"Late-Arriving Data and Point-in-Time Dimension Lookup\").\n",
-  "timestamp_utc": "2026-09-23T19:03:57.771505+00:00",
+  "timestamp_utc": "2026-09-23T19:34:19.002178+00:00",
   "intake_decisions": {
     "status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
     "completeness_score": null,
@@ -26,5 +26,5 @@
   "final_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
   "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
   "verdict": "PASS",
-  "execution_time_ms": 8.03
+  "execution_time_ms": 7.2
 }

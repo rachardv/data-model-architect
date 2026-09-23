@@ -854,6 +854,142 @@ class RSK13_TemporalIntervalOverlapAndGhostKeyLinter(BaseRiskEvaluator):
             metrics={"temporal_dimensions_checked": len(temporal_dims), "interval_overlap_free": True}
         )
 
+@register_risk("RSK-14")
+class RSK14_MetricAdditivityAndRollupLinter(BaseRiskEvaluator):
+    risk_id = "RSK-14"
+    name = "Metric Additivity & Aggregate Rollup Linter"
+    tier = ValidationTier.TIER_2_AST_LINTER
+    default_severity = RiskSeverity.HIGH
+    default_blocking = True
+
+    def evaluate(self, context: ValidationContext) -> RiskResult:
+        target_schema = context.target_schema or {}
+        tables = target_schema.get("tables", [])
+        params = context.inferred_usage_params or {}
+        con = context.duckdb_conn
+
+        facts = [t for t in tables if t.get("type") in ["FACT", "FACTLESS_FACT", "ACCUMULATING_FACT", "PERIODIC_SNAPSHOT", "AGGREGATE_ROLLUP"]]
+
+        # 1. Factless Fact Table Grain & Purity Check
+        factless_tables = [t for t in tables if t.get("type") == "FACTLESS_FACT" or t.get("is_factless")]
+        for ft in factless_tables:
+            ft_name = ft.get("name", "factless_fact")
+            cols = ft.get("columns", [])
+            # Numeric measure columns: Decimal, Float, or non-key Ints
+            numeric_measures = []
+            for c in cols:
+                c_name = c.get("name", "").lower()
+                c_type = c.get("type", "").upper()
+                is_key = c.get("primary_key") or c.get("foreign_key") or c_name.endswith("_sk") or c_name.endswith("_id") or c_name.endswith("_key") or c_name.endswith("_date")
+                if ("DECIMAL" in c_type or "FLOAT" in c_type or "NUMERIC" in c_type or "DOUBLE" in c_type) and not is_key:
+                    numeric_measures.append(c_name)
+                elif ("INT" in c_type or "BIGINT" in c_type) and not is_key and "count" in c_name:
+                    numeric_measures.append(c_name)
+
+            if numeric_measures:
+                return RiskResult(
+                    risk_id=self.risk_id,
+                    name=self.name,
+                    tier=self.tier,
+                    status="FAIL",
+                    severity=self.default_severity,
+                    blocking=self.default_blocking,
+                    details=f"Factless Fact Purity Violation in '{ft_name}': Table is designated as a Factless Fact (Event/Coverage) but contains numeric measure columns: {numeric_measures}. Factless facts must contain zero metric columns.",
+                    remediation_advice="Remove dummy measure columns (such as 'dummy_count = 1'). Model event occurrences strictly through dimension foreign keys."
+                )
+
+            # Ensure composite grain or composite foreign keys
+            fk_cols = [c.get("name") for c in cols if c.get("foreign_key") or c.get("name", "").endswith("_sk") or c.get("name", "").endswith("_id")]
+            if len(fk_cols) < 2 and not ft.get("composite_grain"):
+                return RiskResult(
+                    risk_id=self.risk_id,
+                    name=self.name,
+                    tier=self.tier,
+                    status="WARNING",
+                    severity=RiskSeverity.MEDIUM,
+                    blocking=False,
+                    details=f"Factless Fact Grain Warning in '{ft_name}': Fewer than 2 foreign key dimensions identified. A factless fact grain should represent the intersection of at least 2 dimensions.",
+                    remediation_advice="Declare explicit composite_grain keys across the participating dimension foreign keys."
+                )
+
+        # 2. Semi-Additive Snapshot Metric Governance
+        snapshot_tables = [t for t in tables if t.get("type") in ["PERIODIC_SNAPSHOT", "FACT"] and any("balance" in c.get("name", "").lower() or "inventory" in c.get("name", "").lower() for c in t.get("columns", []))]
+        for st in snapshot_tables:
+            st_name = st.get("name")
+            for c in st.get("columns", []):
+                cn = c.get("name", "").lower()
+                if "balance" in cn or "inventory" in cn or "on_hand" in cn:
+                    additivity = str(c.get("additivity", "")).upper()
+                    if "SEMI_ADDITIVE" not in additivity and not c.get("is_inferred"):
+                        # If table type is periodic snapshot or user stated semi-additive balances
+                        if st.get("type") == "PERIODIC_SNAPSHOT" or params.get("has_semi_additive_balances") or target_schema.get("pattern") == "PERIODIC_SNAPSHOT_BALANCES":
+                            return RiskResult(
+                                risk_id=self.risk_id,
+                                name=self.name,
+                                tier=self.tier,
+                                status="WARNING",
+                                severity=RiskSeverity.MEDIUM,
+                                blocking=False,
+                                details=f"Semi-Additive Balance Warning in '{st_name}.{c.get('name')}': Point-in-time balance/inventory metric is not explicitly marked as SEMI_ADDITIVE_TEMPORAL. Unrestricted temporal SUM() queries will produce multi-thousand percent metric inflation.",
+                                remediation_advice="Tag the measure with 'additivity: SEMI_ADDITIVE_TEMPORAL' and ensure BI layers apply point-in-time closing balance windowing."
+                            )
+
+        # 3. Non-Additive Ratio Governance
+        for t in tables:
+            t_name = t.get("name")
+            for c in t.get("columns", []):
+                cn = c.get("name", "").lower()
+                if (cn.endswith("_pct") or cn.endswith("_rate") or cn.endswith("_ratio") or cn.endswith("_margin")) and not c.get("primary_key") and not c.get("foreign_key"):
+                    additivity = str(c.get("additivity", "")).upper()
+                    formula = c.get("formula")
+                    if "NON_ADDITIVE" not in additivity and not formula and t.get("type") in ["FACT", "PERIODIC_SNAPSHOT", "AGGREGATE_ROLLUP"]:
+                        return RiskResult(
+                            risk_id=self.risk_id,
+                            name=self.name,
+                            tier=self.tier,
+                            status="WARNING",
+                            severity=RiskSeverity.LOW,
+                            blocking=False,
+                            details=f"Non-Additive Ratio Advisory in '{t_name}.{c.get('name')}': Ratio or percentage measure lacks derivation formula or NON_ADDITIVE_RATIO tag. Direct SUM/AVG rollups risk Simpson's Paradox errors.",
+                            remediation_advice="Declare component additive measures (numerator and denominator) and tag the ratio with 'additivity: NON_ADDITIVE_RATIO'."
+                        )
+
+        # 4. Aggregate Rollup Parity Check (if DuckDB connection exists)
+        rollup_tables = [t for t in tables if t.get("type") == "AGGREGATE_ROLLUP" or t.get("base_fact_table")]
+        if con and rollup_tables:
+            try:
+                existing_tables = [t[0].lower() for t in con.execute("SHOW TABLES").fetchall()]
+                for rt in rollup_tables:
+                    r_name = rt.get("name", "").lower()
+                    base_name = str(rt.get("base_fact_table", "")).lower()
+                    if r_name in existing_tables and base_name in existing_tables:
+                        r_count = con.execute(f"SELECT COUNT(*) FROM {r_name}").fetchone()[0]
+                        b_count = con.execute(f"SELECT COUNT(*) FROM {base_name}").fetchone()[0]
+                        if r_count == 0 and b_count > 0:
+                            return RiskResult(
+                                risk_id=self.risk_id,
+                                name=self.name,
+                                tier=self.tier,
+                                status="FAIL",
+                                severity=self.default_severity,
+                                blocking=self.default_blocking,
+                                details=f"Aggregate Rollup Parity Defect: Rollup table '{r_name}' is empty while base fact '{base_name}' contains {b_count} records.",
+                                remediation_advice="Execute companion rollup compilation pipeline to synchronize aggregate tables with base facts."
+                            )
+            except Exception as ex:
+                logger.warning(f"RSK-14 DuckDB physical rollup check encountered: {ex}")
+
+        return RiskResult(
+            risk_id=self.risk_id,
+            name=self.name,
+            tier=self.tier,
+            status="PASS",
+            severity=self.default_severity,
+            blocking=False,
+            details=f"Metric Additivity & Aggregate Rollup Invariants Confirmed: {len(facts)} fact/rollup table(s) verified with proper additivity classifications and grain purity.",
+            metrics={"facts_checked": len(facts), "additivity_governed": True}
+        )
+
 
 # =====================================================================
 # TIER 3 EVALUATORS (In-Memory Physical Proofs in DuckDB)

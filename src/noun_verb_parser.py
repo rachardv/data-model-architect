@@ -280,6 +280,19 @@ class NounVerbSemanticParser:
             "as-was and as-is", "as was and as is", "historical and current",
             "dual-perspective", "dual perspective", "bitemporal scd"
         ])
+
+        # 12. Semi-Additive Balances & Aggregate Navigation
+        has_semi_additive_balances = any(k in text for k in [
+            "semi-additive", "semi additive", "ending balance",
+            "closing balance", "ledger balance", "available balance",
+            "aggregate rollup", "aggregate navigation", "monthly rollup"
+        ])
+
+        # 13. Factless Fact Tables (Event Attendance / Security Logs / Coverage)
+        is_factless_event = any(k in text for k in [
+            "factless", "fact-less", "event attendance", "security event",
+            "audit event", "promotion coverage", "login event", "zero numeric measure"
+        ])
         
         return {
             "is_live_app": is_live_app,
@@ -292,5 +305,7 @@ class NounVerbSemanticParser:
             "is_denormalized_obt": is_denormalized_obt,
             "is_nested_columnar": is_nested_columnar,
             "has_multi_fact_bus_matrix": has_multi_fact_bus_matrix,
-            "has_scd6_hybrid": has_scd6_hybrid
+            "has_scd6_hybrid": has_scd6_hybrid,
+            "has_semi_additive_balances": has_semi_additive_balances,
+            "is_factless_event": is_factless_event
         }

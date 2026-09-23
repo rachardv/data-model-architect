@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any, List, Optional
-from src.schema_types import SchemaSpec, TableSpec, ColumnSpec, RelationshipSpec
+from src.schema_types import SchemaSpec, TableSpec, ColumnSpec, RelationshipSpec, AdditivityType
 from src.bus_matrix import BusMatrixSynthesizer
 
 class DynamicSchemaAuthor:
@@ -68,6 +68,8 @@ class DynamicSchemaAuthor:
                     {
                         "name": f"fact_{clean_domain}_attendance_coverage",
                         "type": "FACTLESS_FACT",
+                        "is_factless": True,
+                        "composite_grain": ["attendee_sk", "event_sk", "date_sk"],
                         "description": "Factless fact tracking event attendance coverage with zero numeric measures",
                         "columns": [
                             {"name": "attendee_sk", "type": "VARCHAR(64)", "nullable": False},
@@ -359,6 +361,154 @@ class DynamicSchemaAuthor:
                         "partition_by": date_key_col,
                         "cluster_by": [entity_sk],
                         "columns": fact_columns
+                    }
+                ]
+            }
+
+        # 3f. Check for Periodic Snapshot Balances & Aggregate Navigation Mart
+        if pattern == "PERIODIC_SNAPSHOT_BALANCES" or inferred_params.get("has_semi_additive_balances") or user_request.get("has_semi_additive_balances"):
+            dim_customer_name = f"dim_{clean_domain}_customer_core"
+            dim_account_name = f"dim_{clean_domain}_account_core"
+            dim_branch_name = f"dim_{clean_domain}_branch_core"
+            dim_date_name = "dim_date"
+
+            fact_snapshot_name = f"fact_daily_{clean_domain}_account_balances" if "banking" not in clean_domain else "fact_daily_account_balances"
+            fact_event_name = f"fact_{clean_domain}_security_events" if "banking" not in clean_domain else "fact_customer_security_events"
+            agg_rollup_name = f"agg_monthly_branch_{clean_domain}_balances" if "banking" not in clean_domain else "agg_monthly_branch_balances"
+
+            dim_customer_cols = [
+                {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "customer_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "customer_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                {"name": "customer_tier", "type": "VARCHAR(32)", "nullable": False, "default": "'PREMIER'"},
+                {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
+                {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"},
+                {"name": "is_current", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "TRUE"},
+                {"name": "is_inferred", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "FALSE"}
+            ]
+
+            dim_account_cols = [
+                {"name": "account_sk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "account_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "account_number", "type": "VARCHAR(32)", "nullable": False, "is_inferred": False},
+                {"name": "account_type", "type": "VARCHAR(32)", "nullable": False, "default": "'CHECKING'"},
+                {"name": "account_status", "type": "VARCHAR(32)", "nullable": False, "default": "'ACTIVE'"},
+                {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_customer_name}.customer_sk", "is_inferred": False}
+            ]
+
+            dim_branch_cols = [
+                {"name": "branch_sk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "branch_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "branch_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                {"name": "branch_city", "type": "VARCHAR(64)", "nullable": False},
+                {"name": "branch_state", "type": "VARCHAR(32)", "nullable": False},
+                {"name": "region", "type": "VARCHAR(64)", "nullable": False, "default": "'NORTH_AMERICA'"}
+            ]
+
+            dim_date_cols = [
+                {"name": "date_sk", "type": "INT", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "calendar_date", "type": "DATE", "nullable": False, "is_inferred": False},
+                {"name": "calendar_year", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "calendar_month", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "calendar_quarter", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "day_of_week", "type": "VARCHAR(16)", "nullable": False, "is_inferred": False}
+            ]
+
+            fact_snapshot_cols = [
+                {"name": "snapshot_id", "type": "BIGINT", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "account_sk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_account_name}.account_sk", "is_inferred": False},
+                {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_customer_name}.customer_sk", "is_inferred": False},
+                {"name": "branch_sk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_branch_name}.branch_sk", "is_inferred": False},
+                {"name": "snapshot_date_key", "type": "INT", "nullable": False, "foreign_key": f"{dim_date_name}.date_sk", "is_inferred": False},
+                {"name": "ending_balance", "type": "DECIMAL(18,2)", "nullable": False, "additivity": "SEMI_ADDITIVE_TEMPORAL", "is_inferred": False},
+                {"name": "available_balance", "type": "DECIMAL(18,2)", "nullable": False, "additivity": "SEMI_ADDITIVE_TEMPORAL", "is_inferred": False},
+                {"name": "interest_rate_pct", "type": "DECIMAL(5,4)", "nullable": False, "additivity": "NON_ADDITIVE_RATIO", "formula": "weighted_interest / ending_balance", "is_inferred": False}
+            ]
+
+            fact_event_cols = [
+                {"name": "event_sk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "customer_sk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_customer_name}.customer_sk", "is_inferred": False},
+                {"name": "event_type", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "device_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "event_date_key", "type": "INT", "nullable": False, "foreign_key": f"{dim_date_name}.date_sk", "is_inferred": False},
+                {"name": "event_timestamp", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False}
+            ]
+
+            agg_rollup_cols = [
+                {"name": "rollup_id", "type": "BIGINT", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "branch_sk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_branch_name}.branch_sk", "is_inferred": False},
+                {"name": "calendar_year", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "calendar_month", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "month_end_date_key", "type": "INT", "nullable": False, "foreign_key": f"{dim_date_name}.date_sk", "is_inferred": False},
+                {"name": "total_closing_balance", "type": "DECIMAL(18,2)", "nullable": False, "additivity": "FULLY_ADDITIVE", "is_inferred": False},
+                {"name": "total_accounts_count", "type": "INT", "nullable": False, "additivity": "FULLY_ADDITIVE", "is_inferred": False}
+            ]
+
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "SCD2",
+                "pattern": "PERIODIC_SNAPSHOT_BALANCES",
+                "tables": [
+                    {
+                        "name": dim_customer_name,
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "primary_key": "customer_sk",
+                        "cluster_by": ["customer_sk"],
+                        "columns": dim_customer_cols
+                    },
+                    {
+                        "name": dim_account_name,
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "primary_key": "account_sk",
+                        "cluster_by": ["account_sk"],
+                        "columns": dim_account_cols
+                    },
+                    {
+                        "name": dim_branch_name,
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "primary_key": "branch_sk",
+                        "cluster_by": ["branch_sk"],
+                        "columns": dim_branch_cols
+                    },
+                    {
+                        "name": dim_date_name,
+                        "type": "DIMENSION",
+                        "is_conformed": True,
+                        "primary_key": "date_sk",
+                        "cluster_by": ["date_sk"],
+                        "columns": dim_date_cols
+                    },
+                    {
+                        "name": fact_snapshot_name,
+                        "type": "PERIODIC_SNAPSHOT",
+                        "description": "Daily account balance snapshot with semi-additive ending balances",
+                        "primary_key": "snapshot_id",
+                        "partition_by": "snapshot_date_key",
+                        "cluster_by": ["account_sk", "branch_sk"],
+                        "columns": fact_snapshot_cols
+                    },
+                    {
+                        "name": fact_event_name,
+                        "type": "FACTLESS_FACT",
+                        "is_factless": True,
+                        "composite_grain": ["customer_sk", "event_type", "device_id", "event_date_key"],
+                        "description": "Factless security audit event log with zero numeric measures",
+                        "primary_key": "event_sk",
+                        "partition_by": "event_date_key",
+                        "cluster_by": ["customer_sk"],
+                        "columns": fact_event_cols
+                    },
+                    {
+                        "name": agg_rollup_name,
+                        "type": "AGGREGATE_ROLLUP",
+                        "base_fact_table": fact_snapshot_name,
+                        "rollup_grain": ["branch_sk", "calendar_year", "calendar_month"],
+                        "description": "Pre-aggregated monthly branch closing balance summary for aggregate navigation",
+                        "primary_key": "rollup_id",
+                        "columns": agg_rollup_cols
                     }
                 ]
             }

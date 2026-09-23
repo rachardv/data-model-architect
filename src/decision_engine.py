@@ -22,7 +22,8 @@ class DataModelDecisionEngine:
         is_denormalized_obt: bool = False,
         is_nested_columnar: bool = False,
         has_multi_fact_bus_matrix: bool = False,
-        has_scd6_hybrid: bool = False
+        has_scd6_hybrid: bool = False,
+        has_semi_additive_balances: bool = False
     ) -> Dict[str, Any]:
         # 0. Factless Fact Table (Event Attendance / Coverage Matrix)
         if is_factless_event:
@@ -31,6 +32,16 @@ class DataModelDecisionEngine:
                 "storage": "Kimball Star Schema",
                 "schema_type": "Factless Event / Coverage Matrix",
                 "temporal": "SCD1_OVERWRITE"
+            }
+
+        # 0a. Periodic Snapshot Balances & Aggregate Navigation Mart
+        if has_semi_additive_balances:
+            return {
+                "pattern": "PERIODIC_SNAPSHOT_BALANCES",
+                "storage": "Kimball Star Schema (Periodic Snapshot + Rollups)",
+                "schema_type": "Periodic Snapshot Fact with Semi-Additive Balances and Aggregate Rollup Navigation",
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE",
+                "has_aggregate_rollups": True
             }
 
         # 0b. Denormalized OBT Mart (Single Flat Table / Sub-Second Scan / Zero Join Latency)

@@ -1,5 +1,12 @@
+from enum import Enum
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, ConfigDict, Field
+
+class AdditivityType(str, Enum):
+    FULLY_ADDITIVE = "FULLY_ADDITIVE"
+    SEMI_ADDITIVE_TEMPORAL = "SEMI_ADDITIVE_TEMPORAL"
+    NON_ADDITIVE_RATIO = "NON_ADDITIVE_RATIO"
+    FACTLESS_EVENT = "FACTLESS_EVENT"
 
 class ColumnSpec(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
@@ -13,6 +20,8 @@ class ColumnSpec(BaseModel):
     is_inferred: bool = False
     masking_policy: Optional[str] = None
     description: Optional[str] = None
+    additivity: Optional[AdditivityType] = AdditivityType.FULLY_ADDITIVE
+    formula: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
@@ -22,7 +31,7 @@ class TableSpec(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     name: str
-    type: str = "DIMENSION"  # DIMENSION | FACT | FACTLESS_FACT | ACCUMULATING_FACT | PERIODIC_SNAPSHOT | BRIDGE
+    type: str = "DIMENSION"  # DIMENSION | FACT | FACTLESS_FACT | ACCUMULATING_FACT | PERIODIC_SNAPSHOT | BRIDGE | AGGREGATE_ROLLUP
     grain: Optional[str] = None
     primary_key: Optional[str] = None
     scd_type: Optional[int] = None
@@ -32,6 +41,10 @@ class TableSpec(BaseModel):
     cluster_by: Optional[List[str]] = Field(default_factory=list)
     temporal_bounds: Optional[Dict[str, str]] = None
     supports_ghost_records: bool = False
+    is_factless: bool = False
+    composite_grain: Optional[List[str]] = Field(default_factory=list)
+    base_fact_table: Optional[str] = None
+    rollup_grain: Optional[List[str]] = Field(default_factory=list)
     columns: List[ColumnSpec] = Field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:

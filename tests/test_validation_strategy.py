@@ -521,6 +521,105 @@ class TestAllTiersEvaluation:
         assert rsk13_overlap["status"] == "FAIL"
         assert "CRITICAL Temporal Interval Overlap Detected" in rsk13_overlap["details"]
 
+    def test_rsk14_metric_additivity_and_rollup_linter(self):
+        # 1. Valid periodic snapshot with semi-additive balance + factless event passes RSK-14
+        valid_schema = {
+            "pattern": "PERIODIC_SNAPSHOT_BALANCES",
+            "tables": [
+                {
+                    "name": "dim_account",
+                    "type": "DIMENSION",
+                    "grain": "one row per bank account",
+                    "primary_key": "account_sk",
+                    "cluster_by": ["account_sk"],
+                    "columns": [{"name": "account_sk", "type": "VARCHAR(64)", "primary_key": True}]
+                },
+                {
+                    "name": "fact_daily_account_balances",
+                    "type": "PERIODIC_SNAPSHOT",
+                    "grain": "one row per account per daily snapshot",
+                    "primary_key": "snapshot_id",
+                    "partition_by": "snapshot_date_key",
+                    "cluster_by": ["account_sk"],
+                    "columns": [
+                        {"name": "snapshot_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "account_sk", "type": "VARCHAR(64)", "foreign_key": "dim_account.account_sk"},
+                        {"name": "snapshot_date_key", "type": "INT"},
+                        {"name": "ending_balance", "type": "DECIMAL(18,2)", "additivity": "SEMI_ADDITIVE_TEMPORAL"}
+                    ]
+                },
+                {
+                    "name": "fact_customer_security_events",
+                    "type": "FACTLESS_FACT",
+                    "grain": "one row per security event occurrence",
+                    "is_factless": True,
+                    "primary_key": "event_sk",
+                    "partition_by": "event_date_key",
+                    "cluster_by": ["customer_sk"],
+                    "composite_grain": ["customer_sk", "event_type", "event_date_key"],
+                    "columns": [
+                        {"name": "event_sk", "type": "VARCHAR(64)", "primary_key": True},
+                        {"name": "customer_sk", "type": "VARCHAR(64)", "foreign_key": "dim_cust.customer_sk"},
+                        {"name": "event_date_key", "type": "INT"}
+                    ]
+                }
+            ]
+        }
+        ctx_valid = ValidationContext(domain="banking_valid", target_schema=valid_schema)
+        sc_valid = ValidationStrategyEngine.evaluate(ctx_valid)
+        rsk14_valid = next(r for r in sc_valid["results"] if r["risk_id"] == "RSK-14")
+        assert rsk14_valid["status"] == "PASS"
+
+        # 2. Factless fact table with numeric measure column fails RSK-14
+        impure_factless_schema = {
+            "tables": [
+                {
+                    "name": "fact_impure_events",
+                    "type": "FACTLESS_FACT",
+                    "grain": "one row per event",
+                    "primary_key": "event_sk",
+                    "partition_by": "event_date_key",
+                    "is_factless": True,
+                    "columns": [
+                        {"name": "event_sk", "type": "VARCHAR(64)", "primary_key": True},
+                        {"name": "customer_sk", "type": "VARCHAR(64)"},
+                        {"name": "event_date_key", "type": "INT"},
+                        {"name": "dummy_amount", "type": "DECIMAL(10,2)"}
+                    ]
+                }
+            ]
+        }
+        ctx_impure = ValidationContext(domain="impure_factless", target_schema=impure_factless_schema)
+        sc_impure = ValidationStrategyEngine.evaluate(ctx_impure)
+        rsk14_impure = next(r for r in sc_impure["results"] if r["risk_id"] == "RSK-14")
+        assert rsk14_impure["status"] == "FAIL"
+        assert "Factless Fact Purity Violation" in rsk14_impure["details"]
+
+        # 3. Periodic snapshot balance without SEMI_ADDITIVE_TEMPORAL generates warning
+        untagged_balance_schema = {
+            "pattern": "PERIODIC_SNAPSHOT_BALANCES",
+            "tables": [
+                {
+                    "name": "fact_daily_balances",
+                    "type": "PERIODIC_SNAPSHOT",
+                    "grain": "one row per account per day",
+                    "primary_key": "snapshot_id",
+                    "partition_by": "snapshot_date_key",
+                    "columns": [
+                        {"name": "snapshot_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "account_sk", "type": "VARCHAR(64)"},
+                        {"name": "snapshot_date_key", "type": "INT"},
+                        {"name": "ending_balance", "type": "DECIMAL(18,2)"}
+                    ]
+                }
+            ]
+        }
+        ctx_untagged = ValidationContext(domain="untagged", target_schema=untagged_balance_schema)
+        sc_untagged = ValidationStrategyEngine.evaluate(ctx_untagged)
+        rsk14_untagged = next(r for r in sc_untagged["results"] if r["risk_id"] == "RSK-14")
+        assert rsk14_untagged["status"] == "WARNING"
+        assert "Semi-Additive Balance Warning" in rsk14_untagged["details"]
+
 
 class TestChaosEngineStandalone:
     def test_zipfian_skew_generator_determinism(self):
