@@ -6,7 +6,7 @@
   "is_intentional_trap": true,
   "prompt": "Omnichannel retail store tracking orders with line items and fulfillment deliveries. We want to report total item sales revenue and total shipping freight charges by customer in a single combined table.\n",
   "citation": "Christopher Adamson, Star Schema: The Complete Reference, Chapter 12: \"Disparate Grains and Traps\", pp. 315-338 (\"The Chasm Trap and Multi-Fact Cross Joins\"); Kimball Chapter 5.\n",
-  "timestamp_utc": "2026-09-23T20:40:06.580084+00:00",
+  "timestamp_utc": "2026-09-23T20:42:21.358743+00:00",
   "intake_decisions": {
     "status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
     "completeness_score": null,
@@ -26,5 +26,5 @@
   "final_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
   "expected_status": "AWAITING_ARCHITECTURAL_CONFIRMATION",
   "verdict": "PASS",
-  "execution_time_ms": 10.85
+  "execution_time_ms": 7.9
 }

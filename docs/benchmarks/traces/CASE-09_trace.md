@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-09 — Bitemporal Insurance Policy & SCD6 Splicing Lifecycle
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `227.1ms`
-> **Timestamp (UTC):** `2026-09-23T20:40:02.418530+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `194.26ms`
+> **Timestamp (UTC):** `2026-09-23T20:42:17.380391+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `insurance_policy`
@@ -31,11 +31,11 @@ We operate an enterprise commercial property and casualty insurance carrier mana
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Zero Interval Overlap in Policy Dimension | `scalar_eq` | `0` | `0` | `0.86ms` | ✅ PASS |
-| Late Arriving Ghost Policy Exists | `scalar_gt` | `0` | `1` | `0.37ms` | ✅ PASS |
-| Zero Dropped Claims With Ghost Key Joins | `scalar_eq` | `4` | `4` | `0.59ms` | ✅ PASS |
-| Historical Point In Time Risk Tier Aggregation | `scalar_gt` | `0` | `1` | `1.26ms` | ✅ PASS |
-| Current Perspective Risk Tier Aggregation | `scalar_gt` | `0` | `1` | `0.99ms` | ✅ PASS |
+| Zero Interval Overlap in Policy Dimension | `scalar_eq` | `0` | `0` | `0.75ms` | ✅ PASS |
+| Late Arriving Ghost Policy Exists | `scalar_gt` | `0` | `1` | `0.32ms` | ✅ PASS |
+| Zero Dropped Claims With Ghost Key Joins | `scalar_eq` | `4` | `4` | `0.6ms` | ✅ PASS |
+| Historical Point In Time Risk Tier Aggregation | `scalar_gt` | `0` | `1` | `1.17ms` | ✅ PASS |
+| Current Perspective Risk Tier Aggregation | `scalar_gt` | `0` | `1` | `1.12ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Zero Interval Overlap in Policy Dimension

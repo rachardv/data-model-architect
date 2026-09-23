@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-05 — Enterprise SaaS Subscription Cohort OBT
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3112.23ms`
-> **Timestamp (UTC):** `2026-09-23T20:40:03.243880+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3042.19ms`
+> **Timestamp (UTC):** `2026-09-23T20:42:18.134571+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `saas`
@@ -31,8 +31,8 @@ We operate an enterprise B2B SaaS platform tracking recurring software subscript
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | OBT Table Subscriptions Positive MRR Count | `scalar_gt` | `0` | `2` | `0.27ms` | ✅ PASS |
-| Total Recurring Revenue MRR Sum | `scalar_gt` | `0.0` | `238.50` | `0.27ms` | ✅ PASS |
-| Zero Join Flat Cohort Aggregation | `row_count_gt` | `0` | `1` | `0.68ms` | ✅ PASS |
+| Total Recurring Revenue MRR Sum | `scalar_gt` | `0.0` | `238.50` | `0.29ms` | ✅ PASS |
+| Zero Join Flat Cohort Aggregation | `row_count_gt` | `0` | `1` | `0.53ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: OBT Table Subscriptions Positive MRR Count

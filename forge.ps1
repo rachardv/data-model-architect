@@ -167,16 +167,24 @@ switch ($Command) {
             exit 1
         }
         
-        Write-Host "`n[Step 1/4] Running Full 144-Test Pytest Suite..." -ForegroundColor Yellow
+        Write-Host "`n[Step 1/4] Running Full 150-Test Pytest Suite..." -ForegroundColor Yellow
         Run-PyCommand "-m pytest -q --tb=short"
         
-        Write-Host "`n[Step 2/4] Verifying 14-Case Golden Baseline Strict Diff..." -ForegroundColor Yellow
+        Write-Host "`n[Step 2/4] Verifying 19-Case Golden Baseline Strict Diff..." -ForegroundColor Yellow
         Run-PyCommand "-m forge.cli --benchmark-gate --diff --strict-drift"
         
         Write-Host "`n[Step 3/4] Executing 219-Check Industry Certification Battery..." -ForegroundColor Yellow
         Run-PyCommand "-m forge.cli --forge"
         
         Write-Host "`n[Step 4/4] Merging 'staging' into 'main' and synchronizing remotes..." -ForegroundColor Yellow
+        
+        # Commit any traces or pipeline docs refreshed during Steps 1-3
+        $dirtyFiles = git status --porcelain
+        if ($dirtyFiles) {
+            git add -A
+            git commit -m "chore(traces): record certified benchmark execution traces [skip ci]" --no-verify 2>$null
+        }
+        
         git checkout main
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         

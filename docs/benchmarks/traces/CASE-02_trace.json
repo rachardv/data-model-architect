@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "Hospital inpatient admission tracking. Patients are admitted to hospital encounters with admission and discharge dates. Each encounter links to multiple primary and secondary ICD-10 diagnoses via an encounter-diagnosis bridge table. Patient demographic and insurance changes are tracked using SCD Type 2.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 10: \"Healthcare\", pp. 267-294 (\"Multi-Valued Diagnoses and Bridge Tables\").\n",
-  "timestamp_utc": "2026-09-23T20:40:02.232127+00:00",
+  "timestamp_utc": "2026-09-23T20:42:17.196092+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -81,7 +81,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.28,
+      "latency_ms": 0.29,
       "error": null
     },
     {
@@ -91,7 +91,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.25,
+      "latency_ms": 0.26,
       "error": null
     },
     {
@@ -101,12 +101,12 @@
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.28,
+      "latency_ms": 0.25,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 76.64
+  "execution_time_ms": 79.17
 }
