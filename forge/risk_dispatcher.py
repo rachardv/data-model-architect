@@ -37,7 +37,7 @@ class RiskToTestDispatcher:
           - Multi-Fact Grain Risk (RSK-02) -> Metric Conservation & Fan-out Proof
           - Key Integrity Risk (RSK-04) -> Duplicate PKs & Orphan FK Quarantine
           - Plan Risk (RSK-05) -> Hash-Join EXPLAIN inspection
-          - Cardinality Risk (RSK-06) -> 16MB Memory Pressure Chaos
+          - Efficiency & Skew Risk (RSK-06) -> Workload Fan-Out & Skew Stability
           - Compliance Risk (RSK-08) -> GDPR Right-to-be-Forgotten Pseudonymization
           - dbt Risk (RSK-07) -> dbt-project-evaluator structural standards
         """
@@ -117,14 +117,14 @@ class RiskToTestDispatcher:
                     "details": qe_res.get("details", "Sub-100ms Hash Join execution verified.")
                 })
 
-            # Battery E: Adversarial Key Skew Chaos (RSK-06)
+            # Battery E: Workload Efficiency & Key Skew Stability (RSK-06)
             skew_risk = next((r for r in risk_scorecard.get("results", []) if r.get("risk_id") == "RSK-06"), None)
             if skew_risk:
                 executed_batteries.append({
-                    "battery": "ADVERSARIAL_KEY_SKEW_16MB_CAP",
+                    "battery": "WORKLOAD_EFFICIENCY_FANOUT_STABILITY",
                     "triggered_by_risk": "RSK-06",
                     "status": skew_risk.get("status", "PASS"),
-                    "details": skew_risk.get("details", "Zipfian 80/20 key skew passed under 16MB cap.")
+                    "details": skew_risk.get("details", "Workload join fan-out stability verified under Zipfian key skew.")
                 })
 
             # Battery F: GDPR Right-to-be-Forgotten Pseudonymization (RSK-08)

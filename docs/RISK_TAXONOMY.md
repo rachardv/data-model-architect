@@ -19,7 +19,7 @@ flowchart TD
             RB["<b>Process B (Static Risk Council)</b><br/>• Syntax & AST graph traversal<br/>• Static cyclic dependency loops<br/>• O(V+E) schema linting before SQL"]
         end
         subgraph QC["Category 3: Computational Stress Risk"]
-            RC["<b>Process C (Physical Dispatcher)</b><br/>• Zipfian 80/20 key skew<br/>• 16MB RAM cap spill-to-disk<br/>• Dynamic stress triggered by Process B"]
+            RC["<b>Process C (Physical Dispatcher)</b><br/>• Zipfian 80/20 key skew<br/>• Join fan-out factor <= 1.0<br/>• Dynamic stress triggered by Process B"]
         end
         subgraph QD["Category 4: Universal Invariant Risk"]
             RD["<b>Process D (Agnostic Probes)</b><br/>• Metric conservation ($0.0000 drift)<br/>• Point-in-time temporal causality<br/>• 100% reflection (Zero hardcoded tables)"]
@@ -67,8 +67,8 @@ flowchart TD
 * **Definition:** The risk that a structurally sound schema fails during physical query execution under adverse hardware constraints, extreme key skew, out-of-order event arrival, or data mutation.
 * **Owned by:** **Process C** (`forge/risk_dispatcher.py` + `forge/chaos_engine.py`).
 * **What it protects against:**
-  - **Zipfian Key Skew & Hash Spills:** Heavy 80/20 power-law key distributions causing partition hotspotting and out-of-memory (OOM) crashes on cloud warehouses (`RSK-06`).
-  - **Hardware Memory Cap Breaches:** Query failure under a restricted `16MB` DuckDB RAM ceiling; verifying clean spill-to-disk rather than hard crash.
+  - **Workload Efficiency & Join Fan-Out Inflation:** Heavy 80/20 key skew causing unconstrained Cartesian row multiplication rather than factor $\le 1.0$ (`RSK-06`).
+  - **Partition & Cluster Pruning Deficiencies:** High-frequency event/transaction tables missing cluster/partition keys.
   - **Out-of-Order Temporal Jitter:** Late-arriving facts arriving with irregular timestamp offsets breaking incremental window loads.
   - **GDPR Art. 17 Pseudonymization Cascades:** Erasing or pseudonymizing customer records breaking referential integrity or zeroing out financial ledger aggregates (`RSK-08`).
 * **Core Characteristics:**
@@ -134,7 +134,7 @@ Every active risk profile in the system must be mapped to its owning process, ca
 | `RSK-04` | Referential Orphan & Quarantine Leakage | **D** | Universal Invariant | Agnostic Foreign Key Integrity Probe & Silver Quarantine Isolation | `forge/benchmark_harness.py` | Do NOT create separate unit tests for foreign key orphans on every new table; Process D probes FK reflection globally. |
 | `RSK-05` | Cyclic Foreign Key Loops & Recursive Traps | **B** | Structural Defect | Static DFS cycle detection over schema foreign key graph | `TRAP-03`, `forge/risk_engine.py` | Do NOT boot DuckDB to detect cyclic dependency deadlocks; Process B traps graph cycles statically in $O(V+E)$. |
 | `RSK-05-DYNAMIC` | Physical Hash-Join EXPLAIN Plan Proof | **D** | Universal Invariant | Battery D: EXPLAIN plan inspection ensuring sub-100ms hash joins | `forge/risk_dispatcher.py`, `forge/benchmark_harness.py` | Do NOT write ad-hoc query plan checks; Process D verifies hash join efficiency across all queries. |
-| `RSK-06` | Adversarial Key Skew & Memory Spill Failure | **C** | Computational Stress | Dynamic Battery E: Zipfian 80/20 Key Skew under 16MB DuckDB RAM cap | `forge/chaos_engine.py`, `forge/risk_dispatcher.py` | Do NOT run Zipfian skew tests unconditionally on all models; Process C dispatches Battery E only when partition risk is detected. |
+| `RSK-06` | Workload Efficiency & Join Fan-Out Stability | **C** | Computational Stress | Dynamic Battery E: Zipfian 80/20 Key Skew Join Fan-Out Verification (Factor $\le 1.0$) | `forge/chaos_engine.py`, `forge/risk_dispatcher.py` | Proves zero intermediate row explosion ($Factor \le 1.0$) under skewed foreign keys. |
 | `RSK-07` | Requirement Volatility & Grain Collapse | **A** | Domain Coverage | Intake Atomic Grain Pushback & Lowest Atomic Grain Verification | `CASE-04`, `IntakeEngine` | Do NOT add snapshot models without lowest atomic grain base facts preserved. |
 | `RSK-08` | GDPR Art. 17 PII Detection & Tagging | **B** | Structural Defect | Static PII Pattern Classifier | `forge/risk_engine.py` | Do NOT add ad-hoc regex checks for PII in pipeline tests; register PII patterns in `RSK-08` static evaluator. |
 | `RSK-08-DYNAMIC` | GDPR Pseudonymization Sentinel & Zero-Orphan Proof | **C** | Computational Stress | Battery G: Physical data redaction & zero-orphan fact ledger check | `forge/risk_dispatcher.py`, `forge/chaos_engine.py` | Process C proves compliance without foreign key orphan corruption under data deletion. |

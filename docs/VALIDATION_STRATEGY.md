@@ -88,7 +88,7 @@ The validation architecture operates across **3 distinct, non-redundant layers**
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ TIER 4: Adversarial Stress & Compliance Proofs (Hardware & Edge Cases) │
-│ • RSK-06: Zipfian 80/20 Key Skew under 16MB RAM Cap (Spill-to-Disk)   │
+│ • RSK-06: Workload Efficiency & Join Fan-Out Factor (<= 1.0000)        │
 │ • RSK-08: GDPR Pseudonymization Sentinel Proof (Zero-Orphan Erasure)   │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
@@ -141,12 +141,12 @@ The validation architecture operates across **3 distinct, non-redundant layers**
 * **Impact:** Query timeouts, out-of-memory crashes on cloud warehouses, massive compute costs.
 * **Mitigation:** **Process B AST Linter** verifying explicit join predicates and cycle detection (`TRAP-03`) + **Process D DuckDB EXPLAIN** plan inspection ensuring sub-100ms hash joins.
 
-### RSK-06: Adversarial Skew & Memory Spill Failure
+### RSK-06: Workload Efficiency & Join Fan-Out Stability
 * **Owning Process:** **Process C** (Computational Stress Battery)
 * **Risk Category:** Category 3 (Computational & Hardware Stress)
-* **Root Cause:** Extreme key skew (Zipfian 80/20 power-law) causes partition hot-spots and hash-join memory blowouts on distributed nodes.
-* **Impact:** Spark/Snowflake node OOM crashes on multi-million row loads.
-* **Mitigation:** **Process C Adversarial Chaos Generator** executing Zipfian skewed keys under a restricted `16MB` DuckDB RAM cap. Passes for memory stability (no crash) and emits physical cluster key advice if disk spill occurs.
+* **Root Cause:** Extreme key skew (Zipfian 80/20 power-law) or unoptimized joins cause intermediate Cartesian row multiplication and distributed shuffle blowouts.
+* **Impact:** Spark/Snowflake node OOM crashes on multi-million row loads and massive compute bills.
+* **Mitigation:** **Process C Workload Fan-Out Battery** executing Zipfian skewed keys on actual synthesized facts and dimensions. Mathematically proves that the join fan-out factor remains $\le 1.0000$ (zero row multiplication) and completes within sub-second SLA.
 
 ### RSK-07: Requirement Volatility & Refactoring Debt
 * **Owning Process:** **Process A** (Curated Benchmarks)

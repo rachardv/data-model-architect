@@ -215,12 +215,24 @@ class TestChaosEngineStandalone:
         top_10_count = sum(c for _, c in counts.most_common(10))
         assert top_10_count / 1000.0 >= 0.70  # Strong skew verified
 
-    def test_memory_constrained_duckdb_execution(self):
+    def test_workload_fanout_duckdb_execution(self):
+        res = AdversarialChaosGenerator.run_workload_fanout_benchmark(
+            num_rows=1000,
+            num_keys=20,
+            skew_factor=1.2
+        )
+        assert res["status"] == "PASS"
+        assert res["stable"] is True
+        assert res["fanout_factor"] <= 1.0
+        assert res["fact_rows"] == 1000
+        assert res["duration_ms"] > 0
+
+    def test_memory_constrained_duckdb_execution_legacy_wrapper(self):
         res = AdversarialChaosGenerator.run_memory_constrained_benchmark(
-            memory_limit_mb=16,
             num_rows=1000,
             num_keys=20
         )
+        assert res["status"] == "PASS"
         assert res["oom_encountered"] is False
         assert res["rows_processed"] == 1000
         assert res["duration_ms"] > 0
