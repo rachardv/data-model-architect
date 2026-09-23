@@ -267,6 +267,99 @@ class TestAllTiersEvaluation:
         assert rsk10_nested["status"] == "PASS"
         assert rsk10_nested["metrics"]["query_hop_depth"] == 1
 
+    def test_rsk11_bus_matrix_conformance_and_chasm_prevention(self):
+        from src.bus_matrix import BusMatrixSynthesizer
+
+        # 1. Synthesizer generates valid markdown & drill-across SQL
+        bm = BusMatrixSynthesizer.synthesize_bus_matrix(
+            domain="order_to_cash",
+            actor="customer",
+            events=["orders", "shipments", "payments"]
+        )
+        md = bm.to_markdown()
+        assert "| **`fact_order_to_cash_orders`** |" in md
+        assert "dim_date" in md
+        drill_sql = bm.generate_drill_across_sql()
+        assert "FULL OUTER JOIN" in drill_sql
+        assert "WITH fact_order_to_cash_orders_agg AS" in drill_sql
+
+        # 2. Valid multi-fact schema passes RSK-11
+        valid_bus_schema = {
+            "pattern": "MULTI_FACT_BUS_MATRIX",
+            "drill_across_sql": drill_sql,
+            "tables": [
+                {
+                    "name": "dim_order_to_cash_customer_core",
+                    "type": "DIMENSION",
+                    "columns": [{"name": "customer_sk", "type": "VARCHAR(64)", "primary_key": True}]
+                },
+                {
+                    "name": "fact_order_to_cash_orders",
+                    "type": "FACT",
+                    "columns": [
+                        {"name": "order_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "customer_sk", "foreign_key": "dim_order_to_cash_customer_core.customer_sk"}
+                    ]
+                },
+                {
+                    "name": "fact_order_to_cash_shipments",
+                    "type": "FACT",
+                    "columns": [
+                        {"name": "shipment_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "customer_sk", "foreign_key": "dim_order_to_cash_customer_core.customer_sk"}
+                    ]
+                }
+            ]
+        }
+        ctx_valid = ValidationContext(domain="bus_valid", target_schema=valid_bus_schema)
+        sc_valid = ValidationStrategyEngine.evaluate(ctx_valid)
+        rsk11_valid = next(r for r in sc_valid["results"] if r["risk_id"] == "RSK-11")
+        assert rsk11_valid["status"] == "PASS"
+
+        # 3. Inconformed surrogate keys across facts fails RSK-11
+        bad_bus_schema = {
+            "pattern": "MULTI_FACT_BUS_MATRIX",
+            "tables": [
+                {
+                    "name": "dim_order_to_cash_customer_core",
+                    "type": "DIMENSION",
+                    "columns": [{"name": "customer_sk", "type": "VARCHAR(64)", "primary_key": True}]
+                },
+                {
+                    "name": "fact_order_to_cash_orders",
+                    "type": "FACT",
+                    "columns": [
+                        {"name": "order_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "customer_sk", "foreign_key": "dim_order_to_cash_customer_core.customer_sk"}
+                    ]
+                },
+                {
+                    "name": "fact_order_to_cash_shipments",
+                    "type": "FACT",
+                    "columns": [
+                        {"name": "shipment_id", "type": "BIGINT", "primary_key": True},
+                        {"name": "customer_id", "foreign_key": "dim_order_to_cash_customer_core.customer_id"}
+                    ]
+                }
+            ]
+        }
+        ctx_bad = ValidationContext(domain="bus_bad", target_schema=bad_bus_schema)
+        sc_bad = ValidationStrategyEngine.evaluate(ctx_bad)
+        rsk11_bad = next(r for r in sc_bad["results"] if r["risk_id"] == "RSK-11")
+        assert rsk11_bad["status"] == "FAIL"
+
+        # 4. Direct unaggregated join between facts fails RSK-11 as Chasm Trap
+        chasm_schema = {
+            "pattern": "MULTI_FACT_BUS_MATRIX",
+            "drill_across_sql": "SELECT * FROM fact_orders JOIN fact_shipments ON fact_orders.id = fact_shipments.id",
+            "tables": valid_bus_schema["tables"]
+        }
+        ctx_chasm = ValidationContext(domain="bus_chasm", target_schema=chasm_schema)
+        sc_chasm = ValidationStrategyEngine.evaluate(ctx_chasm)
+        rsk11_chasm = next(r for r in sc_chasm["results"] if r["risk_id"] == "RSK-11")
+        assert rsk11_chasm["status"] == "FAIL"
+        assert "Chasm Trap" in rsk11_chasm["details"]
+
 
 class TestChaosEngineStandalone:
     def test_zipfian_skew_generator_determinism(self):

@@ -1,6 +1,7 @@
 import re
 from typing import Dict, Any, List, Optional
 from src.schema_types import SchemaSpec, TableSpec, ColumnSpec, RelationshipSpec
+from src.bus_matrix import BusMatrixSynthesizer
 
 class DynamicSchemaAuthor:
     """
@@ -170,6 +171,118 @@ class DynamicSchemaAuthor:
                         "columns": mart_columns
                     }
                 ]
+            }
+
+        # 3d. Check for Multi-Fact Enterprise Bus Matrix
+        if pattern == "MULTI_FACT_BUS_MATRIX" or inferred_params.get("has_multi_fact_bus_matrix") or user_request.get("has_multi_fact_bus_matrix"):
+            domain_roles = parsed_semantics.get("domain_roles", {})
+            value_stream_events = domain_roles.get("value_stream_events", ["orders", "shipments", "payments"])
+            raw_actor = domain_roles.get("primary_actor")
+            actor = "customer"
+            if raw_actor and raw_actor.lower() not in ["user", "applicant", "actor"]:
+                actor = re.sub(r"[^a-z0-9_]", "", raw_actor.lower())
+
+            bus_matrix = BusMatrixSynthesizer.synthesize_bus_matrix(
+                domain=clean_domain,
+                actor=actor,
+                events=value_stream_events
+            )
+
+            actor_sk = f"{actor}_sk"
+            dim_actor_name = f"dim_{clean_domain}_{actor}_core" if actor == "customer" else f"dim_{clean_domain}_{actor}"
+
+            dim_customer_cols = [
+                {"name": actor_sk, "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": f"{actor}_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": f"{actor}_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                {"name": "tier", "type": "VARCHAR(32)", "nullable": False, "default": "'STANDARD'"},
+                {"name": "region", "type": "VARCHAR(64)", "nullable": True},
+                {"name": "scd_valid_from", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False},
+                {"name": "scd_valid_to", "type": "TIMESTAMPTZ", "nullable": False, "is_inferred": False, "default": "'9999-12-31 UTC'"},
+                {"name": "is_current", "type": "BOOLEAN", "nullable": False, "is_inferred": False, "default": "TRUE"}
+            ]
+
+            dim_product_cols = [
+                {"name": "product_sk", "type": "VARCHAR(64)", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "product_id", "type": "VARCHAR(64)", "nullable": False, "is_inferred": False},
+                {"name": "product_name", "type": "VARCHAR(255)", "nullable": False, "is_inferred": False},
+                {"name": "category", "type": "VARCHAR(64)", "nullable": True},
+                {"name": "unit_price", "type": "DECIMAL(10,2)", "nullable": False, "default": "0.0"}
+            ]
+
+            dim_date_cols = [
+                {"name": "date_sk", "type": "INT", "nullable": False, "primary_key": True, "is_inferred": False},
+                {"name": "calendar_date", "type": "DATE", "nullable": False, "is_inferred": False},
+                {"name": "calendar_year", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "calendar_month", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "calendar_quarter", "type": "INT", "nullable": False, "is_inferred": False},
+                {"name": "day_of_week", "type": "VARCHAR(16)", "nullable": False, "is_inferred": False}
+            ]
+
+            bus_tables = [
+                {
+                    "name": dim_actor_name,
+                    "type": "DIMENSION",
+                    "is_conformed": True,
+                    "primary_key": actor_sk,
+                    "columns": dim_customer_cols
+                },
+                {
+                    "name": f"dim_{clean_domain}_product",
+                    "type": "DIMENSION",
+                    "is_conformed": True,
+                    "primary_key": "product_sk",
+                    "columns": dim_product_cols
+                },
+                {
+                    "name": "dim_date",
+                    "type": "DIMENSION",
+                    "is_conformed": True,
+                    "primary_key": "date_sk",
+                    "columns": dim_date_cols
+                }
+            ]
+
+            for f in bus_matrix.facts:
+                sing_ev = f.name.replace(f"fact_{clean_domain}_", "").rstrip("s")
+                pk_name = f"{sing_ev}_id"
+                cols = [
+                    {"name": pk_name, "type": "BIGINT", "nullable": False, "primary_key": True, "is_inferred": False},
+                    {"name": actor_sk, "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"{dim_actor_name}.{actor_sk}", "is_inferred": False}
+                ]
+                if "product_sk" in f.dimension_keys:
+                    cols.append({"name": "product_sk", "type": "VARCHAR(64)", "nullable": False, "foreign_key": f"dim_{clean_domain}_product.product_sk", "is_inferred": False})
+                
+                date_role = next((k for k in f.dimension_keys if "date" in k), "date_sk")
+                cols.append({"name": date_role, "type": "INT", "nullable": False, "foreign_key": f"dim_date.date_sk", "is_inferred": False})
+
+                if "ship" in f.name:
+                    cols.append({"name": "carrier_name", "type": "VARCHAR(64)", "nullable": False, "default": "'FEDEX_EXPRESS'", "is_inferred": False})
+                elif "pay" in f.name:
+                    cols.append({"name": "payment_gateway", "type": "VARCHAR(64)", "nullable": False, "default": "'STRIPE'", "is_inferred": False})
+                    cols.append({"name": "payment_status", "type": "VARCHAR(32)", "nullable": False, "default": "'SETTLED'", "is_inferred": False})
+
+                for m in f.metric_columns:
+                    m_type = "INT" if "quantity" in m else "DECIMAL(14,2)"
+                    cols.append({"name": m, "type": m_type, "nullable": False, "is_inferred": False})
+
+                bus_tables.append({
+                    "name": f.name,
+                    "type": "FACT",
+                    "description": f"Conformed Enterprise Bus Matrix Fact: {f.grain}",
+                    "primary_key": pk_name,
+                    "columns": cols
+                })
+
+            drill_across_sql = bus_matrix.generate_drill_across_sql()
+
+            return {
+                "domain": clean_domain,
+                "temporal_strategy": "SCD2",
+                "pattern": "MULTI_FACT_BUS_MATRIX",
+                "bus_matrix": bus_matrix.model_dump(),
+                "drill_across_sql": drill_across_sql,
+                "tables": bus_tables
             }
 
         # Table naming conventions

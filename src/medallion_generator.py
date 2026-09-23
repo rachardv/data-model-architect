@@ -326,8 +326,20 @@ class MedallionPipelineGenerator:
                             val_mappings.append(f"source.customer_id")
                         elif "name" in cn.lower() or "title" in cn.lower():
                             val_mappings.append(f"source.customer_name")
+                        elif cn == "tier":
+                            val_mappings.append("'STANDARD'")
+                        elif cn == "region":
+                            val_mappings.append("'NORTH_AMERICA'")
+                        elif cn == "email":
+                            val_mappings.append("COALESCE(source.email, 'customer@example.com')")
+                        elif "INT" in c.get("type", "").upper() or "BIGINT" in c.get("type", "").upper():
+                            val_mappings.append("1")
+                        elif "DECIMAL" in c.get("type", "").upper() or "NUMERIC" in c.get("type", "").upper():
+                            val_mappings.append("0.0")
+                        elif "BOOL" in c.get("type", "").upper():
+                            val_mappings.append("TRUE")
                         else:
-                            val_mappings.append(f"source.{cn}")
+                            val_mappings.append(f"'DEFAULT'")
                             
                     lines.append(f"        {', '.join(val_mappings)}")
                     lines.append("    );")
@@ -363,17 +375,32 @@ class MedallionPipelineGenerator:
                         cn = c["name"].lower()
                         ct = c.get("type", "").upper()
                         if "sk" in cn or cn == pk:
-                            val_row1.append("'1'")
-                            val_row2.append("'2'")
+                            val_row1.append("20260115" if "date" in cn else "'1'")
+                            val_row2.append("20260116" if "date" in cn else "'2'")
+                        elif "date" in cn:
+                            val_row1.append("DATE '2026-01-15'")
+                            val_row2.append("DATE '2026-01-16'")
                         elif "id" in cn:
                             val_row1.append(f"'{cn.upper()}-001'")
                             val_row2.append(f"'{cn.upper()}-002'")
                         elif "name" in cn or "title" in cn:
                             val_row1.append(f"'Alpha {c['name'].title()}'")
                             val_row2.append(f"'Beta {c['name'].title()}'")
+                        elif "year" in cn:
+                            val_row1.append("2026")
+                            val_row2.append("2026")
+                        elif "month" in cn or "quarter" in cn:
+                            val_row1.append("1")
+                            val_row2.append("1")
                         elif "INT" in ct or "BIGINT" in ct:
                             val_row1.append("1")
                             val_row2.append("2")
+                        elif any(t in ct for t in ["DECIMAL", "NUMERIC", "FLOAT", "DOUBLE", "REAL"]):
+                            val_row1.append("10.00")
+                            val_row2.append("20.00")
+                        elif "BOOL" in ct:
+                            val_row1.append("TRUE")
+                            val_row2.append("TRUE")
                         else:
                             val_row1.append(f"'SAMPLE_1'")
                             val_row2.append(f"'SAMPLE_2'")
@@ -516,14 +543,30 @@ class MedallionPipelineGenerator:
                     cn = c["name"]
                     if cn == "customer_sk":
                         sel_items.append("    COALESCE(c.customer_sk, 'UNKNOWN_SK') AS customer_sk")
+                    elif cn == "product_sk":
+                        sel_items.append("    'PROD-SK-001' AS product_sk")
+                    elif "date" in cn.lower():
+                        sel_items.append("    20260115 AS " + cn)
                     elif cn == "estimated_delivery_days":
                         sel_items.append("    CAST(3 AS INT) AS estimated_delivery_days -- [AI-GENERATED FALLBACK]")
                     elif cn in ["total_amount_usd", "order_total_usd"]:
                         sel_items.append(f"    COALESCE(o.total_amount, 0.0) AS {cn}")
-                    elif "shipping" in cn:
-                        sel_items.append(f"    CAST(5.00 AS DECIMAL(14,2)) AS {cn}")
+                    elif cn in ["payment_amount_usd", "amount_usd"]:
+                        sel_items.append(f"    COALESCE(o.total_amount, 100.00) AS {cn}")
+                    elif "shipping" in cn.lower() or "cost" in cn.lower():
+                        sel_items.append(f"    CAST(15.00 AS DECIMAL(14,2)) AS {cn}")
+                    elif "quantity" in cn.lower():
+                        sel_items.append("    CAST(1 AS INT) AS quantity")
+                    elif "gateway" in cn.lower():
+                        sel_items.append("    'STRIPE' AS " + cn)
+                    elif "carrier" in cn.lower():
+                        sel_items.append("    'FEDEX_EXPRESS' AS " + cn)
+                    elif "status" in cn.lower():
+                        sel_items.append("    'SETTLED' AS " + cn)
                     elif "tax" in cn:
                         sel_items.append(f"    CAST(0.00 AS DECIMAL(14,2)) AS {cn}")
+                    elif cn == pk:
+                        sel_items.append(f"    o.order_id" if pk == "order_id" else f"    o.order_id AS {pk}")
                     else:
                         sel_items.append(f"    o.{cn}")
                         
@@ -542,7 +585,7 @@ class MedallionPipelineGenerator:
                         lines.append(f"  ON o.customer_id = c.customer_id")
                         
                 lines.append(f"WHERE NOT EXISTS (")
-                lines.append(f"    SELECT 1 FROM {tname} existing WHERE existing.{pk} = o.{pk}")
+                lines.append(f"    SELECT 1 FROM {tname} existing WHERE existing.{pk} = o.order_id")
                 lines.append(f");")
                 
                 gold_sql[tname] = "\n".join(lines)

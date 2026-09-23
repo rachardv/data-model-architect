@@ -158,6 +158,16 @@ class RiskToTestDispatcher:
                     "details": olap_hop_risk.get("details", "Query hop depth and structural fit verified against workload intent.")
                 })
 
+            # Battery I: Bus Matrix Conformance & Chasm Prevention (RSK-11)
+            bus_matrix_risk = next((r for r in risk_scorecard.get("results", []) if r.get("risk_id") == "RSK-11"), None)
+            if bus_matrix_risk:
+                executed_batteries.append({
+                    "battery": "BUS_MATRIX_CONFORMANCE_BATTERY",
+                    "triggered_by_risk": "RSK-11",
+                    "status": bus_matrix_risk.get("status", "PASS"),
+                    "details": bus_matrix_risk.get("details", "Enterprise bus matrix conformed dimensions and chasm avoidance verified.")
+                })
+
             # 5. Check Custom Case Verification Queries (if provided)
             custom_queries_passed = True
             if custom_verification_results is not None:

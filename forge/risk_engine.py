@@ -530,6 +530,90 @@ class RSK10_OlapWorkloadAlignmentEvaluator(BaseRiskEvaluator):
             metrics={"query_hop_depth": 1, "model_archetype": pattern, "fact_count": len(facts), "dimension_count": len(dims)}
         )
 
+@register_risk("RSK-11")
+class RSK11_BusMatrixConformanceAndChasmEvaluator(BaseRiskEvaluator):
+    risk_id = "RSK-11"
+    name = "Enterprise Bus Matrix Conformance & Chasm Prevention Evaluator"
+    tier = ValidationTier.TIER_2_AST_LINTER
+    default_severity = RiskSeverity.HIGH
+    default_blocking = True
+
+    def evaluate(self, context: ValidationContext) -> RiskResult:
+        target_schema = context.target_schema or {}
+        tables = target_schema.get("tables", [])
+        pattern = target_schema.get("pattern", "")
+        params = context.inferred_usage_params or {}
+
+        facts = [t for t in tables if t.get("type") in ["FACT", "FACTLESS_FACT", "ACCUMULATING_FACT", "PERIODIC_SNAPSHOT"]]
+        dims = [t for t in tables if t.get("type") == "DIMENSION"]
+        dim_map = {d.get("name"): d for d in dims}
+
+        # If single-fact and not bus matrix intent, skip
+        if len(facts) < 2 and pattern != "MULTI_FACT_BUS_MATRIX" and not params.get("has_multi_fact_bus_matrix"):
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="PASS",
+                severity=self.default_severity,
+                blocking=False,
+                details="Single-process fact mart: Multi-fact bus matrix conformance checks satisfied.",
+                metrics={"fact_count": len(facts), "is_multi_fact": False}
+            )
+
+        # 1. Dimension Conformance Check across multiple facts
+        dim_fks_by_dim: Dict[str, Set[str]] = {}
+        for f in facts:
+            for c in f.get("columns", []):
+                fk = c.get("foreign_key", "")
+                if fk and "." in fk:
+                    target_table, target_col = fk.split(".", 1)
+                    if target_table in dim_map:
+                        dim_fks_by_dim.setdefault(target_table, set()).add(target_col)
+
+        inconformed_dims = [dt for dt, cols in dim_fks_by_dim.items() if len(cols) > 1]
+        if inconformed_dims:
+            return RiskResult(
+                risk_id=self.risk_id,
+                name=self.name,
+                tier=self.tier,
+                status="FAIL",
+                severity=self.default_severity,
+                blocking=self.default_blocking,
+                details=f"Bus Matrix Conformance Violation: Shared dimensions {inconformed_dims} are referenced by multiple facts using inconsistent surrogate keys: {dim_fks_by_dim}",
+                remediation_advice="Standardize all fact foreign keys to join against the identical conformed surrogate key (e.g. customer_sk)."
+            )
+
+        # 2. Chasm Trap Check: Direct joins between unaggregated fact tables
+        drill_sql = target_schema.get("drill_across_sql", "")
+        fact_names = [f.get("name") for f in facts]
+        if drill_sql:
+            # Check for direct JOIN fact_a ... JOIN fact_b without CTE or subquery aggregation
+            upper_sql = drill_sql.upper()
+            if "JOIN FACT_" in upper_sql and "WITH" not in upper_sql and "GROUP BY" not in upper_sql:
+                return RiskResult(
+                    risk_id=self.risk_id,
+                    name=self.name,
+                    tier=self.tier,
+                    status="FAIL",
+                    severity=RiskSeverity.CRITICAL,
+                    blocking=True,
+                    details="CRITICAL Chasm Trap Detected: Query directly joins separate fact tables without intermediate aggregation, risking Cartesian multiplication.",
+                    remediation_advice="Wrap each fact table in an independent CTE aggregate and FULL OUTER JOIN them on conformed dimension keys."
+                )
+
+        return RiskResult(
+            risk_id=self.risk_id,
+            name=self.name,
+            tier=self.tier,
+            status="PASS",
+            severity=self.default_severity,
+            blocking=False,
+            details=f"Bus Matrix Conformance Confirmed: {len(facts)} facts share conformed dimensions with zero Cartesian chasm traps.",
+            metrics={"fact_count": len(facts), "conformed_dimensions": len(dims), "bus_matrix_aligned": True}
+        )
+
+
 
 # =====================================================================
 # TIER 3 EVALUATORS (In-Memory Physical Proofs in DuckDB)

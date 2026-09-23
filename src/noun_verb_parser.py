@@ -146,6 +146,12 @@ class NounVerbSemanticParser:
         sec_actors = [a for a in set(found_actors) if a.rstrip("s") != primary_actor.rstrip("s")]
         sec_resources = [r for r in set(found_resources) if r.rstrip("s") != resource_loc.rstrip("s")]
 
+        value_stream_events = [primary_event]
+        for e in sec_events:
+            cand_e = e.rstrip("s") if e.endswith("s") and not e.endswith("ss") else e
+            if cand_e not in value_stream_events:
+                value_stream_events.append(cand_e)
+
         return {
             "primary_event": primary_event,
             "primary_actor": primary_actor,
@@ -153,7 +159,9 @@ class NounVerbSemanticParser:
             "child_entity": child_item,
             "secondary_events": sorted(sec_events),
             "secondary_actors": sorted(sec_actors),
-            "secondary_resources": sorted(sec_resources)
+            "secondary_resources": sorted(sec_resources),
+            "value_stream_events": value_stream_events,
+            "is_value_stream": len(value_stream_events) >= 2
         }
 
     @staticmethod
@@ -256,6 +264,14 @@ class NounVerbSemanticParser:
             "struct and array", "nested columnar", "array of structs",
             "repeated line items", "nested line items"
         ])
+
+        # 10. Multi-Fact Enterprise Bus Matrix (Cross-Process Value Streams)
+        has_multi_fact_bus_matrix = any(k in text for k in [
+            "bus matrix", "enterprise bus", "multi-fact", "multi fact", "order-to-cash",
+            "procure-to-pay", "drill across", "drill-across", "cross-process",
+            "across orders and", "orders and shipments", "shipments and payments",
+            "orders, shipments", "conformed dimensions across facts", "shared conformed dimensions"
+        ])
         
         return {
             "is_live_app": is_live_app,
@@ -266,5 +282,6 @@ class NounVerbSemanticParser:
             "is_periodic_state_rollup": is_periodic_state_rollup,
             "has_high_churn_ml_scores": has_high_churn_ml_scores,
             "is_denormalized_obt": is_denormalized_obt,
-            "is_nested_columnar": is_nested_columnar
+            "is_nested_columnar": is_nested_columnar,
+            "has_multi_fact_bus_matrix": has_multi_fact_bus_matrix
         }

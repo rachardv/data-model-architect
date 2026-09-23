@@ -1,7 +1,7 @@
 # Decision Trace Report: TRAP-01 — Contradiction Guardrail Trap
 
-> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `8.18ms`
-> **Timestamp (UTC):** `2026-09-23T17:40:27.060635+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `⚠️ INTENTIONAL DEFENSE TRAP` | **Runtime:** `8.44ms`
+> **Timestamp (UTC):** `2026-09-23T18:27:16.730433+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `highfreq`

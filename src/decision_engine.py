@@ -20,7 +20,8 @@ class DataModelDecisionEngine:
         is_multi_currency: bool = False,
         is_factless_event: bool = False,
         is_denormalized_obt: bool = False,
-        is_nested_columnar: bool = False
+        is_nested_columnar: bool = False,
+        has_multi_fact_bus_matrix: bool = False
     ) -> Dict[str, Any]:
         # 0. Factless Fact Table (Event Attendance / Coverage Matrix)
         if is_factless_event:
@@ -46,6 +47,15 @@ class DataModelDecisionEngine:
                 "pattern": "NESTED_COLUMNAR_MART",
                 "storage": "Nested Columnar (Parquet/BigQuery/DuckDB)",
                 "schema_type": "Nested and Repeated Records (ARRAY<STRUCT>)",
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+            }
+
+        # 0d. Multi-Fact Enterprise Bus Matrix (Cross-Process Value Stream with Conformed Dimensions)
+        if has_multi_fact_bus_matrix:
+            return {
+                "pattern": "MULTI_FACT_BUS_MATRIX",
+                "storage": "Kimball Enterprise Bus Matrix",
+                "schema_type": "Multi-Fact Dimensional Model with Conformed Dimensions",
                 "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
             }
             

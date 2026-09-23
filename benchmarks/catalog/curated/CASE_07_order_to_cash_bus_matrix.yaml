@@ -1,0 +1,155 @@
+case_id: CASE-07
+domain: order_to_cash
+name: Enterprise Order-to-Cash Bus Matrix
+description: Multi-process retail Order-to-Cash value stream orchestrating orders, fulfillment shipments, and payment settlements across conformed customer, product, and date dimensions with zero Cartesian chasm traps.
+citation: >
+  Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition),
+  Chapter 3: "Inventory & Value Chains", pp. 79-116 ("Enterprise Data Warehouse Bus Architecture & Cross-Process Drill-Across Reporting").
+hazard_category: CLEAN_BASELINE
+is_intentional_trap: false
+expected_status: CERTIFIED_PRODUCTION_READY
+tags:
+  - curated
+  - retail
+  - bus_matrix
+  - multi_fact
+  - drill_across
+
+prompt: >
+  We operate an omnichannel enterprise retail platform managing the full Order-to-Cash lifecycle.
+  The value stream tracks order checkout, warehouse shipments, and customer payment settlement across separate lifecycle facts.
+  All fact tables must share strictly conformed dimensions for customers, products, and calendar dates.
+  Cross-process reporting across orders and payments must be executed via drill-across queries to compare booked revenue vs collected payments without join fan-out traps.
+
+business_answers:
+  - "Core business processes: Order-to-Cash enterprise value stream with orders, shipments, and payments"
+  - "Grain: Order items, shipment packages, and payment transaction attempts"
+  - "Workload intent: Enterprise Bus Matrix with shared conformed dimensions and drill-across reporting"
+  - "Dimensions: Conformed customers, conformed products, and role-playing calendar dates"
+  - "Metrics: total_amount_usd, shipping_cost_usd, payment_amount_usd"
+
+seed_data:
+  dim_order_to_cash_customer_core:
+    - customer_sk: "CUST-001"
+      customer_id: "C-101"
+      customer_name: "Acme Corp"
+      tier: "ENTERPRISE"
+      region: "NORTH_AMERICA"
+      scd_valid_from: "2026-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+    - customer_sk: "CUST-002"
+      customer_id: "C-102"
+      customer_name: "Global Tech"
+      tier: "PRO"
+      region: "EMEA"
+      scd_valid_from: "2026-01-01 00:00:00+00"
+      scd_valid_to: "9999-12-31 23:59:59+00"
+      is_current: true
+
+  dim_order_to_cash_product:
+    - product_sk: "PROD-001"
+      product_id: "P-501"
+      product_name: "Cloud Server Pro"
+      category: "HARDWARE"
+      unit_price: 1200.00
+    - product_sk: "PROD-002"
+      product_id: "P-502"
+      product_name: "Support SLA"
+      category: "SERVICES"
+      unit_price: 300.00
+
+  dim_date:
+    - date_sk: 20260115
+      calendar_date: "2026-01-15"
+      calendar_year: 2026
+      calendar_month: 1
+      calendar_quarter: 1
+      day_of_week: "Thursday"
+    - date_sk: 20260116
+      calendar_date: "2026-01-16"
+      calendar_year: 2026
+      calendar_month: 1
+      calendar_quarter: 1
+      day_of_week: "Friday"
+
+  fact_order_to_cash_orders:
+    - order_id: 1001
+      customer_sk: "CUST-001"
+      product_sk: "PROD-001"
+      order_date_key: 20260115
+      quantity: 1
+      total_amount_usd: 1200.00
+    - order_id: 1002
+      customer_sk: "CUST-002"
+      product_sk: "PROD-002"
+      order_date_key: 20260115
+      quantity: 2
+      total_amount_usd: 600.00
+
+  fact_order_to_cash_shipments:
+    - shipment_id: 2001
+      customer_sk: "CUST-001"
+      product_sk: "PROD-001"
+      ship_date_key: 20260116
+      carrier_name: "FEDEX_PRIORITY"
+      shipping_cost_usd: 45.00
+    - shipment_id: 2002
+      customer_sk: "CUST-002"
+      product_sk: "PROD-002"
+      ship_date_key: 20260116
+      carrier_name: "DHL_EXPRESS"
+      shipping_cost_usd: 25.00
+
+  fact_order_to_cash_payments:
+    - payment_id: 3001
+      customer_sk: "CUST-001"
+      payment_date_key: 20260115
+      payment_gateway: "STRIPE_ACH"
+      payment_amount_usd: 1200.00
+      payment_status: "SETTLED"
+    - payment_id: 3002
+      customer_sk: "CUST-002"
+      payment_date_key: 20260116
+      payment_gateway: "WIRE_TRANSFER"
+      payment_amount_usd: 600.00
+      payment_status: "SETTLED"
+
+verification_queries:
+  - name: Orders Fact Row Count
+    query: "SELECT COUNT(*) FROM fact_order_to_cash_orders WHERE total_amount_usd > 0;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected positive order fact records
+
+  - name: Shipments Distinct Carriers Count
+    query: "SELECT COUNT(DISTINCT carrier_name) FROM fact_order_to_cash_shipments;"
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected valid carrier records in shipments fact
+
+  - name: Settled Payment Revenue Total
+    query: "SELECT SUM(payment_amount_usd) FROM fact_order_to_cash_payments WHERE payment_status = 'SETTLED';"
+    assertion_type: scalar_gt
+    expected_value: 0.0
+    failure_message: Expected positive settled payment revenue in payments fact
+
+  - name: Cross-Process Drill-Across Revenue Reconciliation
+    query: >
+      WITH o_agg AS (
+          SELECT customer_sk, SUM(total_amount_usd) AS booked_rev
+          FROM fact_order_to_cash_orders
+          GROUP BY customer_sk
+      ),
+      p_agg AS (
+          SELECT customer_sk, SUM(payment_amount_usd) AS settled_cash
+          FROM fact_order_to_cash_payments
+          GROUP BY customer_sk
+      )
+      SELECT COUNT(*)
+      FROM o_agg o
+      FULL OUTER JOIN p_agg p ON o.customer_sk = p.customer_sk
+      WHERE COALESCE(o.booked_rev, 0.0) = COALESCE(p.settled_cash, 0.0);
+    assertion_type: scalar_gt
+    expected_value: 0
+    failure_message: Expected successful cross-fact drill-across reconciliation without Cartesian inflation

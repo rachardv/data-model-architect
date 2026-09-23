@@ -1,0 +1,187 @@
+{
+  "case_id": "CASE-07",
+  "domain": "order_to_cash",
+  "name": "Enterprise Order-to-Cash Bus Matrix",
+  "hazard_category": "CLEAN_BASELINE",
+  "is_intentional_trap": false,
+  "prompt": "We operate an omnichannel enterprise retail platform managing the full Order-to-Cash lifecycle. The value stream tracks order checkout, warehouse shipments, and customer payment settlement across separate lifecycle facts. All fact tables must share strictly conformed dimensions for customers, products, and calendar dates. Cross-process reporting across orders and payments must be executed via drill-across queries to compare booked revenue vs collected payments without join fan-out traps.\n",
+  "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 3: \"Inventory & Value Chains\", pp. 79-116 (\"Enterprise Data Warehouse Bus Architecture & Cross-Process Drill-Across Reporting\").\n",
+  "timestamp_utc": "2026-09-23T18:27:16.596124+00:00",
+  "intake_decisions": {
+    "status": "SYNTHESIZED_SUCCESSFULLY",
+    "completeness_score": null,
+    "resolved_vectors": {},
+    "missing_vectors": [],
+    "parsed_semantics": {}
+  },
+  "architecture_decisions": {
+    "architecture_pattern": "MULTI_FACT_BUS_MATRIX",
+    "inferred_usage_params": {
+      "is_live_app": false,
+      "is_high_frequency_stream": false,
+      "needs_history": true,
+      "has_retroactive_backdating": false,
+      "has_multi_stage_milestones": true,
+      "is_periodic_state_rollup": false,
+      "has_high_churn_ml_scores": false,
+      "is_denormalized_obt": false,
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": true
+    },
+    "resolution_applied": null,
+    "disposition_matrix": [
+      {
+        "reviewer": "temporal_risk_reviewer",
+        "finding_title": "Missing SCD2 Upper Validity Bound",
+        "disposition": "ACCEPTED & REMEDIATED",
+        "action": "Architect refactored schema according to recommendation: Add scd_valid_from and scd_valid_to TIMESTAMPTZ columns with 9999-12-31 sentinel defaults."
+      },
+      {
+        "reviewer": "temporal_risk_reviewer",
+        "finding_title": "Missing SCD2 Upper Validity Bound",
+        "disposition": "ACCEPTED & REMEDIATED",
+        "action": "Architect refactored schema according to recommendation: Add scd_valid_from and scd_valid_to TIMESTAMPTZ columns with 9999-12-31 sentinel defaults."
+      }
+    ]
+  },
+  "schema_decisions": [
+    {
+      "table_name": "dim_order_to_cash_customer_core",
+      "type": "DIMENSION",
+      "primary_key": "customer_sk",
+      "column_count": 8,
+      "columns": [
+        "customer_sk",
+        "customer_id",
+        "customer_name",
+        "tier",
+        "region",
+        "scd_valid_from",
+        "scd_valid_to",
+        "is_current"
+      ]
+    },
+    {
+      "table_name": "dim_order_to_cash_product",
+      "type": "DIMENSION",
+      "primary_key": "product_sk",
+      "column_count": 5,
+      "columns": [
+        "product_sk",
+        "product_id",
+        "product_name",
+        "category",
+        "unit_price"
+      ]
+    },
+    {
+      "table_name": "dim_date",
+      "type": "DIMENSION",
+      "primary_key": "date_sk",
+      "column_count": 6,
+      "columns": [
+        "date_sk",
+        "calendar_date",
+        "calendar_year",
+        "calendar_month",
+        "calendar_quarter",
+        "day_of_week"
+      ]
+    },
+    {
+      "table_name": "fact_order_to_cash_orders",
+      "type": "FACT",
+      "primary_key": "order_id",
+      "column_count": 6,
+      "columns": [
+        "order_id",
+        "customer_sk",
+        "product_sk",
+        "order_date_key",
+        "total_amount_usd",
+        "quantity"
+      ]
+    },
+    {
+      "table_name": "fact_order_to_cash_shipments",
+      "type": "FACT",
+      "primary_key": "shipment_id",
+      "column_count": 6,
+      "columns": [
+        "shipment_id",
+        "customer_sk",
+        "product_sk",
+        "ship_date_key",
+        "carrier_name",
+        "shipping_cost_usd"
+      ]
+    },
+    {
+      "table_name": "fact_order_to_cash_payments",
+      "type": "FACT",
+      "primary_key": "payment_id",
+      "column_count": 6,
+      "columns": [
+        "payment_id",
+        "customer_sk",
+        "payment_date_key",
+        "payment_gateway",
+        "payment_status",
+        "payment_amount_usd"
+      ]
+    }
+  ],
+  "validation_decisions": {
+    "risk_scorecard_status": "CERTIFIED_PRODUCTION_READY",
+    "critical_halt": false,
+    "tier_scores": {},
+    "benchmark_overall_score": 100.0,
+    "benchmark_status": "PASS"
+  },
+  "verification_queries_trace": [
+    {
+      "name": "Orders Fact Row Count",
+      "query": "SELECT COUNT(*) FROM fact_order_to_cash_orders WHERE total_amount_usd > 0;",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 4,
+      "passed": true,
+      "latency_ms": 0.31,
+      "error": null
+    },
+    {
+      "name": "Shipments Distinct Carriers Count",
+      "query": "SELECT COUNT(DISTINCT carrier_name) FROM fact_order_to_cash_shipments;",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 3,
+      "passed": true,
+      "latency_ms": 0.46,
+      "error": null
+    },
+    {
+      "name": "Settled Payment Revenue Total",
+      "query": "SELECT SUM(payment_amount_usd) FROM fact_order_to_cash_payments WHERE payment_status = 'SETTLED';",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0.0,
+      "actual_value": "2038.50",
+      "passed": true,
+      "latency_ms": 0.32,
+      "error": null
+    },
+    {
+      "name": "Cross-Process Drill-Across Revenue Reconciliation",
+      "query": "WITH o_agg AS (\n    SELECT customer_sk, SUM(total_amount_usd) AS booked_rev\n    FROM fact_order_to_cash_orders\n    GROUP BY customer_sk\n), p_agg AS (\n    SELECT customer_sk, SUM(payment_amount_usd) AS settled_cash\n    FROM fact_order_to_cash_payments\n    GROUP BY customer_sk\n) SELECT COUNT(*) FROM o_agg o FULL OUTER JOIN p_agg p ON o.customer_sk = p.customer_sk WHERE COALESCE(o.booked_rev, 0.0) = COALESCE(p.settled_cash, 0.0);\n",
+      "assertion_type": "scalar_gt",
+      "expected_value": 0,
+      "actual_value": 4,
+      "passed": true,
+      "latency_ms": 1.32,
+      "error": null
+    }
+  ],
+  "final_status": "CERTIFIED_PRODUCTION_READY",
+  "expected_status": "CERTIFIED_PRODUCTION_READY",
+  "verdict": "PASS",
+  "execution_time_ms": 129.8
+}

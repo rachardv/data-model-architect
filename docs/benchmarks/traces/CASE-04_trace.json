@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "Warehouse and retail store inventory management. Every night at midnight, the warehouse captures a periodic daily snapshot of stock levels per product and warehouse location, tracking quantity on hand and inventory valuation. Product catalog attributes and categories are tracked historically using SCD Type 2.\n",
   "citation": "Ralph Kimball & Margy Ross, The Data Warehouse Toolkit (3rd Edition), Chapter 3: \"Inventory\", pp. 79-96 (\"The Periodic Snapshot Fact Table and Semi-Additive Metrics\").\n",
-  "timestamp_utc": "2026-09-23T17:40:21.062525+00:00",
+  "timestamp_utc": "2026-09-23T18:27:10.161119+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -25,7 +25,8 @@
       "is_periodic_state_rollup": true,
       "has_high_churn_ml_scores": false,
       "is_denormalized_obt": false,
-      "is_nested_columnar": false
+      "is_nested_columnar": false,
+      "has_multi_fact_bus_matrix": false
     },
     "resolution_applied": null,
     "disposition_matrix": []
@@ -73,7 +74,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.25,
+      "latency_ms": 0.36,
       "error": null
     },
     {
@@ -83,7 +84,7 @@
       "expected_value": 0,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.23,
+      "latency_ms": 0.24,
       "error": null
     },
     {
@@ -93,12 +94,12 @@
       "expected_value": 0.0,
       "actual_value": "238.50",
       "passed": true,
-      "latency_ms": 0.22,
+      "latency_ms": 0.25,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 70.02
+  "execution_time_ms": 71.29
 }

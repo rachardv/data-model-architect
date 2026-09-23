@@ -116,7 +116,9 @@ class IntakeCompletenessScorer:
             "sub-second", "live app", "point-of-care", "analyze", "metrics", "performance",
             "over time", "business metrics", "one big table", "obt", "single flat table",
             "denormalized mart", "zero join latency", "sub-second dashboard scan",
-            "nested repeated", "nested columnar", "struct and array", "repeated records"
+            "nested repeated", "nested columnar", "struct and array", "repeated records",
+            "bus matrix", "drill-across", "drill across", "cross-process", "value stream",
+            "order-to-cash", "multi-fact", "multi fact"
         ]
         if any(k in text for k in workload_keywords):
             resolved_vectors["workload_intent"] = True
@@ -133,7 +135,8 @@ class IntakeCompletenessScorer:
             "physical or digital goods", "subscription memberships", "monthly billing renewals",
             "patient care", "credit lending", "revenue", "insurance", "car insurance",
             "policy", "driver", "coverage", "premium", "subscription", "subscriptions",
-            "contract", "contracts", "renewal", "renewals", "nested line items", "repeated line items"
+            "contract", "contracts", "renewal", "renewals", "nested line items", "repeated line items",
+            "order items", "shipment packages", "payment transaction attempts", "orders, shipments", "multi-process"
         ]
         if len(nouns) >= 2 and any(k in text for k in grain_keywords):
             resolved_vectors["entity_grain"] = True
@@ -148,7 +151,7 @@ class IntakeCompletenessScorer:
             "preserve", "historical", "scd", "original address", "point-in-time",
             "overwrite", "newest address", "audit date", "regulated", "sox",
             "insurance at time", "newest policy", "always overwrite", "newest menu price",
-            "original price", "tracking", "cohort", "churn"
+            "original price", "tracking", "cohort", "churn", "calendar dates", "dates", "role-playing"
         ]
         if any(k in text for k in temporal_keywords):
             resolved_vectors["temporal_policy"] = True
@@ -166,7 +169,8 @@ class IntakeCompletenessScorer:
             "periodic", "monthly summary", "daily summary", "balance rollup", "stock levels",
             "single standalone transaction", "multi-stage turnaround tracking",
             "renewal", "renewals", "recurring subscription", "subscription renewals",
-            "order checkout", "order with repeated line items", "e-commerce order"
+            "order checkout", "order with repeated line items", "e-commerce order",
+            "order-to-cash", "order to cash", "orders, shipments, and payments", "value stream", "lifecycle facts", "lifecycle"
         ]
         if any(k in text for k in lifecycle_keywords):
             resolved_vectors["lifecycle_funnel"] = True
@@ -175,7 +179,7 @@ class IntakeCompletenessScorer:
             missing_vectors.append("lifecycle_funnel")
             
         # Vector 5: Relationship Multiplicity
-        if len(nouns) >= 2 or any(k in text for k in ["one-to-one ownership", "one-to-many", "co-ownership", "shared", "standard", "denormalized", "nested", "repeated", "obt"]):
+        if len(nouns) >= 2 or any(k in text for k in ["one-to-one ownership", "one-to-many", "co-ownership", "shared", "standard", "denormalized", "nested", "repeated", "obt", "bus matrix", "conformed", "conformed dimensions"]):
             resolved_vectors["relationship_multiplicity"] = True
         else:
             resolved_vectors["relationship_multiplicity"] = False

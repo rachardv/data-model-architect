@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-02 — Healthcare Encounter & Diagnosis Bridge
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `73.23ms`
-> **Timestamp (UTC):** `2026-09-23T17:40:20.911716+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `71.32ms`
+> **Timestamp (UTC):** `2026-09-23T18:27:10.012415+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `healthcare`
@@ -31,7 +31,7 @@ Hospital inpatient admission tracking. Patients are admitted to hospital encount
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Active SCD2 Patients Check | `scalar_gt` | `0` | `2` | `0.29ms` | ✅ PASS |
+| Active SCD2 Patients Check | `scalar_gt` | `0` | `2` | `0.26ms` | ✅ PASS |
 | Admissions Fact Grain Count | `scalar_gt` | `0` | `2` | `0.23ms` | ✅ PASS |
 | Total Admission Cost Sum | `scalar_gt` | `0.0` | `238.50` | `0.22ms` | ✅ PASS |
 
