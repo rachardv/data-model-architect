@@ -38,27 +38,35 @@ def test_trace_id_contextvars():
     assert new_tid != "trace-abc"
 
 def test_captain_emits_structured_logs(caplog):
-    custom_trace = "trace-captain-workflow-999"
-    captain = CaptainOrchestrator()
-    payload = {
-        "domain": "observability_test",
-        "branch": "NEW_MODEL",
-        "narrative": "A user logs into an app and performs actions.",
-        "trace_id": custom_trace,
-        "usage_params": {
-            "is_live_app": True,
-            "is_high_frequency_stream": False,
-            "needs_history": False,
-            "has_retroactive_backdating": False,
-            "has_multi_stage_milestones": False,
-            "is_periodic_state_rollup": False,
-            "has_high_churn_ml_scores": False
+    orig_level = logging.getLogger("data_model_architect").level
+    orig_propagate = logging.getLogger("data_model_architect").propagate
+    try:
+        configure_logging(level="INFO")
+        logging.getLogger("data_model_architect").propagate = True
+        custom_trace = "trace-captain-workflow-999"
+        captain = CaptainOrchestrator()
+        payload = {
+            "domain": "observability_test",
+            "branch": "NEW_MODEL",
+            "narrative": "A user logs into an app and performs actions.",
+            "trace_id": custom_trace,
+            "usage_params": {
+                "is_live_app": True,
+                "is_high_frequency_stream": False,
+                "needs_history": False,
+                "has_retroactive_backdating": False,
+                "has_multi_stage_milestones": False,
+                "is_periodic_state_rollup": False,
+                "has_high_churn_ml_scores": False
+            }
         }
-    }
-    
-    with caplog.at_level(logging.INFO):
-        result = captain.execute_workflow(payload)
         
-    assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
-    assert custom_trace in caplog.text
-    assert "data_model_architect.captain" in caplog.text
+        with caplog.at_level(logging.INFO):
+            result = captain.execute_workflow(payload)
+            
+        assert result["status"] == "SYNTHESIZED_SUCCESSFULLY"
+        assert custom_trace in caplog.text
+        assert "data_model_architect.captain" in caplog.text
+    finally:
+        logging.getLogger("data_model_architect").setLevel(orig_level)
+        logging.getLogger("data_model_architect").propagate = orig_propagate

@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-10 — Retail Banking Semi-Additive Balances, Factless Events & Rollup Navigation
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3178.14ms`
-> **Timestamp (UTC):** `2026-09-23T20:36:03.416403+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3255.97ms`
+> **Timestamp (UTC):** `2026-09-23T20:39:55.772703+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `retail_banking`
@@ -32,11 +32,11 @@ We operate an enterprise retail banking platform managing retail checking and sa
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Semi-Additive Point-in-Time Monthly Closing Balance | `scalar_eq` | `3300.0` | `3300.0` | `1.94ms` | ✅ PASS |
-| Cross-Sectional Dimensional Additivity | `scalar_eq` | `8800.0` | `8800.0` | `0.34ms` | ✅ PASS |
-| Factless Security Event Exact Occurrence Count | `scalar_eq` | `2` | `2` | `0.57ms` | ✅ PASS |
-| Aggregate Rollup Parity Against Base Fact Closing Balance | `scalar_eq` | `8800.0` | `8800.0` | `0.35ms` | ✅ PASS |
-| Non-Additive Derived Ratio Component Derivation | `scalar_eq` | `1650.0` | `1650.0` | `0.36ms` | ✅ PASS |
+| Semi-Additive Point-in-Time Monthly Closing Balance | `scalar_eq` | `3300.0` | `3300.0` | `1.83ms` | ✅ PASS |
+| Cross-Sectional Dimensional Additivity | `scalar_eq` | `8800.0` | `8800.0` | `0.39ms` | ✅ PASS |
+| Factless Security Event Exact Occurrence Count | `scalar_eq` | `2` | `2` | `0.6ms` | ✅ PASS |
+| Aggregate Rollup Parity Against Base Fact Closing Balance | `scalar_eq` | `8800.0` | `8800.0` | `0.43ms` | ✅ PASS |
+| Non-Additive Derived Ratio Component Derivation | `scalar_eq` | `1650.0` | `1650.0` | `0.44ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Semi-Additive Point-in-Time Monthly Closing Balance
