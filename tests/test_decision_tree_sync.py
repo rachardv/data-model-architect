@@ -37,11 +37,11 @@ class TestDecisionTreeDocumentationSync:
             "Run `.\\forge.ps1 tree` or `py -3.14 -m forge.decision_tree_generator` to synchronize."
         )
 
-    def test_all_22_patterns_represented(self):
-        """All 22 canonical architectural patterns must be documented in the matrix and flow."""
+    def test_all_21_patterns_represented(self):
+        """All 21 canonical architectural patterns must be documented in the matrix and flow."""
         content = DOCS_PATH.read_text(encoding="utf-8")
         expected_patterns = [p["pattern"] for p in PATTERN_METADATA]
-        assert len(expected_patterns) == 22, f"Expected 22 patterns, got {len(expected_patterns)}"
+        assert len(expected_patterns) == 21, f"Expected 21 patterns, got {len(expected_patterns)}"
 
         missing = [pat for pat in expected_patterns if pat not in content]
         assert not missing, f"The following patterns are missing from docs/DECISION_TREE.md: {missing}"

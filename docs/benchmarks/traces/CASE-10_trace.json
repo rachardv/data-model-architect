@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an enterprise retail banking platform managing retail checking and savings accounts across national branch networks. Every night, a nightly snapshot captures account ending balances and available balances; these metrics are strictly semi-additive (additive across accounts, customers, and branches, but strictly non-additive across time, requiring point-in-time closing balance reductions). Additionally, security authentication and fraud monitoring requires tracking customer security events (logins, password resets, MFA challenges) as a pure factless fact table with zero numeric measures, where the grain is defined solely by the composite dimension foreign keys. To accelerate high-throughput executive branch dashboards without scanning multi-billion row daily snapshots, the warehouse maintains a companion monthly branch rollup aggregate table with navigation routing that mathematically reconciles with base fact closing balances.\n",
   "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 7 (\"Financial Services: Periodic Snapshot Fact Tables, Semi-Additive Metrics & Factless Facts\"), pp. 241-274, and Chapter 19 (\"Aggregate Navigation and Materialized Summary Tables\"), pp. 493-512.\n",
-  "timestamp_utc": "2026-09-23T21:19:41.917905+00:00",
+  "timestamp_utc": "2026-09-24T00:46:13.772028+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -91,7 +91,7 @@
       "expected_value": 3300.0,
       "actual_value": 3300.0,
       "passed": true,
-      "latency_ms": 1.77,
+      "latency_ms": 1.76,
       "error": null
     },
     {
@@ -101,7 +101,7 @@
       "expected_value": 8800.0,
       "actual_value": 8800.0,
       "passed": true,
-      "latency_ms": 0.39,
+      "latency_ms": 0.33,
       "error": null
     },
     {
@@ -111,7 +111,7 @@
       "expected_value": 2,
       "actual_value": 2,
       "passed": true,
-      "latency_ms": 0.57,
+      "latency_ms": 0.56,
       "error": null
     },
     {
@@ -121,7 +121,7 @@
       "expected_value": 8800.0,
       "actual_value": 8800.0,
       "passed": true,
-      "latency_ms": 0.38,
+      "latency_ms": 0.31,
       "error": null
     },
     {
@@ -131,12 +131,12 @@
       "expected_value": 1650.0,
       "actual_value": 1650.0,
       "passed": true,
-      "latency_ms": 0.42,
+      "latency_ms": 0.34,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 3201.42
+  "execution_time_ms": 3344.03
 }

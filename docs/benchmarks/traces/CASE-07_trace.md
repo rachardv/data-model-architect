@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-07 — Enterprise Order-to-Cash Bus Matrix
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `136.96ms`
-> **Timestamp (UTC):** `2026-09-23T21:19:58.504370+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `129.12ms`
+> **Timestamp (UTC):** `2026-09-24T00:46:30.867828+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `order_to_cash`
@@ -35,10 +35,10 @@ We operate an omnichannel enterprise retail platform managing the full Order-to-
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Orders Fact Row Count | `scalar_gt` | `0` | `2` | `0.33ms` | ✅ PASS |
-| Shipments Distinct Carriers Count | `scalar_gt` | `0` | `2` | `0.56ms` | ✅ PASS |
-| Settled Payment Revenue Total | `scalar_gt` | `0.0` | `1800.00` | `0.32ms` | ✅ PASS |
-| Cross-Process Drill-Across Revenue Reconciliation | `scalar_gt` | `0` | `2` | `1.86ms` | ✅ PASS |
+| Orders Fact Row Count | `scalar_gt` | `0` | `2` | `0.32ms` | ✅ PASS |
+| Shipments Distinct Carriers Count | `scalar_gt` | `0` | `2` | `0.51ms` | ✅ PASS |
+| Settled Payment Revenue Total | `scalar_gt` | `0.0` | `1800.00` | `0.3ms` | ✅ PASS |
+| Cross-Process Drill-Across Revenue Reconciliation | `scalar_gt` | `0` | `2` | `1.79ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Orders Fact Row Count

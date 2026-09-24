@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-19 — AI Vector Embeddings and Dual-Speed Feature Store for Real-Time Inference and Training
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3168.01ms`
-> **Timestamp (UTC):** `2026-09-23T21:19:55.331345+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3371.33ms`
+> **Timestamp (UTC):** `2026-09-24T00:46:27.491534+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `ml_feature_store`
@@ -31,10 +31,10 @@ An AI-powered e-commerce fraud detection and recommendation platform deploys dee
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Point-in-Time ASOF Join Zero Feature Leakage Proof | `scalar_eq` | `0.45` | `0.45` | `1.25ms` | ✅ PASS |
-| Dense Vector Cosine Similarity Match | `scalar_eq` | `1.0` | `1.0` | `1.19ms` | ✅ PASS |
-| Historical Time-Versioned Feature Snapshots Count | `scalar_eq` | `2` | `2` | `0.33ms` | ✅ PASS |
-| Observation Event Feature Completeness | `scalar_eq` | `2` | `2` | `0.87ms` | ✅ PASS |
+| Point-in-Time ASOF Join Zero Feature Leakage Proof | `scalar_eq` | `0.45` | `0.45` | `0.88ms` | ✅ PASS |
+| Dense Vector Cosine Similarity Match | `scalar_eq` | `1.0` | `1.0` | `1.12ms` | ✅ PASS |
+| Historical Time-Versioned Feature Snapshots Count | `scalar_eq` | `2` | `2` | `0.31ms` | ✅ PASS |
+| Observation Event Feature Completeness | `scalar_eq` | `2` | `2` | `0.75ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Point-in-Time ASOF Join Zero Feature Leakage Proof

@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-04 — Retail Inventory Periodic Daily Snapshot
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `72.5ms`
-> **Timestamp (UTC):** `2026-09-23T21:19:58.715593+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `84.51ms`
+> **Timestamp (UTC):** `2026-09-24T00:46:31.089953+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `inventory`
@@ -31,9 +31,9 @@ Warehouse and retail store inventory management. Every night at midnight, the wa
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Active Products Dimension Check | `scalar_gt` | `0` | `2` | `0.32ms` | ✅ PASS |
-| Periodic Snapshot Fact Grain Count | `scalar_gt` | `0` | `2` | `0.33ms` | ✅ PASS |
-| Total Inventory Valuation Sum | `scalar_gt` | `0.0` | `238.50` | `0.27ms` | ✅ PASS |
+| Active Products Dimension Check | `scalar_gt` | `0` | `2` | `0.33ms` | ✅ PASS |
+| Periodic Snapshot Fact Grain Count | `scalar_gt` | `0` | `2` | `0.3ms` | ✅ PASS |
+| Total Inventory Valuation Sum | `scalar_gt` | `0.0` | `238.50` | `0.35ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Active Products Dimension Check

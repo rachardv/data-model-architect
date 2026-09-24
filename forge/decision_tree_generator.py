@@ -84,17 +84,6 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
     },
     {
         "priority": 6,
-        "flag": "has_semi_additive_balances",
-        "pattern": "PERIODIC_SNAPSHOT_BALANCES",
-        "storage": "Kimball Star Schema (Periodic Snapshot + Rollups)",
-        "schema_type": "Periodic Snapshot Fact with Semi-Additive Balances and Aggregate Rollup Navigation",
-        "temporal": "SCD2_HISTORICAL / SCD1_OVERWRITE",
-        "citation": "Kimball Ch 3, pp. 110-114 ('Semi-Additive Balances & Periodic Snapshot Tables')",
-        "description": "Daily/monthly account ending balances, inventory stock-on-hand. Balances are additive across dimensions but non-additive across time.",
-        "cases": ["CASE-04", "CASE-10"]
-    },
-    {
-        "priority": 7,
         "flag": "is_denormalized_obt",
         "pattern": "DENORMALIZED_OBT_MART",
         "storage": "Columnar Flat Mart (OBT)",
@@ -105,7 +94,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-05"]
     },
     {
-        "priority": 8,
+        "priority": 7,
         "flag": "is_nested_columnar",
         "pattern": "NESTED_COLUMNAR_MART",
         "storage": "Nested Columnar (Parquet/BigQuery/DuckDB)",
@@ -116,7 +105,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-06"]
     },
     {
-        "priority": 9,
+        "priority": 8,
         "flag": "has_multi_fact_bus_matrix",
         "pattern": "MULTI_FACT_BUS_MATRIX",
         "storage": "Kimball Enterprise Bus Matrix",
@@ -127,7 +116,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-07", "TRAP-02"]
     },
     {
-        "priority": 10,
+        "priority": 9,
         "flag": "has_scd6_hybrid",
         "pattern": "KIMBALL_STAR_SCD6",
         "storage": "Kimball Star Schema (Type 6 Hybrid)",
@@ -138,7 +127,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-09"]
     },
     {
-        "priority": 11,
+        "priority": 10,
         "flag": "has_multivalued_bridge",
         "pattern": "MULTIVALUED_BRIDGE_STAR",
         "storage": "Kimball Multi-Valued Bridge Schema",
@@ -149,7 +138,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-02", "CASE-03", "CASE-13"]
     },
     {
-        "priority": 12,
+        "priority": 11,
         "flag": "has_junk_dimension",
         "pattern": "JUNK_DIMENSION_CONSOLIDATION",
         "storage": "Kimball Star Schema (Junk Dimension)",
@@ -160,7 +149,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-14"]
     },
     {
-        "priority": 13,
+        "priority": 12,
         "flag": "has_outrigger_dimension",
         "pattern": "KIMBALL_OUTRIGGER_STAR",
         "storage": "Kimball Star Schema (Outrigger Dimension)",
@@ -171,7 +160,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-15"]
     },
     {
-        "priority": 14,
+        "priority": 13,
         "flag": "is_high_frequency_stream",
         "pattern": "TIMESCALEDB_HYPERTABLE",
         "storage": "Time-Series Hypertables",
@@ -182,7 +171,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["Telematics / Streaming Engine"]
     },
     {
-        "priority": 15,
+        "priority": 14,
         "flag": "has_recursive_hierarchy",
         "pattern": "RECURSIVE_HIERARCHY_CLOSURE",
         "storage": "Kimball Closure Bridge Table",
@@ -193,7 +182,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["Org Charts / BOM Models"]
     },
     {
-        "priority": 16,
+        "priority": 15,
         "flag": "is_live_app and not needs_history",
         "pattern": "OLTP_3NF_RELATIONAL",
         "storage": "Standard ANSI Relational",
@@ -204,7 +193,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["TRAP-01 (Contradiction Gate)"]
     },
     {
-        "priority": 17,
+        "priority": 16,
         "flag": "has_multi_stage_milestones",
         "pattern": "ACCUMULATING_SNAPSHOT_FACT",
         "storage": "Kimball Star Schema",
@@ -215,7 +204,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-11"]
     },
     {
-        "priority": 18,
+        "priority": 17,
         "flag": "is_periodic_state_rollup and has_high_churn_ml_scores",
         "pattern": "PERIODIC_SNAPSHOT_MINIDIM",
         "storage": "Kimball Star Schema",
@@ -226,18 +215,18 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["ML Scoring / Risk Marts"]
     },
     {
-        "priority": 19,
-        "flag": "is_periodic_state_rollup",
+        "priority": 18,
+        "flag": "is_periodic_state_rollup or has_semi_additive_balances",
         "pattern": "PERIODIC_SNAPSHOT_FACT",
-        "storage": "Kimball Star Schema",
-        "schema_type": "Periodic Snapshot Fact + SCD2 Dimension",
+        "storage": "Kimball Star Schema (Periodic Snapshot)",
+        "schema_type": "Periodic Snapshot Fact with Semi-Additive Balances and Aggregate Rollup Navigation",
         "temporal": "BITEMPORAL / SCD2_HISTORICAL",
-        "citation": "Kimball Ch 2, pp. 55-58 ('Periodic Snapshot Fact Tables for Regular State Capture')",
-        "description": "Point-in-time state capture taken at uniform recurring intervals (monthly financial close, daily inventory snapshots).",
-        "cases": ["CASE-04"]
+        "citation": "Kimball Ch 2, pp. 55-58 & Ch 3, pp. 110-114 ('Periodic Snapshot Fact Tables & Semi-Additive Balances')",
+        "description": "Point-in-time state capture taken at uniform recurring intervals (monthly financial close, daily inventory snapshots) with optional semi-additive balances and aggregate rollup navigation.",
+        "cases": ["CASE-04", "CASE-10"]
     },
     {
-        "priority": 20,
+        "priority": 19,
         "flag": "needs_history and has_retroactive_backdating",
         "pattern": "BITEMPORAL_SCD2_ENGINE",
         "storage": "Bi-Temporal Relational",
@@ -248,7 +237,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-09", "TRAP-04"]
     },
     {
-        "priority": 21,
+        "priority": 20,
         "flag": "needs_history",
         "pattern": "KIMBALL_STAR_SCD2",
         "storage": "Kimball Star Schema",
@@ -259,7 +248,7 @@ PATTERN_METADATA: List[Dict[str, Any]] = [
         "cases": ["CASE-01", "CASE-08", "CASE-12"]
     },
     {
-        "priority": 22,
+        "priority": 21,
         "flag": "Default / Fallback",
         "pattern": "KIMBALL_STAR_SCD1",
         "storage": "Kimball Star Schema",
@@ -308,6 +297,15 @@ MILESTONE_HISTORY: List[Dict[str, str]] = [
         "title": "Universal Multi-Paradigm Analytical Coverage",
         "summary": "Expanded engine to all 22 Universal Architecture Patterns: added Data Vault 2.0 raw ingestion (Hubs, Links, Satellites with SHA-256 keys), Graph Property Topology (discrete vertices/edges with recursive CTE AML cycle detection), Real-Time Columnar Streaming (ClickHouse/Pinot wide event streams with HyperLogLog sketches), and AI Dual-Speed Feature Stores (ASOF JOIN point-in-time zero leakage & dense vector embeddings). Promoted 23-case golden baseline.",
         "citations": "Linstedt & Olschimke (2015); Robinson, Webber & Eifrem (2015); Milovidov et al. (2024); Huyen (2022)",
+        "commit": "`6828c4a`"
+    },
+    {
+        "version": "v4.1.0",
+        "date": "2026-09-23",
+        "patterns_count": "21",
+        "title": "Streamlined 21-Pattern Architecture & 2-Tier Formalization",
+        "summary": "Eliminated redundant PERIODIC_SNAPSHOT_BALANCES pattern, consolidating semi-additive balances and rollup summary navigation directly into the canonical PERIODIC_SNAPSHOT_FACT archetype. Formalized the 2-Tier Compositional Model distinguishing primary storage/fact paradigms from secondary dimension structural techniques (Bridge, Junk, Outrigger, Closure, Mini-Dim).",
+        "citations": "Kimball Ch 2, 3, 5, 7, 10; Linstedt & Olschimke (2015); Milovidov et al. (2024)",
         "commit": "`staging`"
     }
 ]
@@ -446,10 +444,7 @@ flowchart TD
     Q_vec -- "No" --> Q0{"is_factless_event?"}
 
     Q0 -- "Yes" --> P0["<b>FACTLESS_FACT_COVERAGE</b><br/>Kimball Star Schema<br/>Event Attendance / Coverage Matrix<br/><i>(CASE-10)</i>"]
-    Q0 -- "No" --> Q0a{"has_semi_additive_balances?"}
-
-    Q0a -- "Yes" --> P0a["<b>PERIODIC_SNAPSHOT_BALANCES</b><br/>Kimball Star + Rollups<br/>Semi-Additive Balances + Aggregate Nav<br/><i>(CASE-04, CASE-10)</i>"]
-    Q0a -- "No" --> Q0b{"is_denormalized_obt?"}
+    Q0 -- "No" --> Q0b{"is_denormalized_obt?"}
 
     Q0b -- "Yes" --> P0b["<b>DENORMALIZED_OBT_MART</b><br/>Single Flat Wide Table<br/>Zero Join Latency / Sub-Second Scan<br/><i>(CASE-05)</i>"]
     Q0b -- "No" --> Q0c{"is_nested_columnar?"}
@@ -482,11 +477,11 @@ flowchart TD
     Q3 -- "No" --> Q4{"has_multi_stage_milestones?"}
 
     Q4 -- "Yes" --> P4["<b>ACCUMULATING_SNAPSHOT_FACT</b><br/>Accumulating Snapshot Fact<br/>Pipeline & Milestone Lag Attribution<br/><i>(CASE-11)</i>"]
-    Q4 -- "No" --> Q5{"is_periodic_state_rollup?"}
+    Q4 -- "No" --> Q5{"is_periodic_state_rollup or has_semi_additive_balances?"}
 
     Q5 -- "Yes" --> Q5a{"has_high_churn_ml_scores?"}
     Q5a -- "Yes" --> P5a["<b>PERIODIC_SNAPSHOT_MINIDIM</b><br/>Mini-Dimension Outrigger<br/>High-Churn ML / Risk Scoring"]
-    Q5a -- "No" --> P5b["<b>PERIODIC_SNAPSHOT_FACT</b><br/>Periodic Snapshot Fact<br/>Uniform Historical Interval State"]
+    Q5a -- "No" --> P5b["<b>PERIODIC_SNAPSHOT_FACT</b><br/>Periodic Snapshot Fact<br/>Uniform Interval State & Semi-Additive Balances<br/><i>(CASE-04, CASE-10)</i>"]
 
     Q5 -- "No" --> Q6{"needs_history and retroactive?"}
     Q6 -- "Yes" --> P6["<b>BITEMPORAL_SCD2_ENGINE</b><br/>Bi-Temporal Valid & System Time<br/>SOX Regulatory Audit Trajectory<br/><i>(CASE-09, TRAP-04)</i>"]
@@ -495,8 +490,13 @@ flowchart TD
     Q7 -- "Yes" --> P7["<b>KIMBALL_STAR_SCD2</b><br/>Standard Historical Star Mart<br/>SCD Type 2 Surrogate Splicing<br/><i>(CASE-01, CASE-08, CASE-12)</i>"]
     Q7 -- "No" --> P8["<b>KIMBALL_STAR_SCD1</b><br/>Current-State Star Mart<br/>Type 1 Direct In-Place Overwrite"]
 
-    subgraph Modifiers ["Cross-Cutting Architectural Modifiers"]
+    subgraph Modifiers ["Tier 2: Cross-Cutting Compositional Modifiers"]
         M1["is_multi_currency = true<br/>==> Synthesizes Multi-Currency Triad<br/>(Transaction Currency + Local Book + USD Base)<br/><i>(CASE-12)</i>"]
+        M2["has_multivalued_bridge = true<br/>==> Attaches Multi-Valued Bridge Table with Allocation Weighting<br/><i>(CASE-02, CASE-03, CASE-13)</i>"]
+        M3["has_junk_dimension = true<br/>==> Consolidates Flags & Status Indicators into Junk Dimension<br/><i>(CASE-14)</i>"]
+        M4["has_outrigger_dimension = true<br/>==> Attaches Secondary Grain Outrigger Dimension<br/><i>(CASE-15)</i>"]
+        M5["has_high_churn_ml_scores = true<br/>==> Separates High-Churn Scores into Mini-Dimension"]
+        M6["has_recursive_hierarchy = true<br/>==> Generates Transitive Closure Bridge Table"]
     end
 ```"""
 
@@ -524,7 +524,7 @@ flowchart TD
             "",
             "---",
             "",
-            "## 2. Priority Decision Cascade Matrix (22 Patterns)",
+            "## 2. Priority Decision Cascade Matrix (21 Patterns)",
             "",
             "The Data Model Decision Engine evaluates business requirements through a strict priority cascade. Higher-priority specialized patterns short-circuit standard fallbacks:",
             "",
@@ -575,7 +575,7 @@ flowchart TD
             "| **Consolidated Junk Dimension** | Kimball Ch 2, pp. 58-60 | [`CASE-14`](../benchmarks/catalog/curated/olap/retail/CASE_14_retail_junk_dimension_consolidation.yaml) | 12 low-cardinality status flags consolidated into 1 surrogate key, zero Cartesian explosion. |",
             "| **Dimension Outrigger** | Kimball Ch 7, pp. 252-254 | [`CASE-15`](../benchmarks/catalog/curated/olap/insurance/CASE_15_insurance_outrigger_dimension.yaml) | Legitimate secondary county demographic dimension at differing grain, snowflake anti-pattern avoided. |",
             "| **Multi-Valued Dimension Bridge** | Kimball Ch 10, pp. 267-294 | [`CASE-02`](../benchmarks/catalog/curated/olap/healthcare/CASE_02_healthcare_admission_bridge.yaml), [`CASE-03`](../benchmarks/catalog/curated/olap/banking/CASE_03_banking_joint_account_coownership.yaml), [`CASE-13`](../benchmarks/catalog/curated/olap/healthcare/CASE_13_clinical_episode_drg_bridge.yaml) | M:N comorbidities and co-ownership with weighting allocation factors ($\\\\sum = 1.0$). |",
-            "| **Periodic Snapshot Balances** | Kimball Ch 3, pp. 110-114 | [`CASE-04`](../benchmarks/catalog/curated/olap/retail/CASE_04_retail_inventory_periodic_snapshot.yaml), [`CASE-10`](../benchmarks/catalog/curated/olap/banking/CASE_10_semi_additive_banking_aggregate_nav.yaml) | Semi-additive measures, balance reduction, aggregate rollup navigation. |",
+            "| **Periodic Snapshot Fact** | Kimball Ch 2, pp. 55-58 & Ch 3, pp. 110-114 | [`CASE-04`](../benchmarks/catalog/curated/olap/retail/CASE_04_retail_inventory_periodic_snapshot.yaml), [`CASE-10`](../benchmarks/catalog/curated/olap/banking/CASE_10_semi_additive_banking_aggregate_nav.yaml) | Uniform interval state capture, semi-additive measures, balance reduction, aggregate rollup navigation. |",
             "| **Accumulating Snapshot Fact** | Kimball Ch 2, pp. 60-63 | [`CASE-11`](../benchmarks/catalog/curated/olap/saas/CASE_11_saas_subscription_funnel_accumulating.yaml) | Milestone timestamp lag days, cohort progress, unfulfilled milestones. |",
             "| **Multi-Fact Enterprise Bus Matrix** | Kimball Ch 4, pp. 143-168 | [`CASE-07`](../benchmarks/catalog/curated/olap/order_to_cash/CASE_07_order_to_cash_bus_matrix.yaml) | Conformed dimension surrogate keys across facts, CTE drill-across reconciliation. |",
             "| **SCD Type 6 Hybrid Dimension** | Kimball Ch 5, pp. 204-209 | [`CASE-09`](../benchmarks/catalog/curated/olap/insurance/CASE_09_bitemporal_scd6_insurance.yaml) | Dual-perspective reporting (as-was historical branch vs. as-is current branch). |",

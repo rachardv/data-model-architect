@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-17 — Anti-Money Laundering Financial Transfer Network and Circular Mule Ring Detection
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3274.19ms`
-> **Timestamp (UTC):** `2026-09-23T21:19:48.268122+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3241.43ms`
+> **Timestamp (UTC):** `2026-09-24T00:46:20.412111+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `aml_fraud`
@@ -31,10 +31,10 @@ An AML financial crime investigation unit at a major tier-1 bank monitors wire a
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Recursive Closed Cycle Detection for Depth 3 Mule Ring | `scalar_eq` | `3` | `3` | `2.83ms` | ✅ PASS |
-| Total Laundered Volume in Circular Ring | `scalar_eq` | `29300.0` | `29300.0` | `0.48ms` | ✅ PASS |
-| High-Fan-Out Structuring Hub Out-Degree | `scalar_eq` | `3` | `3` | `0.71ms` | ✅ PASS |
-| Linear Legitimate Chain Cycle Immunity | `scalar_eq` | `0` | `0` | `1.42ms` | ✅ PASS |
+| Recursive Closed Cycle Detection for Depth 3 Mule Ring | `scalar_eq` | `3` | `3` | `2.33ms` | ✅ PASS |
+| Total Laundered Volume in Circular Ring | `scalar_eq` | `29300.0` | `29300.0` | `0.65ms` | ✅ PASS |
+| High-Fan-Out Structuring Hub Out-Degree | `scalar_eq` | `3` | `3` | `0.8ms` | ✅ PASS |
+| Linear Legitimate Chain Cycle Immunity | `scalar_eq` | `0` | `0` | `1.54ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Recursive Closed Cycle Detection for Depth 3 Mule Ring

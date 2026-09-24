@@ -96,16 +96,6 @@ class DataModelDecisionEngine:
                 "temporal": "SCD1_OVERWRITE"
             }
 
-        # 0a. Periodic Snapshot Balances & Aggregate Navigation Mart
-        if has_semi_additive_balances:
-            return {
-                "pattern": "PERIODIC_SNAPSHOT_BALANCES",
-                "storage": "Kimball Star Schema (Periodic Snapshot + Rollups)",
-                "schema_type": "Periodic Snapshot Fact with Semi-Additive Balances and Aggregate Rollup Navigation",
-                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE",
-                "has_aggregate_rollups": True
-            }
-
         # 0b. Denormalized OBT Mart (Single Flat Table / Sub-Second Scan / Zero Join Latency)
         if is_denormalized_obt:
             return {
@@ -148,7 +138,8 @@ class DataModelDecisionEngine:
                 "pattern": "MULTIVALUED_BRIDGE_STAR",
                 "storage": "Kimball Multi-Valued Bridge Schema",
                 "schema_type": "Multi-Valued Dimension Bridge Table with Allocation Weighting",
-                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE",
+                "has_bridge_table": True
             }
             if is_multi_currency:
                 res["multi_currency_triad"] = True
@@ -160,7 +151,8 @@ class DataModelDecisionEngine:
                 "pattern": "JUNK_DIMENSION_CONSOLIDATION",
                 "storage": "Kimball Star Schema (Junk Dimension)",
                 "schema_type": "Transaction Fact with Consolidated Junk Dimension for Flags and Indicators",
-                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE",
+                "has_junk_dimension": True
             }
             if is_multi_currency:
                 res["multi_currency_triad"] = True
@@ -172,7 +164,8 @@ class DataModelDecisionEngine:
                 "pattern": "KIMBALL_OUTRIGGER_STAR",
                 "storage": "Kimball Star Schema (Outrigger Dimension)",
                 "schema_type": "Dimension Outrigger Table at Secondary Grain",
-                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE",
+                "has_outrigger_dimension": True
             }
             if is_multi_currency:
                 res["multi_currency_triad"] = True
@@ -196,7 +189,8 @@ class DataModelDecisionEngine:
                 "pattern": "RECURSIVE_HIERARCHY_CLOSURE",
                 "storage": "Kimball Closure Bridge Table",
                 "schema_type": "Transitive Closure Bridge + Conformed Dimensions",
-                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE"
+                "temporal": "SCD2_HISTORICAL" if needs_history else "SCD1_OVERWRITE",
+                "has_closure_table": True
             }
             if is_multi_currency:
                 res["multi_currency_triad"] = True
@@ -227,22 +221,26 @@ class DataModelDecisionEngine:
                 res["multi_currency_triad"] = True
             return res
             
-        # 5. Periodic Snapshot (Monthly / Daily Balance Rollups)
-        if is_periodic_state_rollup:
+        # 5. Periodic Snapshot (Monthly / Daily Balance Rollups / Semi-Additive Balances)
+        if is_periodic_state_rollup or has_semi_additive_balances:
             if has_high_churn_ml_scores:
                 res = {
                     "pattern": "PERIODIC_SNAPSHOT_MINIDIM",
                     "storage": "Kimball Star Schema",
                     "schema_type": "Periodic Snapshot Fact + Mini-Dimension Outrigger",
-                    "temporal": "SCD2_CORE_PLUS_MINIDIM"
+                    "temporal": "SCD2_CORE_PLUS_MINIDIM",
+                    "has_mini_dimension": True
                 }
             else:
                 temporal_type = "BITEMPORAL" if has_retroactive_backdating else "SCD2_HISTORICAL"
+                schema_desc = "Periodic Snapshot Fact with Semi-Additive Balances and Aggregate Rollup Navigation" if has_semi_additive_balances else "Periodic Snapshot Fact + SCD2 Dimension"
                 res = {
                     "pattern": "PERIODIC_SNAPSHOT_FACT",
-                    "storage": "Kimball Star Schema",
-                    "schema_type": "Periodic Snapshot Fact + SCD2 Dimension",
-                    "temporal": temporal_type
+                    "storage": "Kimball Star Schema (Periodic Snapshot)",
+                    "schema_type": schema_desc,
+                    "temporal": temporal_type,
+                    "has_semi_additive_balances": has_semi_additive_balances,
+                    "has_aggregate_rollups": has_semi_additive_balances
                 }
             if is_multi_currency:
                 res["multi_currency_triad"] = True

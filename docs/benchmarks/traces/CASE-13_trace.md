@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-13 — Clinical Inpatient Episode DRG Comorbidity Bridge & Attending Allocation
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `98.11ms`
-> **Timestamp (UTC):** `2026-09-23T21:19:51.627104+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `100.63ms`
+> **Timestamp (UTC):** `2026-09-24T00:46:23.742564+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `clinical_healthcare`
@@ -31,10 +31,10 @@ We operate an acute care regional hospital network tracking clinical inpatient e
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Physician Bridge Allocation Weight Completeness | `scalar_eq` | `1.0` | `1.0` | `1.55ms` | ✅ PASS |
-| Total Inpatient Hospital Charges Reconciliation | `scalar_eq` | `80000.0` | `80000.0` | `0.4ms` | ✅ PASS |
-| Weighted Attending Revenue Attribution Without Double Counting | `scalar_eq` | `24500.0` | `24500.0` | `0.79ms` | ✅ PASS |
-| Comorbid Secondary Diagnoses Count Per Episode | `scalar_eq` | `2` | `2` | `0.31ms` | ✅ PASS |
+| Physician Bridge Allocation Weight Completeness | `scalar_eq` | `1.0` | `1.0` | `1.18ms` | ✅ PASS |
+| Total Inpatient Hospital Charges Reconciliation | `scalar_eq` | `80000.0` | `80000.0` | `0.31ms` | ✅ PASS |
+| Weighted Attending Revenue Attribution Without Double Counting | `scalar_eq` | `24500.0` | `24500.0` | `0.71ms` | ✅ PASS |
+| Comorbid Secondary Diagnoses Count Per Episode | `scalar_eq` | `2` | `2` | `0.34ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Physician Bridge Allocation Weight Completeness

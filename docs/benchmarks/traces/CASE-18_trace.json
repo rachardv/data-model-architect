@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "An ad-tech programmatic bidding platform processes over 100,000 real-time ad impression and click events per second. Marketing analytics teams and automated bidder engines require real-time campaign performance dashboards reporting Return on Ad Spend (ROAS), conversion rates, and unique visitor reach over rolling 5-minute sliding windows with sub-second p99 latency. Traditional normalized star schemas fail under this workload due to foreign key join overhead and write contention on dimension tables. Per Alexey Milovidov et al. (2024) and Apache Pinot architecture standards, we require a Real-Time Columnar Streaming OLAP table (stream_ad_clicks) where all dimensional attributes (campaign, ad placement, visitor, device category, geo country) are denormalized directly into the high-velocity streaming event record at ingestion time. Analytical queries must compute sub-second aggregations, utilize HyperLogLog approximate distinct counting (approx_count_distinct) for visitor reach, and execute with zero joins.\n",
   "citation": "Alexey Milovidov et al. (2024), \"ClickHouse: Ultra-Fast Analytical DBMS Architecture\", ClickHouse Documentation & VLDB. Also Apache Pinot Real-Time Distributed Columnar OLAP Engine (VLDB 2021).\n",
-  "timestamp_utc": "2026-09-23T21:20:02.298777+00:00",
+  "timestamp_utc": "2026-09-24T00:46:34.696999+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -76,7 +76,7 @@
       "expected_value": 3.75,
       "actual_value": 3.75,
       "passed": true,
-      "latency_ms": 0.42,
+      "latency_ms": 0.58,
       "error": null
     },
     {
@@ -86,7 +86,7 @@
       "expected_value": 3,
       "actual_value": 3,
       "passed": true,
-      "latency_ms": 0.31,
+      "latency_ms": 0.38,
       "error": null
     },
     {
@@ -96,7 +96,7 @@
       "expected_value": 0.33,
       "actual_value": 0.33,
       "passed": true,
-      "latency_ms": 0.43,
+      "latency_ms": 0.47,
       "error": null
     },
     {
@@ -113,5 +113,5 @@
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 3317.42
+  "execution_time_ms": 3200.25
 }

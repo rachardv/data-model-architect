@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-16 — Enterprise Multi-Source CRM and Billing Data Vault 2.0 Raw Ingestion Layer
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3221.34ms`
-> **Timestamp (UTC):** `2026-09-23T21:19:52.011470+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3263.38ms`
+> **Timestamp (UTC):** `2026-09-24T00:46:24.129150+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `enterprise_integration`
@@ -34,10 +34,10 @@ An enterprise B2B conglomerate acquires customer profile and financial relations
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Reconstructed Customer 360 Current Profile Credit Limit for Enterprise Tier | `scalar_eq` | `250000.0` | `250000.0` | `2.56ms` | ✅ PASS |
-| Point-in-Time Historical PIT Credit Limit Before Increase | `scalar_eq` | `50000.0` | `50000.0` | `1.13ms` | ✅ PASS |
-| Zero Orphan Foreign Hash Keys in Customer Account Link | `scalar_eq` | `0` | `0` | `0.7ms` | ✅ PASS |
-| Multi-Source Satellite System Isolation Distinct Sources | `scalar_eq` | `2` | `2` | `0.55ms` | ✅ PASS |
+| Reconstructed Customer 360 Current Profile Credit Limit for Enterprise Tier | `scalar_eq` | `250000.0` | `250000.0` | `2.31ms` | ✅ PASS |
+| Point-in-Time Historical PIT Credit Limit Before Increase | `scalar_eq` | `50000.0` | `50000.0` | `1.21ms` | ✅ PASS |
+| Zero Orphan Foreign Hash Keys in Customer Account Link | `scalar_eq` | `0` | `0` | `0.74ms` | ✅ PASS |
+| Multi-Source Satellite System Isolation Distinct Sources | `scalar_eq` | `2` | `2` | `0.6ms` | ✅ PASS |
 
 ### Query Details
 #### Query 1: Reconstructed Customer 360 Current Profile Credit Limit for Enterprise Tier

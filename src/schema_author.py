@@ -542,7 +542,7 @@ class DynamicSchemaAuthor:
             }
 
         # 3f. Check for Periodic Snapshot Balances & Aggregate Navigation Mart
-        if pattern == "PERIODIC_SNAPSHOT_BALANCES" or inferred_params.get("has_semi_additive_balances") or user_request.get("has_semi_additive_balances"):
+        if (pattern in ["PERIODIC_SNAPSHOT_FACT", "PERIODIC_SNAPSHOT_BALANCES"] and (inferred_params.get("has_semi_additive_balances") or user_request.get("has_semi_additive_balances"))) or pattern == "PERIODIC_SNAPSHOT_BALANCES":
             dim_customer_name = f"dim_{clean_domain}_customer_core"
             dim_account_name = f"dim_{clean_domain}_account_core"
             dim_branch_name = f"dim_{clean_domain}_branch_core"
@@ -623,7 +623,7 @@ class DynamicSchemaAuthor:
             return {
                 "domain": clean_domain,
                 "temporal_strategy": "SCD2",
-                "pattern": "PERIODIC_SNAPSHOT_BALANCES",
+                "pattern": "PERIODIC_SNAPSHOT_FACT",
                 "tables": [
                     {
                         "name": dim_customer_name,

@@ -6,7 +6,7 @@
   "is_intentional_trap": false,
   "prompt": "We operate an international supply chain and manufacturing enterprise procuring components from global suppliers across Europe, Japan, and the Americas. Purchase orders are negotiated and transacted in distinct local currencies (EUR, GBP, JPY), while corporate headquarters requires consolidated financial reporting in US Dollars (USD). Per Kimball Chapter 8, multi-currency fact tables must preserve both the original local transaction currency amount and the converted corporate reporting currency amount on every fact record to support both operational vendor management and corporate financial rollups simultaneously. Currency conversions must be linked to a conformed daily currency exchange rate dimension capturing spot rates. When goods are received and invoices are paid on later dates, fluctuations between the order spot rate and payment settlement spot rate produce realized foreign exchange (FX) variance (gain/loss), which must be tracked and reconciled with zero floating-point drift.\n",
   "citation": "Ralph Kimball & Margy Ross (2013), \"The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling\" (3rd Edition), Chapter 8 (\"Procurement & Global Logistics: Multi-Currency Fact Tables, Daily Spot Rates & Corporate Reporting Currency Triangulation\"), pp. 275-304.\n",
-  "timestamp_utc": "2026-09-23T21:19:55.238268+00:00",
+  "timestamp_utc": "2026-09-24T00:46:27.398011+00:00",
   "intake_decisions": {
     "status": "SYNTHESIZED_SUCCESSFULLY",
     "completeness_score": null,
@@ -85,7 +85,7 @@
       "expected_value": 23700.0,
       "actual_value": 23700.0,
       "passed": true,
-      "latency_ms": 0.44,
+      "latency_ms": 0.39,
       "error": null
     },
     {
@@ -95,7 +95,7 @@
       "expected_value": 400.0,
       "actual_value": 400.0,
       "passed": true,
-      "latency_ms": 0.37,
+      "latency_ms": 0.4,
       "error": null
     },
     {
@@ -105,7 +105,7 @@
       "expected_value": 0.0,
       "actual_value": 0.0,
       "passed": true,
-      "latency_ms": 0.43,
+      "latency_ms": 0.35,
       "error": null
     },
     {
@@ -115,12 +115,12 @@
       "expected_value": 10800.0,
       "actual_value": 10800.0,
       "passed": true,
-      "latency_ms": 0.4,
+      "latency_ms": 0.38,
       "error": null
     }
   ],
   "final_status": "CERTIFIED_PRODUCTION_READY",
   "expected_status": "CERTIFIED_PRODUCTION_READY",
   "verdict": "PASS",
-  "execution_time_ms": 90.41
+  "execution_time_ms": 90.1
 }

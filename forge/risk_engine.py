@@ -922,7 +922,7 @@ class RSK14_MetricAdditivityAndRollupLinter(BaseRiskEvaluator):
                     additivity = str(c.get("additivity", "")).upper()
                     if "SEMI_ADDITIVE" not in additivity and not c.get("is_inferred"):
                         # If table type is periodic snapshot or user stated semi-additive balances
-                        if st.get("type") == "PERIODIC_SNAPSHOT" or params.get("has_semi_additive_balances") or target_schema.get("pattern") == "PERIODIC_SNAPSHOT_BALANCES":
+                        if st.get("type") == "PERIODIC_SNAPSHOT" or params.get("has_semi_additive_balances") or target_schema.get("pattern") in ["PERIODIC_SNAPSHOT_BALANCES", "PERIODIC_SNAPSHOT_FACT"]:
                             return RiskResult(
                                 risk_id=self.risk_id,
                                 name=self.name,

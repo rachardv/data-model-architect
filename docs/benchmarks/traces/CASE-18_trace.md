@@ -1,7 +1,7 @@
 # Decision Trace Report: CASE-18 — Real-Time Columnar Streaming Ad Telemetry and Clickstream Mart
 
-> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3317.42ms`
-> **Timestamp (UTC):** `2026-09-23T21:20:02.298777+00:00`
+> **Verdict:** 🟢 PASS | **Type:** `✅ VALID DOMAIN MODEL` | **Runtime:** `3200.25ms`
+> **Timestamp (UTC):** `2026-09-24T00:46:34.696999+00:00`
 
 ## 1. Case Metadata, Provenance & Intent
 - **Domain:** `telemetry`
@@ -30,9 +30,9 @@ An ad-tech programmatic bidding platform processes over 100,000 real-time ad imp
 ## 4. Physical Verification Queries & Assertions
 | Query Name | Assertion | Expected | Actual | Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Real-Time Campaign Return on Ad Spend ROAS | `scalar_eq` | `3.75` | `3.75` | `0.42ms` | ✅ PASS |
-| HyperLogLog Approximate Unique Visitor Reach | `scalar_eq` | `3` | `3` | `0.31ms` | ✅ PASS |
-| Sliding Window Conversion Rate | `scalar_eq` | `0.33` | `0.33` | `0.43ms` | ✅ PASS |
+| Real-Time Campaign Return on Ad Spend ROAS | `scalar_eq` | `3.75` | `3.75` | `0.58ms` | ✅ PASS |
+| HyperLogLog Approximate Unique Visitor Reach | `scalar_eq` | `3` | `3` | `0.38ms` | ✅ PASS |
+| Sliding Window Conversion Rate | `scalar_eq` | `0.33` | `0.33` | `0.47ms` | ✅ PASS |
 | Total Real-Time Streaming Events Ingested | `scalar_eq` | `5` | `5` | `0.23ms` | ✅ PASS |
 
 ### Query Details
