@@ -173,7 +173,7 @@ Every active risk profile in the system must be mapped to its owning process, ca
 | `SSB` | Star Schema Benchmark Suite (13 queries) | **A** | Domain Coverage / Industry Standard | Standard flight and supplier dimensional mart battery | `forge/industry_benchmarks.py` | Covers high-speed analytical aggregation over star schemas. |
 | `TPC-H` | Ad-Hoc Decision Support Suite (22 queries) | **A** | Domain Coverage / Industry Standard | Standard relational supply chain and order processing queries | `forge/industry_benchmarks.py` | Covers complex multi-table joins, subqueries, and grouping sets. |
 | `BIRD/Spider` | Academic Semantic Text-to-Model Suite (25 scenarios) | **A** | Domain Coverage / Academic Standard | Cross-domain natural language modeling scenarios | `forge/semantic_benchmarks.py` | Covers diverse cross-industry schemas and complex relational queries. |
-| `DECISION-TREE-GEN` | Zero-Cost AST Decision Tree Living Documentation Synchronizer | **B** | Structural Defect / Living Docs | In-Memory AST & Semantic Reflection (<1ms, 0 credits, 21 Patterns) | `forge/decision_tree_generator.py`, `tests/test_decision_tree_sync.py` | Eliminates manual documentation drift and LLM API token costs for architecture diagrams; synchronized with Milestone v4.1.0. |
+| `DECISION-TREE-GEN` | Zero-Cost AST Decision Tree Living Documentation Synchronizer | **B** | Structural Defect / Living Docs | In-Memory AST & Semantic Reflection (<1ms, 0 credits, 21 Patterns) | `forge/decision_tree_generator.py`, `tests/test_decision_tree_sync.py` | Eliminates manual documentation drift and LLM API token costs for architecture diagrams; synchronized with Milestone v4.1.0 and cross-platform normalized hashing. |
 
 ---
 

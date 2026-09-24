@@ -316,11 +316,13 @@ class DecisionTreeGenerator:
 
     @classmethod
     def compute_source_hashes(cls) -> Dict[str, str]:
-        """Compute deterministic SHA-256 hashes of engine source files."""
+        """Compute deterministic SHA-256 hashes of engine source files, normalized across OS line endings."""
         hashes = {}
         for p in [DECISION_ENGINE_PATH, PARSER_PATH]:
             if p.exists():
-                h = hashlib.sha256(p.read_bytes()).hexdigest()
+                # Normalize line endings (\r\n -> \n) so hash is byte-for-byte identical across Windows and Linux
+                normalized_bytes = p.read_text(encoding="utf-8").replace("\r\n", "\n").encode("utf-8")
+                h = hashlib.sha256(normalized_bytes).hexdigest()
                 hashes[p.name] = h[:16]
             else:
                 hashes[p.name] = "MISSING"
