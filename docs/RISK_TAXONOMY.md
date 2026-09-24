@@ -124,27 +124,27 @@ flowchart TD
 
 ## 📋 3. Master Risk Registry & Coverage Matrix
 
-Every active risk profile in the system must be mapped to its owning process, category, and anti-bloat exclusion criteria:
+Every active risk profile in the system must be mapped to its owning process, category, target workload, and anti-bloat exclusion criteria:
 
-| Risk ID | Hazard / Risk Name | Owning Process | Risk Category | Detection Mechanism | Existing Coverage | Anti-Bloat Exclusion Rule |
+| Risk ID | Intuitive Risk Name (Technical Hazard) | Owning Process | Target Workload | Detection Mechanism | Existing Coverage | Anti-Bloat Exclusion Rule |
 | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
-| `RSK-01` | Semantic Inversion Trap (OLTP vs OLAP) | **A & B** | Domain Coverage / Structural | Tier 1 Intake Vector Gate + Static Workload Classifier | `TRAP-01`, `IntakeEngine` | Do NOT add OLTP vs OLAP tests for other domains; `TRAP-01` already validates compile-time contradiction halts. |
-| `RSK-02` | Chasm & Fan-Out Trap (Static AST) | **B** | Structural Defect | Static AST 1:N join detector | `TRAP-02`, `forge/risk_engine.py` | Traps disparate grain joins statically. Do not run SQL here. |
-| `RSK-02-DYNAMIC` | Metric Conservation Proof ($\sum Raw \equiv \sum Mart$) | **D** | Universal Invariant | Battery A: Physical DuckDB aggregate assertion down to $0.0000$ drift | `forge/risk_dispatcher.py`, `forge/benchmark_harness.py` | Do NOT write manual SQL summing columns in custom cases; Process D automatically probes all numeric facts. |
-| `RSK-03` | Temporal Causality Leakage (Timeline Bleed) | **D** | Universal Invariant | Universal SCD2 Point-in-Time Join Probe (`9999-12-31` sentinel) | `TRAP-04`, `forge/benchmark_harness.py` | Do NOT hardcode date joins in new benchmarks to test PIT causality; Process D validates time intervals dynamically. |
-| `RSK-04` | Referential Orphan & Quarantine Leakage | **D** | Universal Invariant | Agnostic Foreign Key Integrity Probe & Silver Quarantine Isolation | `forge/benchmark_harness.py` | Do NOT create separate unit tests for foreign key orphans on every new table; Process D probes FK reflection globally. |
-| `RSK-05` | Cyclic Foreign Key Loops & Recursive Traps | **B** | Structural Defect | Static DFS cycle detection over schema foreign key graph | `TRAP-03`, `forge/risk_engine.py` | Do NOT boot DuckDB to detect cyclic dependency deadlocks; Process B traps graph cycles statically in $O(V+E)$. |
-| `RSK-05-DYNAMIC` | Physical Hash-Join EXPLAIN Plan Proof | **D** | Universal Invariant | Battery D: EXPLAIN plan inspection ensuring sub-100ms hash joins | `forge/risk_dispatcher.py`, `forge/benchmark_harness.py` | Do NOT write ad-hoc query plan checks; Process D verifies hash join efficiency across all queries. |
-| `RSK-06` | Workload Efficiency & Join Fan-Out Stability | **C** | Computational Stress | Dynamic Battery E: Zipfian 80/20 Key Skew Join Fan-Out Verification (Factor $\le 1.0$) | `forge/chaos_engine.py`, `forge/risk_dispatcher.py` | Proves zero intermediate row explosion ($Factor \le 1.0$) under skewed foreign keys. |
-| `RSK-07` | Requirement Volatility & Grain Collapse | **A** | Domain Coverage | Intake Atomic Grain Pushback & Lowest Atomic Grain Verification | `CASE-04`, `IntakeEngine` | Do NOT add snapshot models without lowest atomic grain base facts preserved. |
-| `RSK-08` | GDPR Art. 17 PII Detection & Tagging | **B** | Structural Defect | Static PII Pattern Classifier | `forge/risk_engine.py` | Do NOT add ad-hoc regex checks for PII in pipeline tests; register PII patterns in `RSK-08` static evaluator. |
-| `RSK-08-DYNAMIC` | GDPR Pseudonymization Sentinel & Zero-Orphan Proof | **C** | Computational Stress | Battery G: Physical data redaction & zero-orphan fact ledger check | `forge/risk_dispatcher.py`, `forge/chaos_engine.py` | Process C proves compliance without foreign key orphan corruption under data deletion. |
-| `RSK-09` | Lineage Blast Radius & Breaking Changes | **B** | Structural Defect | Column-Level Lineage Linter & Semantic Versioning View Linter | `forge/risk_engine.py` | Do NOT create manual schema diff scripts; use `SnapshotEngine` and `RSK-09` AST comparison. |
-| `RSK-10` | OLAP Workload & Query Hop Alignment | **B & C** | Structural Defect / Computational | AST query hop depth validator (0 hops for OBT, unnest for Nested) & Battery H dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Enforces zero join latency for OBT and array unnesting for nested columnar schemas. |
-| `RSK-11` | Enterprise Bus Matrix Conformance & Chasm Prevention | **B & C** | Structural Defect / Computational | AST shared dimension key conformance, Chasm trap direct join detection & Battery I dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Enforces shared conformed surrogate keys across multiple facts and CTE-based Drill-Across reporting. |
-| `RSK-12` | Distributed MPP Shuffle & Partitioning Blindspot | **B & C** | Structural Defect / Physical Layout | AST temporal fact partition_by verification, co-located cluster_by key alignment & Battery J dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Prevents full-table scans and distributed network shuffle join bottlenecks on BigQuery, Snowflake, and Databricks. |
-| `RSK-13` | Bitemporal Interval Overlap & Inferred Ghost Key Linter | **B & C** | Structural Defect / Temporal Invariant | AST SCD6 attribute pairing, closed-open interval overlap detection & Battery K dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Prevents point-in-time join metric inflation caused by overlapping dimension intervals and dropped late-arriving facts. |
-| `RSK-14` | Metric Additivity & Aggregate Rollup Linter | **B & C** | Structural Defect / Computational | AST semi-additive temporal balance verification across PERIODIC_SNAPSHOT_FACT / BALANCES, factless grain purity, rollup parity & Battery L dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Prevents 30x temporal sum balance inflation on snapshot metrics, dummy measure pollution on factless events, and aggregate rollup divergence. |
+| `RSK-01` | **Workload Mismatch Risk** (Semantic Inversion Trap) | **A & B** | Universal (OLTP / OLAP) | Tier 1 Intake Vector Gate + Static Workload Classifier | `TRAP-01`, `IntakeEngine` | Do NOT add OLTP vs OLAP tests for other domains; `TRAP-01` already validates compile-time contradiction halts. |
+| `RSK-02` | **Metric Multiplication Risk** (Chasm & Fan-Out Trap) | **B** | Dimensional OLAP / Multi-Fact | Static AST 1:N join detector | `TRAP-02`, `forge/risk_engine.py` | Traps disparate grain joins statically. Do not run SQL here. |
+| `RSK-02-DYNAMIC` | **Metric Conservation Proof** ($\sum Raw \equiv \sum Mart$) | **D** | Universal Invariant | Battery A: Physical DuckDB aggregate assertion down to $0.0000$ drift | `forge/risk_dispatcher.py`, `forge/benchmark_harness.py` | Do NOT write manual SQL summing columns in custom cases; Process D automatically probes all numeric facts. |
+| `RSK-03` | **Timeline Leak Risk** (Temporal Causality Leakage) | **D** | Dimensional OLAP (SCD2) / Audit | Universal SCD2 Point-in-Time Join Probe (`9999-12-31` sentinel) | `TRAP-04`, `forge/benchmark_harness.py` | Do NOT hardcode date joins in new benchmarks to test PIT causality; Process D validates time intervals dynamically. |
+| `RSK-04` | **Orphan Data Risk** (Referential Quarantine Leakage) | **D** | Dimensional OLAP / Ingestion | Agnostic Foreign Key Integrity Probe & Silver Quarantine Isolation | `forge/benchmark_harness.py` | Do NOT create separate unit tests for foreign key orphans on every new table; Process D probes FK reflection globally. |
+| `RSK-05` | **Circular Dependency Risk** (Cyclic Foreign Key Loops) | **B** | OLTP Relational / dbt DAGs | Static DFS cycle detection over schema foreign key graph | `TRAP-03`, `forge/risk_engine.py` | Do NOT boot DuckDB to detect cyclic dependency deadlocks; Process B traps graph cycles statically in $O(V+E)$. |
+| `RSK-05-DYNAMIC` | **Circular Dependency Plan Proof** (Physical Hash-Join EXPLAIN) | **D** | Universal Invariant | Battery D: EXPLAIN plan inspection ensuring sub-100ms hash joins | `forge/risk_dispatcher.py`, `forge/benchmark_harness.py` | Do NOT write ad-hoc query plan checks; Process D verifies hash join efficiency across all queries. |
+| `RSK-06` | **Data Skew Crash Risk** (Join Fan-Out Stability) | **C** | Distributed Cloud MPP / Spark | Dynamic Battery E: Zipfian 80/20 Key Skew Join Fan-Out Verification (Factor $\le 1.0$) | `forge/chaos_engine.py`, `forge/risk_dispatcher.py` | Proves zero intermediate row explosion ($Factor \le 1.0$) under skewed foreign keys. |
+| `RSK-07` | **Lost Detail Risk** (Requirement Volatility & Grain Collapse) | **A** | Dimensional OLAP / Summary Marts | Intake Atomic Grain Pushback & Lowest Atomic Grain Verification | `CASE-04`, `IntakeEngine` | Do NOT add snapshot models without lowest atomic grain base facts preserved. |
+| `RSK-08` | **Privacy Leak Risk** (GDPR Art. 17 PII Exposure & Tagging) | **B** | B2C Data Lakehouses / Analytics | Static PII Pattern Classifier | `forge/risk_engine.py` | Do NOT add ad-hoc regex checks for PII in pipeline tests; register PII patterns in `RSK-08` static evaluator. |
+| `RSK-08-DYNAMIC` | **Privacy Deletion Proof** (GDPR Pseudonymization Sentinel) | **C** | B2C / Regulatory Compliance | Battery G: Physical data redaction & zero-orphan fact ledger check | `forge/risk_dispatcher.py`, `forge/chaos_engine.py` | Process C proves compliance without foreign key orphan corruption under data deletion. |
+| `RSK-09` | **Breaking Change Risk** (Lineage Blast Radius) | **B** | Medallion Pipelines / Semantic Layer | Column-Level Lineage Linter & Semantic Versioning View Linter | `forge/risk_engine.py` | Do NOT create manual schema diff scripts; use `SnapshotEngine` and `RSK-09` AST comparison. |
+| `RSK-10` | **Over-Engineering Risk** (Query Hop & Workload Alignment) | **B & C** | Real-Time Serving / OBT Marts | AST query hop depth validator (0 hops for OBT, unnest for Nested) & Battery H dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Enforces zero join latency for OBT and array unnesting for nested columnar schemas. |
+| `RSK-11` | **Siloed Data Risk** (Enterprise Bus Matrix Inconformance) | **B & C** | Multi-Fact Enterprise Bus Matrix | AST shared dimension key conformance, Chasm trap direct join detection & Battery I dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Enforces shared conformed surrogate keys across multiple facts and CTE-based Drill-Across reporting. |
+| `RSK-12` | **Full-Table Scan Risk** (Distributed MPP Shuffle & Partitioning) | **B & C** | Distributed Cloud MPP (BigQuery/Snowflake) | AST temporal fact partition_by verification, co-located cluster_by key alignment & Battery J dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Prevents full-table scans and distributed network shuffle join bottlenecks on BigQuery, Snowflake, and Databricks. |
+| `RSK-13` | **Date Overlap Risk** (Bitemporal Interval & Ghost Keys) | **B & C** | Bitemporal / SCD6 Hybrid / Insurance | AST SCD6 attribute pairing, closed-open interval overlap detection & Battery K dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Prevents point-in-time join metric inflation caused by overlapping dimension intervals and dropped late-arriving facts. |
+| `RSK-14` | **Balance Inflation Risk** (Metric Additivity & Rollup Linter) | **B & C** | Banking / Periodic Snapshots / Accounting | AST semi-additive temporal balance verification across PERIODIC_SNAPSHOT_FACT / BALANCES, factless grain purity, rollup parity & Battery L dispatch | `forge/risk_engine.py`, `forge/risk_dispatcher.py` | Prevents 30x temporal sum balance inflation on snapshot metrics, dummy measure pollution on factless events, and aggregate rollup divergence. |
 | `CASE-01` | Retail Kimball Star Mart Baseline | **A** | Domain Coverage | Curated YAML benchmark verifying conformed dimensions & sales facts | `benchmarks/catalog/curated/olap/retail/CASE_01_retail_kimball_star.yaml` | Covers single-source e-commerce retail. Do NOT add another e-commerce case unless it introduces a fundamentally new grain. |
 | `CASE-02` | Healthcare Encounter-to-Diagnosis Bridge | **A** | Domain Coverage | Curated YAML benchmark verifying M:N bridge tables & group weighting | `benchmarks/catalog/curated/olap/healthcare/CASE_02_healthcare_admission_bridge.yaml` | Covers M:N multi-valued bridge table patterns with allocation factors. |
 | `CASE-03` | Banking Joint Account Multi-Owner Bridge | **A** | Domain Coverage | Curated YAML benchmark verifying multi-party account co-ownership | `benchmarks/catalog/curated/olap/banking/CASE_03_banking_joint_account_coownership.yaml` | Covers recursive role-playing entities and dual ownership accounting. |
@@ -194,7 +194,230 @@ Before submitting a Pull Request that adds anything to The Forge:
 
 ---
 
-## ⏳ 5. Candidate & Backlogged Architectural Risks (Roadmap)
+## 📖 5. Plain-English Risk & Workload Reference Guide
+
+This reference guide translates all 14 monitored architectural risks into clear, practical engineering principles. Each entry details the target workload, the catastrophic production hazard, bad vs. good design patterns, and how The Forge prevents or proves safety.
+
+---
+
+### RSK-01: Workload Mismatch Risk
+* **Technical Hazard:** Semantic Inversion Trap
+* **Target Workload:** Universal (Transactional OLTP vs. Analytical OLAP / Lakehouse)
+* **The Real-World Disaster:** 
+  Mixing operational transactional patterns with analytical data warehouse patterns. For example, forcing a 3NF normalized transactional schema into an analytical warehouse requires 15-way joins for a simple executive dashboard, causing report timeouts. Conversely, trying to perform sub-millisecond point lookups or row-level mutations against a columnar data lakehouse (e.g. Parquet/Iceberg) creates small-file fragmentation and exhausts compute budgets.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Building analytical reporting directly on operational PostgreSQL tables with long-running analytical queries locking production OLTP checkout rows.
+  * ✔️ **Good:** Decoupling workloads. Stream transactional mutations via Change Data Capture (CDC) into an analytical OLAP star mart or flat One Big Table (OBT) optimized for columnar aggregation.
+* **The Forge Architectural Invariant:**
+  Intake classification dynamically validates workload compatibility; contradictions between low-latency transactional CRUD and analytical aggregations halt synthesis (`TRAP-01`).
+
+---
+
+### RSK-02: Metric Multiplication Risk
+* **Technical Hazard:** Chasm Trap & Cartesian Fan-Out
+* **Target Workload:** Dimensional OLAP / Multi-Fact Star Schemas
+* **The Real-World Disaster:**
+  When querying two independent fact tables (e.g., `fact_orders` and `fact_shipments`) that share a common dimension (e.g., `dim_customer`), joining both facts in a single SQL query causes a Cartesian row explosion. A customer with 5 orders and 4 shipments produces 20 joined rows instead of 9, multiplying financial revenue by $4\times$ to $10\times$ and corrupting executive KPI dashboards.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad (Direct Multi-Fact Join):**
+    ```sql
+    SELECT c.customer_name, SUM(o.order_amount), SUM(s.shipping_cost)
+    FROM dim_customer c
+    JOIN fact_orders o ON c.customer_id = o.customer_id
+    JOIN fact_shipments s ON c.customer_id = s.customer_id
+    GROUP BY c.customer_name; -- CARTESIAN FAN-OUT: Multiplies revenue!
+    ```
+  * ✔️ **Good (Kimball Drill-Across):**
+    ```sql
+    WITH orders_agg AS (
+      SELECT customer_id, SUM(order_amount) AS total_orders
+      FROM fact_orders GROUP BY customer_id
+    ),
+    shipments_agg AS (
+      SELECT customer_id, SUM(shipping_cost) AS total_shipping
+      FROM fact_shipments GROUP BY customer_id
+    )
+    SELECT c.customer_name, COALESCE(o.total_orders, 0), COALESCE(s.total_shipping, 0)
+    FROM dim_customer c
+    LEFT JOIN orders_agg o ON c.customer_id = o.customer_id
+    LEFT JOIN shipments_agg s ON c.customer_id = s.customer_id;
+    ```
+* **The Forge Architectural Invariant:**
+  Process B statically detects 1:N multi-fact join paths in AST schema graphs (`RSK-02`). Process D dynamically proves the **Law of Metric Conservation** ($\sum Raw \equiv \sum Mart$) down to $0.0000$ drift (`Battery A`).
+
+---
+
+### RSK-03: Timeline Leak Risk
+* **Technical Hazard:** SCD2 Point-in-Time Causality Amnesia
+* **Target Workload:** Dimensional OLAP (Slowly Changing Dimensions) / Historical Auditing
+* **The Real-World Disaster:**
+  A customer lived in California in 2022 and moved to Texas in 2024. In 2026, an auditor analyzes 2022 sales tax liabilities. If the query joins to `dim_customer WHERE is_current = TRUE`, the 2022 transactions are joined to Texas, illegally misattributing state sales tax and exposing the business to audit fines and retroactive tax penalties.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Joining historical transactions to current dimension state:
+    ```sql
+    SELECT f.sale_id, c.state, f.tax_collected
+    FROM fact_sales f
+    JOIN dim_customer c ON f.customer_id = c.customer_id AND c.is_current = TRUE;
+    ```
+  * ✔️ **Good:** Point-in-Time interval join using effective dates:
+    ```sql
+    SELECT f.sale_id, c.state, f.tax_collected
+    FROM fact_sales f
+    JOIN dim_customer c ON f.customer_id = c.customer_id
+      AND f.sale_timestamp >= c.valid_from 
+      AND f.sale_timestamp < c.valid_to; -- [valid_from, valid_to) with '9999-12-31'
+    ```
+* **The Forge Architectural Invariant:**
+  Process D executes universal point-in-time invariant probes across surrogate keys and date ranges to guarantee historical immutability (`Battery B`, `TRAP-04`).
+
+---
+
+### RSK-04: Orphan Data Risk
+* **Technical Hazard:** Referential Quarantine Leakage
+* **Target Workload:** Data Lakehouse Ingestion / Medallion Pipelines (Bronze $\rightarrow$ Silver $\rightarrow$ Gold)
+* **The Real-World Disaster:**
+  Source upstream systems emit transactions referencing deleted, corrupt, or late-arriving customer IDs. If the data warehouse pipeline performs a strict `INNER JOIN` against the dimension table, thousands of orders are silently discarded from the Gold marts. Financial ledgers fail to balance, and executive revenue numbers understate real cash collections.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Dropping orphan records via strict inner join or allowing unverified foreign keys into Gold tables without integrity verification.
+  * ✔️ **Good:** Silver quarantine processing routes unresolved keys to synthetic surrogate entries (e.g., `-1: Unknown / Pending Resolution`) in dimensional lookup tables, preserving 100% of transaction amounts.
+* **The Forge Architectural Invariant:**
+  Process D inspects schema reflection dynamically, proving zero orphan foreign keys and ensuring quarantine routing preserves total monetary ledger integrity (`Battery C`).
+
+---
+
+### RSK-05: Circular Dependency Risk
+* **Technical Hazard:** Cyclic Foreign Key Loops & Deadlocks
+* **Target Workload:** Relational OLTP / dbt & Airflow Pipeline DAGs
+* **The Real-World Disaster:**
+  Table A foreign-keys to Table B, Table B foreign-keys to Table C, and Table C foreign-keys back to Table A. In OLTP databases, inserting a new record requires all three to exist simultaneously, causing transactional deadlocks and circular cascade errors. In data pipelines (dbt, Airflow), circular model references create infinite compilation cycles. In query planners, cyclic joins cause optimizer thrashing and exponential hash-join probe latency.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Cyclic relational references:
+    `orders(invoice_id) -> invoices(payment_id) -> payments(order_id) -> orders`
+  * ✔️ **Good:** Directed Acyclic Graph (DAG) using an explicit junction/bridge table or lifecycle state machine entity:
+    `orders -> invoices -> payments` (strictly acyclic).
+* **The Forge Architectural Invariant:**
+  Process B runs static Depth-First Search (DFS) cycle detection in $O(V+E)$ without touching the database (`RSK-05`). Process D verifies physical EXPLAIN query plans to ensure hash-joins complete in sub-100ms linear time (`Battery D`, `TRAP-03`).
+
+---
+
+### RSK-06: Data Skew Crash Risk
+* **Technical Hazard:** Zipfian Key Skew & Join Fan-Out Instability
+* **Target Workload:** Distributed Cloud MPP / Apache Spark / BigQuery / Snowflake
+* **The Real-World Disaster:**
+  In e-commerce, 80% of all purchases may be tagged with a generic customer ID like `customer_id = 0` ("Guest Checkout") or an enterprise wholesale distributor ID. In a distributed hash join, the query engine partitions data across worker nodes by `HASH(customer_id)`. All guest transactions are routed to a single worker node, causing that node to exhaust memory, throw Out-Of-Memory (OOM) errors, and crash the entire multi-node cluster while all other nodes sit idle.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Direct distributed shuffle join on an un-salted, highly skewed foreign key.
+  * ✔️ **Good:** Salting the skewed join key (e.g. `customer_id || '_' || MOD(RANDOM(), 10)`) or splitting guest checkouts into a separate broadcast join branch.
+* **The Forge Architectural Invariant:**
+  Process C injects adversarial 80/20 Zipfian key skew via `ChaosEngine`, proving that the Join Fan-Out Factor remains strictly $\le 1.0$ under severe key distribution stress (`Battery E`).
+
+---
+
+### RSK-07: Lost Detail Risk
+* **Technical Hazard:** Requirement Volatility & Premature Summary (Grain Collapse)
+* **Target Workload:** Dimensional OLAP / Executive Data Marts
+* **The Real-World Disaster:**
+  To make dashboards fast, an engineering team only builds a `monthly_store_sales_summary` table and discards the individual line-item transactions. Six months later, product leadership requests basket-analysis ("Which products are bought together?") or return rate analysis by hour of day. The data warehouse cannot answer the question because the atomic detail was permanently destroyed.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Creating aggregate-only summary tables without establishing an underlying lowest atomic grain fact table.
+  * ✔️ **Good:** Kimball Grain Law: First model the lowest atomic grain transaction fact table (`fact_sales_order_line`). Then, optionally create daily/monthly periodic snapshot rollups as companion acceleration layers.
+* **The Forge Architectural Invariant:**
+  The Intake Engine enforces lowest atomic grain verification before approving companion aggregate snapshot designs (`RSK-07`, `CASE-04`).
+
+---
+
+### RSK-08: Privacy Leak Risk
+* **Technical Hazard:** GDPR Art. 17 PII Exposure & Non-Compliance
+* **Target Workload:** B2C Data Lakehouses / Customer Analytics / Regulatory Compliance
+* **The Real-World Disaster:**
+  Storing raw Personally Identifiable Information (PII) like names, email addresses, and phone numbers directly inside fact tables containing billions of rows. When a consumer exercises their legal "Right to be Forgotten" (GDPR Article 17 / CCPA), engineers are forced to rewrite petabytes of immutable historical Parquet/Iceberg files, causing multi-day table locks, corrupting downstream partitions, and risking regulatory fines up to €20M or 4% of global turnover.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Inlining `customer_email`, `customer_ssn`, and `full_name` directly in `fact_orders`.
+  * ✔️ **Good:** Pseudonymizing facts. Store immutable surrogate keys in fact tables. Isolate PII attributes into a dedicated, encrypted dimension (`dim_customer_pii`). Deletion requests simply overwrite or cryptographically shred the single dimension record while leaving billions of financial fact rows intact with an anonymized surrogate key.
+* **The Forge Architectural Invariant:**
+  Process B runs static PII pattern detection to flag exposed sensitive attributes (`RSK-08`). Process C dynamically proves zero-orphan ledger integrity during simulated consumer data redaction (`Battery G`).
+
+---
+
+### RSK-09: Breaking Change Risk
+* **Technical Hazard:** Column-Level Lineage Blast Radius
+* **Target Workload:** Medallion Data Pipelines / Semantic Layers / Shared Analytics
+* **The Real-World Disaster:**
+  A data engineer renames `user_id` to `account_uuid` in an upstream Silver table or alters a column's nullability. Without end-to-end lineage monitoring, this silent change deploys to production and immediately breaks 40 downstream dbt models, breaks 12 executive Looker/Tableau dashboards, and causes ML feature extraction jobs to fail silently.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Directly mutating or dropping columns in core shared warehouse models without versioned deprecation.
+  * ✔️ **Good:** Schema contracts and semantic versioning (`dim_customer_v1` view maintaining backward compatibility while `dim_customer_v2` introduces the new schema), combined with automated lineage blast radius analysis.
+* **The Forge Architectural Invariant:**
+  Process B evaluates column-level AST lineage graphs before schema promotion, blocking breaking alterations that lack compatibility views (`RSK-09`).
+
+---
+
+### RSK-10: Over-Engineering Risk
+* **Technical Hazard:** Query Hop Depth & Workload Misalignment
+* **Target Workload:** Real-Time Serving / Low-Latency Dashboards / One Big Table (OBT)
+* **The Real-World Disaster:**
+  Designing a deeply normalized 3NF or 6-hop snowflake schema for a high-frequency real-time web application or ClickHouse streaming analytics mart. Every user pageview triggers 6 relational joins across distributed nodes, inflating query latency from 15 milliseconds to 6 seconds and overwhelming database connection pools.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** 6-table normalized snowflake join required for real-time latency-critical mobile app endpoints.
+  * ✔️ **Good:** Wide denormalized One Big Table (OBT) or nested repeated columnar records (`ARRAY<STRUCT>`), achieving sub-second analytics with 0 join hops.
+* **The Forge Architectural Invariant:**
+  Process B inspects query hop depth against the target workload SLA (enforcing 0 joins for OBT and array unnesting for nested columnar), verified by sub-50ms execution stress tests (`Battery H`, `CASE-05`, `CASE-06`).
+
+---
+
+### RSK-11: Siloed Data Risk
+* **Technical Hazard:** Enterprise Bus Matrix Inconformance
+* **Target Workload:** Multi-Fact Enterprise Data Warehouses / Cross-Department Reporting
+* **The Real-World Disaster:**
+  Marketing, Sales, and Finance build independent, uncoordinated data marts. Marketing creates `dim_customer` with `customer_id` from HubSpot; Finance creates `dim_client` with `client_id` from NetSuite. When the CFO asks for Customer Lifetime Value (comparing marketing acquisition spend against revenue earned), the two tables cannot be joined without messy fuzzy string matching, producing conflicting executive reports.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Fragmented, department-specific dimensions with conflicting surrogate keys and disparate grain definitions.
+  * ✔️ **Good:** Kimball Enterprise Bus Matrix. All business process facts share certified, enterprise-conformed dimensions with standardized surrogate keys.
+* **The Forge Architectural Invariant:**
+  Process B verifies shared dimension conformance across multiple fact tables and enforces CTE Drill-Across reporting rather than direct cross-fact joins (`Battery I`, `CASE-07`).
+
+---
+
+### RSK-12: Full-Table Scan Risk
+* **Technical Hazard:** Distributed MPP Shuffle & Partitioning Blindspot
+* **Target Workload:** Distributed Cloud MPP (BigQuery, Snowflake, Databricks)
+* **The Real-World Disaster:**
+  Creating multi-billion row tables in BigQuery or Snowflake without temporal partitioning or clustering keys. Every morning, hundreds of analyst queries scan the entire 10-terabyte table rather than the last 24 hours of data. The company receives a surprise \$50,000 monthly cloud query invoice, and queries stall due to massive distributed network shuffles.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Unpartitioned, unclustered petabyte tables filtered by `WHERE event_timestamp >= CURRENT_DATE - 1`.
+  * ✔️ **Good:** Explicit temporal partitioning (`PARTITION BY DATE(event_timestamp)`) paired with co-located cluster keys on high-cardinality join/filter attributes (`CLUSTER BY customer_id, region`), enabling physical partition pruning.
+* **The Forge Architectural Invariant:**
+  Process B statically inspects table DDL for partition and cluster alignment on distributed fact tables (`RSK-12`), verified by execution plan assertions guaranteeing partition pruning (`Battery J`, `CASE-08`).
+
+---
+
+### RSK-13: Date Overlap Risk
+* **Technical Hazard:** Bitemporal Interval Overlap & Ghost Keys
+* **Target Workload:** Bitemporal / SCD Type 6 / Insurance / Financial Auditing
+* **The Real-World Disaster:**
+  In financial contracts or insurance policies, retroactive amendments are common. If historical tracking allows overlapping `[valid_from, valid_to)` intervals for the same entity, point-in-time joins match multiple dimension rows, duplicating financial obligations. Furthermore, late-arriving claims occurring during brief temporal gaps find no matching dimension record (Ghost Key) and are dropped.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Unconstrained date columns allowing overlapping ranges or discontinuous gaps in entity lifecycles.
+  * ✔️ **Good:** Bitemporal modeling separating Assertion Time from Effective Time. Contiguous closed-open intervals `[valid_from, valid_to)` guaranteed by exclusion constraints, with universal ghost key fallbacks for late-arriving events.
+* **The Forge Architectural Invariant:**
+  Process B validates bitemporal attribute pairing and interval continuity (`RSK-13`). Process C verifies zero record loss or duplication under late-arriving retroactive claims (`Battery K`, `CASE-09`).
+
+---
+
+### RSK-14: Balance Inflation Risk
+* **Technical Hazard:** Metric Additivity & Rollup Divergence
+* **Target Workload:** Retail Banking / Periodic Snapshot Inventory / Financial Accounting
+* **The Real-World Disaster:**
+  An analyst calculates quarterly bank balances by running `SELECT SUM(account_balance) FROM fact_daily_balances WHERE quarter = '2026-Q1'`. Because an account balance is a point-in-time snapshot (semi-additive measure), summing 90 days multiplies the customer's actual wealth by $90\times$, resulting in wildly inflated balance sheets and catastrophic reporting errors.
+* **Bad vs. Good Pattern:**
+  * ❌ **Bad:** Storing semi-additive balances in event-level fact tables or allowing naive `SUM()` aggregations across the time dimension.
+  * ✔️ **Good:** Explicit `PERIODIC_SNAPSHOT_FACT` metadata designating balance measures as semi-additive, forcing end-of-period closing balance selection or temporal average rollups (`AVG()`), paired with companion pre-aggregated summary tables.
+* **The Forge Architectural Invariant:**
+  Process B lints semi-additive measures across snapshot tables, enforcing grain purity on factless events and mathematical parity between base facts and rollups (`RSK-14`, `Battery L`, `CASE-10`).
+
+---
+
+## ⏳ 6. Candidate & Backlogged Architectural Risks (Roadmap)
 
 Per the **Zero-Lost Bugs & Features Protocol**, future architectural risks identified during senior expert reviews that are deferred for future milestones are formally documented below and tracked in [`implementation_plans/00_ACTIVE_BACKLOG.md`](file:///C:/Coding/VSCode/data-model-architect/implementation_plans/00_ACTIVE_BACKLOG.md):
 

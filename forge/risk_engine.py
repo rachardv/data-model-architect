@@ -141,7 +141,7 @@ def register_risk(evaluator_cls_or_id: Any = None):
 @register_risk("RSK-01")
 class RSK01_SemanticInversionEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-01"
-    name = "Semantic Inversion & Workload Mismatch Trap"
+    name = "Workload Mismatch Risk (Semantic Inversion)"
     tier = ValidationTier.TIER_1_INTAKE
     default_severity = RiskSeverity.CRITICAL
     default_blocking = True
@@ -196,7 +196,7 @@ class RSK01_SemanticInversionEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-07")
 class RSK07_RequirementVolatilityEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-07"
-    name = "Requirement Volatility & Refactoring Debt (Schema Rigidity)"
+    name = "Lost Detail Risk (Premature Summary)"
     tier = ValidationTier.TIER_1_INTAKE
     default_severity = RiskSeverity.HIGH
     default_blocking = False
@@ -243,7 +243,7 @@ class RSK07_RequirementVolatilityEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-02")
 class RSK02_StrictMartSeparationEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-02"
-    name = "Chasm Trap & Strict Mart Separation (Static Linter)"
+    name = "Metric Multiplication Risk (Chasm Trap)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.CRITICAL
     default_blocking = True
@@ -290,7 +290,7 @@ class RSK02_StrictMartSeparationEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-05")
 class RSK05_CartesianHierarchyEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-05"
-    name = "Execution Plan Traps & Circular Loops (Static Linter)"
+    name = "Circular Dependency Risk (Cyclic FK Loops)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.HIGH
     default_blocking = True
@@ -374,7 +374,7 @@ class RSK05_CartesianHierarchyEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-08")
 class RSK08_PiiMaskingEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-08"
-    name = "PII Data Exposure & Masking Policy (Static Linter)"
+    name = "Privacy Leak Risk (GDPR PII Exposure)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.HIGH
     default_blocking = False
@@ -417,7 +417,7 @@ class RSK08_PiiMaskingEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-09")
 class RSK09_BlastRadiusEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-09"
-    name = "Downstream Blast Radius & Breaking Changes"
+    name = "Breaking Change Risk (Lineage Blast Radius)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.MEDIUM
     default_blocking = False
@@ -440,7 +440,7 @@ class RSK09_BlastRadiusEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-10")
 class RSK10_OlapWorkloadAlignmentEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-10"
-    name = "OLAP Workload & Query Hop Alignment Evaluator"
+    name = "Over-Engineering Risk (Query Hop & Workload Mismatch)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.HIGH
     default_blocking = True
@@ -533,7 +533,7 @@ class RSK10_OlapWorkloadAlignmentEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-11")
 class RSK11_BusMatrixConformanceAndChasmEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-11"
-    name = "Enterprise Bus Matrix Conformance & Chasm Prevention Evaluator"
+    name = "Siloed Data Risk (Bus Matrix Inconformance)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.HIGH
     default_blocking = True
@@ -616,7 +616,7 @@ class RSK11_BusMatrixConformanceAndChasmEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-12")
 class RSK12_MppPartitionAndShuffleLinter(BaseRiskEvaluator):
     risk_id = "RSK-12"
-    name = "Distributed MPP Shuffle & Partitioning Blindspot Linter"
+    name = "Full-Table Scan Risk (MPP Partition & Shuffle Blindspot)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.HIGH
     default_blocking = True
@@ -725,7 +725,7 @@ class RSK12_MppPartitionAndShuffleLinter(BaseRiskEvaluator):
 @register_risk("RSK-13")
 class RSK13_TemporalIntervalOverlapAndGhostKeyLinter(BaseRiskEvaluator):
     risk_id = "RSK-13"
-    name = "Temporal Interval Overlap & Inferred Ghost Key Linter"
+    name = "Date Overlap Risk (Bitemporal Interval & Ghost Keys)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.HIGH
     default_blocking = True
@@ -857,7 +857,7 @@ class RSK13_TemporalIntervalOverlapAndGhostKeyLinter(BaseRiskEvaluator):
 @register_risk("RSK-14")
 class RSK14_MetricAdditivityAndRollupLinter(BaseRiskEvaluator):
     risk_id = "RSK-14"
-    name = "Metric Additivity & Aggregate Rollup Linter"
+    name = "Balance Inflation Risk (Metric Additivity & Rollup Linter)"
     tier = ValidationTier.TIER_2_AST_LINTER
     default_severity = RiskSeverity.HIGH
     default_blocking = True
@@ -998,7 +998,7 @@ class RSK14_MetricAdditivityAndRollupLinter(BaseRiskEvaluator):
 @register_risk("RSK-02-DYNAMIC")
 class RSK02_MetricConservationDynamicEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-02-DYNAMIC"
-    name = "Metric Conservation Proof (Law of Conservation of Money)"
+    name = "Metric Multiplication Proof (Conservation of Money)"
     tier = ValidationTier.TIER_3_PHYSICAL_DUCKDB
     default_severity = RiskSeverity.CRITICAL
     default_blocking = True
@@ -1079,7 +1079,7 @@ class RSK02_MetricConservationDynamicEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-03")
 class RSK03_TemporalCausalityEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-03"
-    name = "Temporal Timeline Causality (SCD2 Point-in-Time Proof)"
+    name = "Timeline Leak Risk (SCD2 Point-in-Time Causality)"
     tier = ValidationTier.TIER_3_PHYSICAL_DUCKDB
     default_severity = RiskSeverity.CRITICAL
     default_blocking = True
@@ -1156,7 +1156,7 @@ class RSK03_TemporalCausalityEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-04")
 class RSK04_ReferentialQuarantineEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-04"
-    name = "Referential Integrity & Silver Quarantine Isolation"
+    name = "Orphan Data Risk (Referential Integrity & Quarantine)"
     tier = ValidationTier.TIER_3_PHYSICAL_DUCKDB
     default_severity = RiskSeverity.CRITICAL
     default_blocking = True
@@ -1244,7 +1244,7 @@ class RSK04_ReferentialQuarantineEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-05-DYNAMIC")
 class RSK05_HashJoinExplainEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-05-DYNAMIC"
-    name = "Physical Hash-Join EXPLAIN Execution Plan"
+    name = "Circular Dependency Plan Proof (Physical Hash-Join EXPLAIN)"
     tier = ValidationTier.TIER_3_PHYSICAL_DUCKDB
     default_severity = RiskSeverity.HIGH
     default_blocking = True
@@ -1325,7 +1325,7 @@ class RSK05_HashJoinExplainEvaluator(BaseRiskEvaluator):
 @register_risk("RSK-06")
 class RSK06_WorkloadEfficiencyEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-06"
-    name = "Workload Efficiency & Join Fan-Out Stability"
+    name = "Data Skew Crash Risk (Zipfian Key Skew Stability)"
     tier = ValidationTier.TIER_4_ADVERSARIAL_CHAOS
     default_severity = RiskSeverity.HIGH
     default_blocking = False
@@ -1411,7 +1411,7 @@ RSK06_AdversarialSkewEvaluator = RSK06_WorkloadEfficiencyEvaluator
 @register_risk("RSK-08-DYNAMIC")
 class RSK08_GdprErasureProofEvaluator(BaseRiskEvaluator):
     risk_id = "RSK-08-DYNAMIC"
-    name = "GDPR Right to be Forgotten (Pseudonymization Proof)"
+    name = "Privacy Deletion Proof (GDPR Right to be Forgotten)"
     tier = ValidationTier.TIER_4_ADVERSARIAL_CHAOS
     default_severity = RiskSeverity.HIGH
     default_blocking = True
